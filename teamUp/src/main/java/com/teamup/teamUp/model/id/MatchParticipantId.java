@@ -1,4 +1,4 @@
-package com.teamup.teamUp.model;
+package com.teamup.teamUp.model.id;
 
 
 import jakarta.persistence.Embeddable;

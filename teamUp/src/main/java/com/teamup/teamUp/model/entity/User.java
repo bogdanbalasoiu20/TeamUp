@@ -1,4 +1,4 @@
-package com.teamup.teamUp.model;
+package com.teamup.teamUp.model.entity;
 
 
 import jakarta.persistence.*;

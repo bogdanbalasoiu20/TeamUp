@@ -1,6 +1,7 @@
-package com.teamup.teamUp.model;
+package com.teamup.teamUp.model.entity;
 
 
+import com.teamup.teamUp.model.id.SkillEndorsementId;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;

@@ -1,5 +1,6 @@
-package com.teamup.teamUp.model;
+package com.teamup.teamUp.model.entity;
 
+import com.teamup.teamUp.model.enums.NotificationType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
