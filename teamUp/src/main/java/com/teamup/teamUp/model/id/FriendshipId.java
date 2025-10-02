@@ -1,5 +1,6 @@
 package com.teamup.teamUp.model.id;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.*;
 
@@ -14,6 +15,9 @@ import java.util.UUID;
 @Builder
 @EqualsAndHashCode
 public class FriendshipId implements Serializable {
+    @Column(name = "user_a",nullable = false, insertable = false, updatable = false)
     private UUID userA;
+
+    @Column(name = "user_b", nullable = false,  insertable = false, updatable = false)
     private UUID userB;
 }

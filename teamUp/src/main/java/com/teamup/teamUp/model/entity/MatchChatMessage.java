@@ -16,7 +16,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(exclude = {"match", "senderParticipation"})
+@ToString(exclude = {"match", "sender"})
 public class MatchChatMessage {
     @Id
     @GeneratedValue
@@ -28,12 +28,9 @@ public class MatchChatMessage {
     @JoinColumn(name = "match_id", nullable = false, foreignKey = @ForeignKey(name = "fk_mcm_match"))
     private Match match;
 
-    @ManyToOne(fetch = FetchType.LAZY,optional = false)
-    @JoinColumns(value={
-            @JoinColumn(name = "match_id", referencedColumnName = "match_id", insertable = false, updatable = false),
-            @JoinColumn(name = "sender_id", referencedColumnName = "user_id", nullable = false)
-    }, foreignKey = @ForeignKey(name = "fk_mcm_sender_is_participant"))
-    private MatchParticipant senderParticipation;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "sender_id", nullable = false)
+    private User sender;
 
     @Column(nullable = false)
     private String content;
@@ -42,11 +39,6 @@ public class MatchChatMessage {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    @Transient //transient ii spune lui hibernate ca metoda nu e mapata la nicio coloana din tabel si sa nu o salveze in db
-    public User getSenderUser(){
-        return senderParticipation!=null ? senderParticipation.getUser():null;
-    }
-
     @PrePersist
     @PreUpdate
     private void validate(){
@@ -54,10 +46,7 @@ public class MatchChatMessage {
             throw new IllegalArgumentException("Content cannot be empty");
         }
         content = content.trim();
-        if(match==null || senderParticipation == null)
+        if(match==null || sender == null)
             throw new IllegalArgumentException("Match or sender must be provided");
-
-        if(!senderParticipation.getMatch().getId().equals(match.getId()))
-            throw new IllegalArgumentException("Sender participant does not belong to this match");
     }
 }
