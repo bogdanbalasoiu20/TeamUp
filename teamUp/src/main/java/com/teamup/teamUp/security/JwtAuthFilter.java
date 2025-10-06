@@ -14,6 +14,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
+//Scop: să „agațe” fiecare request, să caute un Authorization: Bearer ..., să valideze token-ul și să seteze user-ul curent.
 @Component
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {

@@ -16,12 +16,17 @@ import java.util.Map;
 
 @RequiredArgsConstructor
 @Service
+
+//genereaza si verifica token-urile
 public class JwtService {
     private final JwtProperties props;
+
+    //decodifica secretul base64 si timpul de expirare al token-ului
     private SecretKey key() {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(props.secret()));
     }
 
+    //construiesc un jwt semnat
     public String generate(String subject, Map<String,?> claims) {
         var now = Instant.now();
         return Jwts.builder()
@@ -33,6 +38,7 @@ public class JwtService {
                 .compact();
     }
 
+    //verific tokenul
     public Jws<Claims> parse(String token) {
         return Jwts.parser().verifyWith(key()).build().parseSignedClaims(token);
     }

@@ -11,6 +11,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+
+//Scop: să configureze Spring Security pentru un API stateless cu JWT.
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
