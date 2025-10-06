@@ -41,6 +41,8 @@ public class User {
 
     private String position;
     private String city;
+
+    @Column(length = 300)
     private String description;
     private String rank;
 

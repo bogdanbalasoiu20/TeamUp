@@ -1,15 +1,15 @@
 package com.teamup.teamUp.service;
 
-import com.teamup.teamUp.mapper.UserMapper;
-import com.teamup.teamUp.model.dto.userDto.LoginRequestDto;
-import com.teamup.teamUp.model.dto.userDto.LoginResponseDto;
+import com.teamup.teamUp.model.dto.userDto.*;
 import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.repository.UserRepository;
 import com.teamup.teamUp.security.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
@@ -26,7 +26,7 @@ public class AuthService {
         this.jwtService = jwtService;
     }
 
-    public LoginResponseDto login(LoginRequestDto request){
+    public AuthResponseDto login(LoginRequestDto request){
         var key = request.emailOrUsername().trim();
         var user = userRepository.findByUsernameIgnoreCaseOrEmailIgnoreCase(key, key).orElseThrow(()->new BadCredentialsException("Invalid credentials"));
 
@@ -35,6 +35,37 @@ public class AuthService {
 
         var token = jwtService.generate(user.getId().toString(), Map.of("username", user.getUsername()));
 
-        return new LoginResponseDto(user.getId(),token,user.getEmail(),user.getUsername());
+        return new AuthResponseDto(token, UserResponseDto.from(user));
+    }
+
+    @Transactional
+    public AuthResponseDto register(RegisterRequestDto request){
+        String email = request.email().trim().toLowerCase();
+        if(userRepository.existsByEmailIgnoreCase(email))
+            throw new IllegalArgumentException("Email already exists");
+
+        String username = request.username().trim();
+        if(userRepository.existsByUsernameIgnoreCase(username))
+            throw new IllegalArgumentException("Username already exists");
+
+        var user = User.builder()
+                .email(email)
+                .username(username)
+                .passwordHash(passwordEncoder.encode(request.password()))
+                .phoneNumber(request.phoneNumber())
+                .birthday(request.birthday())
+                .city(request.city())
+                .position(request.position())
+                .description(request.description())
+                .build();
+
+        try {
+            var userSaved = userRepository.save(user);
+            var token = jwtService.generate(userSaved.getId().toString(), Map.of("username", userSaved.getUsername()));
+            return new AuthResponseDto(token, UserResponseDto.from(userSaved));
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalArgumentException("Email or username already exists");
+        }
+
     }
 }

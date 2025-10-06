@@ -8,6 +8,7 @@ import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
     boolean existsByEmailIgnoreCase(String email);
+    boolean existsByUsernameIgnoreCase(String username);
     boolean existsByUsernameIgnoreCaseOrEmailIgnoreCase(String username, String email);
     Optional<User> findByUsernameIgnoreCaseOrEmailIgnoreCase(String username,String email);
 }
