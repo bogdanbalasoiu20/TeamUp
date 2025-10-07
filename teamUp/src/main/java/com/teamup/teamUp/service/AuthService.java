@@ -1,5 +1,7 @@
 package com.teamup.teamUp.service;
 
+import com.teamup.teamUp.exceptions.ResourceConflictException;
+import com.teamup.teamUp.exceptions.UnauthorizedException;
 import com.teamup.teamUp.model.dto.userDto.*;
 import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.repository.UserRepository;
@@ -28,10 +30,10 @@ public class AuthService {
 
     public AuthResponseDto login(LoginRequestDto request){
         var key = request.emailOrUsername().trim();
-        var user = userRepository.findByUsernameIgnoreCaseOrEmailIgnoreCase(key, key).orElseThrow(()->new BadCredentialsException("Invalid credentials"));
+        var user = userRepository.findByUsernameIgnoreCaseOrEmailIgnoreCase(key, key).orElseThrow(()->new UnauthorizedException("Invalid credentials"));
 
         if(!passwordEncoder.matches(request.password(), user.getPasswordHash()))
-            throw new BadCredentialsException("Invalid credentials");
+            throw new UnauthorizedException("Invalid credentials");
 
         var token = jwtService.generate(user.getId().toString(), Map.of("username", user.getUsername()));
 
@@ -42,11 +44,11 @@ public class AuthService {
     public AuthResponseDto register(RegisterRequestDto request){
         String email = request.email().trim().toLowerCase();
         if(userRepository.existsByEmailIgnoreCase(email))
-            throw new IllegalArgumentException("Email already exists");
+            throw new ResourceConflictException("Email already exists");
 
         String username = request.username().trim();
         if(userRepository.existsByUsernameIgnoreCase(username))
-            throw new IllegalArgumentException("Username already exists");
+            throw new ResourceConflictException("Username already exists");
 
         var user = User.builder()
                 .email(email)
@@ -64,7 +66,7 @@ public class AuthService {
             var token = jwtService.generate(userSaved.getId().toString(), Map.of("username", userSaved.getUsername()));
             return new AuthResponseDto(token, UserResponseDto.from(userSaved));
         } catch (DataIntegrityViolationException e) {
-            throw new IllegalArgumentException("Email or username already exists");
+            throw new ResourceConflictException("Email or username already exists");
         }
 
     }
