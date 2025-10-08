@@ -1,4 +1,4 @@
-package com.teamup.teamUp.model.dto.userDto;
+package com.teamup.teamUp.model.dto.user;
 
 import com.teamup.teamUp.model.entity.User;
 

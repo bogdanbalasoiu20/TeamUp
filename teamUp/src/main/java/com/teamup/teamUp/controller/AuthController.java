@@ -1,8 +1,8 @@
 package com.teamup.teamUp.controller;
 
-import com.teamup.teamUp.model.dto.userDto.AuthResponseDto;
-import com.teamup.teamUp.model.dto.userDto.LoginRequestDto;
-import com.teamup.teamUp.model.dto.userDto.RegisterRequestDto;
+import com.teamup.teamUp.model.dto.auth.AuthResponseDto;
+import com.teamup.teamUp.model.dto.auth.LoginRequestDto;
+import com.teamup.teamUp.model.dto.auth.RegisterRequestDto;
 import com.teamup.teamUp.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;

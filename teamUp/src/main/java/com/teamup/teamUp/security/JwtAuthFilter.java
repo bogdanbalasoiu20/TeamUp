@@ -20,16 +20,25 @@ import java.util.List;
 public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtService jwt;
 
-    @Override protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+    @Override
+    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
             throws ServletException, IOException {
         var header = req.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
             var token = header.substring(7);
             try {
                 var jws = jwt.parse(token);
-                var sub = jws.getPayload().getSubject(); // ex: userId
-                var auth = new UsernamePasswordAuthenticationToken(sub, null, List.of());
-                SecurityContextHolder.getContext().setAuthentication(auth);
+                var claims = jws.getPayload();
+
+
+                String principal = claims.get("username", String.class);
+                if (principal == null) principal = claims.getSubject();
+
+                if (SecurityContextHolder.getContext().getAuthentication() == null) {
+                    var auth = new UsernamePasswordAuthenticationToken(principal, null, List.of());
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
+
             } catch (JwtException ignored) {}
         }
         chain.doFilter(req, res);

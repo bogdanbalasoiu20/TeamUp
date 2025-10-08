@@ -2,13 +2,15 @@ package com.teamup.teamUp.service;
 
 import com.teamup.teamUp.exceptions.ResourceConflictException;
 import com.teamup.teamUp.exceptions.UnauthorizedException;
-import com.teamup.teamUp.model.dto.userDto.*;
+import com.teamup.teamUp.model.dto.auth.AuthResponseDto;
+import com.teamup.teamUp.model.dto.auth.LoginRequestDto;
+import com.teamup.teamUp.model.dto.auth.RegisterRequestDto;
+import com.teamup.teamUp.model.dto.user.*;
 import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.repository.UserRepository;
 import com.teamup.teamUp.security.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,7 +37,7 @@ public class AuthService {
         if(!passwordEncoder.matches(request.password(), user.getPasswordHash()))
             throw new UnauthorizedException("Invalid credentials");
 
-        var token = jwtService.generate(user.getId().toString(), Map.of("username", user.getUsername()));
+        var token = jwtService.generate(user.getId().toString(), Map.of("username", user.getUsername(),"email", user.getEmail()));
 
         return new AuthResponseDto(token, UserResponseDto.from(user));
     }
@@ -63,7 +65,11 @@ public class AuthService {
 
         try {
             var userSaved = userRepository.save(user);
-            var token = jwtService.generate(userSaved.getId().toString(), Map.of("username", userSaved.getUsername()));
+            var token = jwtService.generate(
+                    userSaved.getId().toString(),
+                    Map.of("username", userSaved.getUsername(), "email", userSaved.getEmail())
+            );
+
             return new AuthResponseDto(token, UserResponseDto.from(userSaved));
         } catch (DataIntegrityViolationException e) {
             throw new ResourceConflictException("Email or username already exists");

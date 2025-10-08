@@ -37,12 +37,6 @@ public class GlobalExceptionHandler {
                 .body(new ApiError("FORBIDDEN", ex.getMessage(), null, request.getRequestURI()));
     }
 
-    @ExceptionHandler(PostNotFoundException.class)
-    public ResponseEntity<ApiError> handlePostNotFound(PostNotFoundException ex, HttpServletRequest request) {
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(new ApiError("POST_NOT_FOUND", ex.getMessage(), null, request.getRequestURI()));
-    }
 
     @ExceptionHandler(ResourceConflictException.class)
     public ResponseEntity<ApiError> handleConflict(ResourceConflictException ex, HttpServletRequest request) {
