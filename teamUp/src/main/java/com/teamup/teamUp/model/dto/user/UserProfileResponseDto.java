@@ -1,5 +1,7 @@
 package com.teamup.teamUp.model.dto.user;
 
+import com.teamup.teamUp.model.enums.Position;
+
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -10,7 +12,7 @@ public record UserProfileResponseDto(
         String email,
         LocalDate birthday,
         String phoneNumber,
-        String position,
+        Position position,
         String city,
         String description,
         String rank,

@@ -1,5 +1,6 @@
 package com.teamup.teamUp.model.dto.user;
 
+import com.teamup.teamUp.model.enums.Position;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -14,7 +15,7 @@ public record UpdateProfileRequestDto(
                 message = "Phone number must contain only digits and can start with +")
         String phoneNumber,
 
-        String position,
+        Position position,
 
         @Size(max = 64)
         String city,

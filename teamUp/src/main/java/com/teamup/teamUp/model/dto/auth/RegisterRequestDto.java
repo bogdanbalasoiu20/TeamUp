@@ -1,5 +1,6 @@
 package com.teamup.teamUp.model.dto.auth;
 
+import com.teamup.teamUp.model.enums.Position;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
@@ -29,8 +30,7 @@ public record RegisterRequestDto(
         @Past
         LocalDate birthday,
 
-        @Size(max = 30)
-        String position,
+        Position position,
 
         @Size(max = 64)
         String city,

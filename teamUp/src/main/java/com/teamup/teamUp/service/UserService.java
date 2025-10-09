@@ -33,7 +33,7 @@ public class UserService {
         if(request.phoneNumber()!=null)
             me.setPhoneNumber(request.phoneNumber().trim());
         if(request.position()!=null)
-            me.setPosition(request.position().trim());
+            me.setPosition(request.position());
         if(request.city()!=null)
             me.setCity(request.city().trim());
         if(request.description()!=null)

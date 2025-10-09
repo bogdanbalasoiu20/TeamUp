@@ -1,6 +1,7 @@
 package com.teamup.teamUp.model.entity;
 
 
+import com.teamup.teamUp.model.enums.Position;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -39,7 +40,10 @@ public class User {
     @Column(name = "phone_number",nullable = false)
     private String phoneNumber;
 
-    private String position;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "position", length = 32)
+    private Position position;
+
     private String city;
 
     @Column(length = 300)
