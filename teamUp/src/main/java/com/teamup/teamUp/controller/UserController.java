@@ -2,17 +2,16 @@ package com.teamup.teamUp.controller;
 
 
 import com.teamup.teamUp.mapper.UserMapper;
+import com.teamup.teamUp.model.dto.user.UpdateProfileRequestDto;
 import com.teamup.teamUp.model.dto.user.UserProfileResponseDto;
 import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/users")
@@ -41,5 +40,12 @@ public class UserController {
         User user =  userService.findByUsername(auth.getName().trim());
         UserProfileResponseDto response = userMapper.toProfileDto(user,true);
         return ResponseEntity.ok(new ResponseApi<>("User profile retrieved successfully",response,true));
+    }
+
+    @PatchMapping("/me")
+    public ResponseEntity<ResponseApi<UserProfileResponseDto>> updateMyProfile(@Valid @RequestBody UpdateProfileRequestDto request, Authentication auth){
+        User updatedUser = userService.updateMyProfile(auth.getName(),request);
+        UserProfileResponseDto response = userMapper.toProfileDto(updatedUser,true);
+        return ResponseEntity.ok(new ResponseApi<>("User profile updated successfully",response,true));
     }
 }
