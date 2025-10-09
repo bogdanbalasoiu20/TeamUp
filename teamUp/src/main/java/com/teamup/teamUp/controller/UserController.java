@@ -7,6 +7,7 @@ import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,6 +33,13 @@ public class UserController {
         boolean isMyProfile = (auth !=null) && user.getUsername().equalsIgnoreCase(auth.getName());
         UserProfileResponseDto response = userMapper.toProfileDto(user,isMyProfile);
 
+        return ResponseEntity.ok(new ResponseApi<>("User profile retrieved successfully",response,true));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ResponseApi<UserProfileResponseDto>> me(Authentication auth){
+        User user =  userService.findByUsername(auth.getName().trim());
+        UserProfileResponseDto response = userMapper.toProfileDto(user,true);
         return ResponseEntity.ok(new ResponseApi<>("User profile retrieved successfully",response,true));
     }
 }

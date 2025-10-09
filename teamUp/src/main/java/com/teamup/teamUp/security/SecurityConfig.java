@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -15,6 +16,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 //Scop: să configureze Spring Security pentru un API stateless cu JWT.
 @Configuration
+@EnableMethodSecurity
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
@@ -29,9 +31,24 @@ public class SecurityConfig {
         http.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
                 .anyRequest().authenticated()
         );
+
+        http.exceptionHandling(e -> e
+                .authenticationEntryPoint((req, res, ex) -> { // 401 la neautentificat
+                    res.setStatus(401);
+                    res.setContentType("application/json");
+                    res.getWriter().write("{\"success\":false,\"message\":\"Unauthorized\",\"data\":null}");
+                })
+                .accessDeniedHandler((req, res, ex) -> { // 403 la lipsă permisiuni
+                    res.setStatus(403);
+                    res.setContentType("application/json");
+                    res.getWriter().write("{\"success\":false,\"message\":\"Forbidden\",\"data\":null}");
+                })
+        );
+
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
