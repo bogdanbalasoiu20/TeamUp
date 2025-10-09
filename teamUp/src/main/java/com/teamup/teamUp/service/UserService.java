@@ -19,22 +19,7 @@ public class UserService {
     }
 
     @Transactional(readOnly=true)
-    public UserProfileResponseDto getUserProfile(String username, String requester){
-        User user = userRepository.findByUsernameIgnoreCase(username).orElseThrow(()-> new NotFoundException("User not found with username: "+username));
-
-        boolean isMyProfile = requester!=null && user.getUsername().equalsIgnoreCase(requester);
-
-        return new UserProfileResponseDto(
-                user.getId(),
-                user.getUsername(),
-                isMyProfile ?user.getEmail():null,
-                user.getBirthday(),
-                isMyProfile ?user.getPhoneNumber():null,
-                user.getPosition(),
-                user.getCity(),
-                user.getDescription(),
-                user.getRank(),
-                user.getPhotoUrl(),
-                user.getCreatedAt());
+    public User findByUsername(String username){
+        return userRepository.findByUsernameIgnoreCase(username).orElseThrow(()-> new NotFoundException("User not found with username: "+username));
     }
 }
