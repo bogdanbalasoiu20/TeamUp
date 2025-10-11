@@ -1,5 +1,6 @@
 package com.teamup.teamUp.security;
 
+import com.teamup.teamUp.repository.UserRepository;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -19,6 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtService jwt;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
@@ -33,6 +35,24 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                 String principal = claims.get("username", String.class);
                 if (principal == null) principal = claims.getSubject();
+
+                Integer tokenVersionClaim = claims.get("tokenVersion", Integer.class);
+                if (tokenVersionClaim == null) tokenVersionClaim = 0;
+                Long pwdChangedAtClaim = claims.get("pwdChangedAt", Long.class);
+
+                var user = userRepository.findByUsernameIgnoreCase(principal)
+                        .orElseThrow(() -> new JwtException("User not found"));
+
+                Integer currentVersion = user.getTokenVersion() == null ? 0 : user.getTokenVersion();
+                if (!currentVersion.equals(tokenVersionClaim)) {
+                    throw new JwtException("Token version mismatch");
+                }
+                if (pwdChangedAtClaim != null && user.getPasswordChangedAt() != null) {
+                    long dbEpoch = user.getPasswordChangedAt().getEpochSecond();
+                    if (pwdChangedAtClaim < dbEpoch) {
+                        throw new JwtException("Password changed after token was issued");
+                    }
+                }
 
                 if (SecurityContextHolder.getContext().getAuthentication() == null) {
                     var auth = new UsernamePasswordAuthenticationToken(principal, null, List.of());

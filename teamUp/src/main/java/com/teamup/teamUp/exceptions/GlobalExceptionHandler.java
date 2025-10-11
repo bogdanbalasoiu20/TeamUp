@@ -79,5 +79,12 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new ApiError("BAD_REQUEST", ex.getMessage(), null, request.getRequestURI()));
     }
+
+    @ExceptionHandler(BusinessConflictException.class)
+    public ResponseEntity<ApiError> handleBusinessConflict(BusinessConflictException ex, HttpServletRequest request) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ApiError("BUSINESS_ERROR", ex.getMessage(), null, request.getRequestURI()));
+    }
 }
 

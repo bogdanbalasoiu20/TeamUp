@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -37,7 +38,15 @@ public class AuthService {
         if(!passwordEncoder.matches(request.password(), user.getPasswordHash()))
             throw new UnauthorizedException("Invalid credentials");
 
-        var token = jwtService.generate(user.getId().toString(), Map.of("username", user.getUsername(),"email", user.getEmail()));
+        var claims = new HashMap<String, Object>();
+        claims.put("username", user.getUsername());
+        claims.put("email", user.getEmail());
+        claims.put("tokenVersion", user.getTokenVersion() == null ? 0 : user.getTokenVersion());
+        claims.put("pwdChangedAt", user.getPasswordChangedAt() == null
+                ? 0L
+                : user.getPasswordChangedAt().getEpochSecond());
+
+        var token = jwtService.generate(user.getId().toString(), claims);
 
         return new AuthResponseDto(token, UserResponseDto.from(user));
     }
@@ -65,9 +74,17 @@ public class AuthService {
 
         try {
             var userSaved = userRepository.save(user);
+
+            var claims = new java.util.HashMap<String, Object>();
+            claims.put("username", userSaved.getUsername());
+            claims.put("email", userSaved.getEmail());
+            claims.put("tokenVersion", userSaved.getTokenVersion() == null ? 0 : userSaved.getTokenVersion());
+            claims.put("pwdChangedAt", userSaved.getPasswordChangedAt() == null ? 0L
+                    : userSaved.getPasswordChangedAt().getEpochSecond());
+
             var token = jwtService.generate(
                     userSaved.getId().toString(),
-                    Map.of("username", userSaved.getUsername(), "email", userSaved.getEmail())
+                    claims
             );
 
             return new AuthResponseDto(token, UserResponseDto.from(userSaved));

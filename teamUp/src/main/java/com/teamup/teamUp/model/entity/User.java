@@ -26,10 +26,10 @@ public class User {
     @Column(columnDefinition = "uuid")
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(nullable = false,unique = true)
     private String username;
 
-    @Column(nullable = false)
+    @Column(nullable = false,unique = true)
     private String email;
 
     @Column(name = "password_hash",nullable = false)
@@ -60,4 +60,7 @@ public class User {
     @UpdateTimestamp
     @Column(name = "updated_at",nullable = false)
     private Instant updatedAt;
+
+    private Instant passwordChangedAt;
+    private Integer tokenVersion;
 }

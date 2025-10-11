@@ -2,6 +2,7 @@ package com.teamup.teamUp.controller;
 
 
 import com.teamup.teamUp.mapper.UserMapper;
+import com.teamup.teamUp.model.dto.user.ChangePasswordRequestDto;
 import com.teamup.teamUp.model.dto.user.UpdateProfileRequestDto;
 import com.teamup.teamUp.model.dto.user.UserProfileResponseDto;
 import com.teamup.teamUp.model.entity.User;
@@ -47,5 +48,11 @@ public class UserController {
         User updatedUser = userService.updateMyProfile(auth.getName(),request);
         UserProfileResponseDto response = userMapper.toProfileDto(updatedUser,true);
         return ResponseEntity.ok(new ResponseApi<>("User profile updated successfully",response,true));
+    }
+
+    @PutMapping("/me/password")
+    public ResponseEntity<ResponseApi<Void>> changePassword(@Valid @RequestBody ChangePasswordRequestDto request, Authentication auth){
+        userService.changePassword(request, auth.getName());
+        return ResponseEntity.ok(new ResponseApi<>("Password changed successfully",null,true));
     }
 }
