@@ -59,9 +59,8 @@ public class UserController {
     }
 
     @DeleteMapping("/me")
-    public ResponseEntity<ResponseApi<Void>> deleteMyProfile(Authentication auth){
-        String username = auth.getName();
-        userService.deleteProfile(username);
-        return ResponseEntity.ok(new ResponseApi<>("User deleted successfully",null,true));
+    public ResponseEntity<Void> deleteMyProfile(Authentication auth){
+        userService.deleteProfile(auth.getName());
+        return ResponseEntity.noContent().build();
     }
 }

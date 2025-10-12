@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Locale;
 
 @Service
 public class UserService {
@@ -72,6 +73,30 @@ public class UserService {
     @Transactional
     public void deleteProfile(String username){
         User user = findByUsername(username);
-        userRepository.delete(user);
+        user.setDeleted(true);
+        user.setTokenVersion((user.getTokenVersion() == null ? 0 : user.getTokenVersion()) + 1);
+
+        //dupa ce un user este setat ca deleted, marchez username-ul si email-ul pentru a le elibera pentru un nou user
+
+        String shortId = user.getId().toString().replace("-", "").substring(0, 8);
+        String suffix  = "del" + shortId;
+
+        // Username
+        String base = user.getUsername().toLowerCase(Locale.ROOT);
+        int MAX = 20;
+        int keep = Math.max(1, MAX - suffix.length());
+        user.setUsername((base.length() > keep ? base.substring(0, keep) : base) + suffix);
+
+        // Email valid: name+del<id>@domain
+        String email = user.getEmail();
+        int at = email.lastIndexOf('@');
+        if (at > 0) {
+            String local = email.substring(0, at);
+            String domain = email.substring(at + 1);
+            user.setEmail(local + "+del" + shortId + "@" + domain);
+        } else {
+            user.setEmail(email + "+del" + shortId);
+        }
+        userRepository.save(user);
     }
 }

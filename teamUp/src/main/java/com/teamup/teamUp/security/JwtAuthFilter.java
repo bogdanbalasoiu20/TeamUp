@@ -9,11 +9,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 //Scop: să „agațe” fiecare request, să caute un Authorization: Bearer ..., să valideze token-ul și să seteze user-ul curent.
 @Component
@@ -23,44 +25,76 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final UserRepository userRepository;
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest req) {
+        // Exclude endpoints publice / static / auth
+        String p = req.getServletPath();
+        return p.startsWith("/auth/") || p.startsWith("/public/") || "OPTIONS".equals(req.getMethod());
+    }
+
+    @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
             throws ServletException, IOException {
-        var header = req.getHeader("Authorization");
+
+        String header = req.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
-            var token = header.substring(7);
+            String token = header.substring(7);
             try {
-                var jws = jwt.parse(token);
+                var jws    = jwt.parse(token);            // să verifice și exp/nbf înăuntru
                 var claims = jws.getPayload();
 
+                // 1) Ia sub ca ID (tu emiți token cu sub = userId)
+                String sub = claims.getSubject();
+                if (sub == null || sub.isBlank()) {
+                    throw new JwtException("Missing subject");
+                }
 
-                String principal = claims.get("username", String.class);
-                if (principal == null) principal = claims.getSubject();
-
-                Integer tokenVersionClaim = claims.get("tokenVersion", Integer.class);
-                if (tokenVersionClaim == null) tokenVersionClaim = 0;
-                Long pwdChangedAtClaim = claims.get("pwdChangedAt", Long.class);
-
-                var user = userRepository.findByUsernameIgnoreCase(principal)
+                UUID userId = UUID.fromString(sub);
+                var user = userRepository.findById(userId)
                         .orElseThrow(() -> new JwtException("User not found"));
 
-                Integer currentVersion = user.getTokenVersion() == null ? 0 : user.getTokenVersion();
-                if (!currentVersion.equals(tokenVersionClaim)) {
-                    throw new JwtException("Token version mismatch");
-                }
-                if (pwdChangedAtClaim != null && user.getPasswordChangedAt() != null) {
-                    long dbEpoch = user.getPasswordChangedAt().getEpochSecond();
-                    if (pwdChangedAtClaim < dbEpoch) {
-                        throw new JwtException("Password changed after token was issued");
-                    }
+                // 2) Blochează conturi șterse
+                if (user.isDeleted()) {
+                    throw new JwtException("User deleted");
                 }
 
+                // 3) Verifică tokenVersion
+                Integer tvClaim = claims.get("tokenVersion", Integer.class);
+                int tvUser = user.getTokenVersion() == null ? 0 : user.getTokenVersion();
+                if (tvClaim == null || tvUser != tvClaim) {
+                    throw new JwtException("Token version mismatch");
+                }
+
+                // 4) Verifică pwdChangedAt (epoch seconds)
+                Long pwdClaim = claims.get("pwdChangedAt", Long.class);
+                long pwdUser = user.getPasswordChangedAt() == null ? 0L : user.getPasswordChangedAt().getEpochSecond();
+                // Dacă DB are o dată, iar claim-ul e lipsă sau mai mic -> invalid
+                if (pwdUser > 0 && (pwdClaim == null || pwdClaim < pwdUser)) {
+                    throw new JwtException("Password changed after token was issued");
+                }
+
+                // 5) Setează Authentication doar dacă nu e deja setat
                 if (SecurityContextHolder.getContext().getAuthentication() == null) {
-                    var auth = new UsernamePasswordAuthenticationToken(principal, null, List.of());
+                    // Dacă ai roluri, pune-le aici; dacă nu, List.of()
+                    var auth = new UsernamePasswordAuthenticationToken(
+                            user.getUsername(), // principal (poți folosi și un UserDetails propriu)
+                            null,
+                            List.of()
+                    );
+                    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 }
 
-            } catch (JwtException ignored) {}
+            } catch (JwtException ex) {
+                // Opțiunea A (recomandat): marchezi motivul și la access to a protected endpoint
+                // AuthenticationEntryPoint va răspunde 401.
+                req.setAttribute("jwt_error", ex.getMessage());
+                SecurityContextHolder.clearContext();
+                // NU trimite răspuns aici: lasă chain-ul și configurarea de security
+                // să decidă (endpoint public vs. protejat).
+            }
         }
+
         chain.doFilter(req, res);
     }
 }
+

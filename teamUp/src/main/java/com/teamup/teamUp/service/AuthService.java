@@ -38,6 +38,10 @@ public class AuthService {
         if(!passwordEncoder.matches(request.password(), user.getPasswordHash()))
             throw new UnauthorizedException("Invalid credentials");
 
+        if(user.isDeleted()){
+            throw new UnauthorizedException("Invalid credentials");
+        }
+
         var claims = new HashMap<String, Object>();
         claims.put("username", user.getUsername());
         claims.put("email", user.getEmail());
