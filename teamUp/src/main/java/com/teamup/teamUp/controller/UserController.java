@@ -63,4 +63,10 @@ public class UserController {
         userService.deleteProfile(auth.getName());
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/me/logout")
+    public ResponseEntity<Void> logout(Authentication auth){
+        userService.logout(auth.getName());
+        return ResponseEntity.noContent().build();
+    }
 }

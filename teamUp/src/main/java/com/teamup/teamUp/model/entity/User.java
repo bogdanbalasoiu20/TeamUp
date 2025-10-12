@@ -61,8 +61,12 @@ public class User {
     @Column(name = "updated_at",nullable = false)
     private Instant updatedAt;
 
+    @Column(name = "password_changed_at")
     private Instant passwordChangedAt;
-    private Integer tokenVersion;
+
+    @Column(name = "token_version",nullable = false)
+    @Builder.Default
+    private Integer tokenVersion = 0;
 
     @Column(name = "is_deleted",nullable = false)
     @Builder.Default

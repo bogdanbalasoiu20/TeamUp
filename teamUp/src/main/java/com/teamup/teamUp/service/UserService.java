@@ -64,7 +64,7 @@ public class UserService {
 
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
         user.setPasswordChangedAt(Instant.now());
-        user.setTokenVersion((user.getTokenVersion() == null ? 0 : user.getTokenVersion()) + 1);
+        user.setTokenVersion( user.getTokenVersion()+ 1);
 
         userRepository.save(user);
     }
@@ -73,7 +73,7 @@ public class UserService {
     public void deleteProfile(String username){
         User user = findByUsername(username);
         user.setDeleted(true);
-        user.setTokenVersion((user.getTokenVersion() == null ? 0 : user.getTokenVersion()) + 1);
+        user.setTokenVersion( user.getTokenVersion() + 1);
 
         //dupa ce un user este setat ca deleted, marchez username-ul si email-ul pentru a le elibera pentru un nou user
 
@@ -96,6 +96,13 @@ public class UserService {
         } else {
             user.setEmail(email + "+del" + shortId);
         }
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void logout(String username){
+        User user = findByUsername(username);
+        user.setTokenVersion(user.getTokenVersion() + 1);
         userRepository.save(user);
     }
 }
