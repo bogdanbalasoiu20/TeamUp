@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
-import java.util.Map;
 
 @Service
 public class AuthService {
@@ -79,7 +78,7 @@ public class AuthService {
         try {
             var userSaved = userRepository.save(user);
 
-            var claims = new java.util.HashMap<String, Object>();
+            var claims = new HashMap<String, Object>();
             claims.put("username", userSaved.getUsername());
             claims.put("email", userSaved.getEmail());
             claims.put("tokenVersion", userSaved.getTokenVersion() == null ? 0 : userSaved.getTokenVersion());

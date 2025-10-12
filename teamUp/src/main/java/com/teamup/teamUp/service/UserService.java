@@ -5,7 +5,6 @@ import com.teamup.teamUp.exceptions.BusinessConflictException;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.model.dto.user.ChangePasswordRequestDto;
 import com.teamup.teamUp.model.dto.user.UpdateProfileRequestDto;
-import com.teamup.teamUp.model.dto.user.UserProfileResponseDto;
 import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,12 +29,12 @@ public class UserService {
 
     @Transactional(readOnly=true)
     public User findByUsername(String username){
-        return userRepository.findByUsernameIgnoreCase(username).orElseThrow(()-> new NotFoundException("User not found with username: "+username));
+        return userRepository.findByUsernameIgnoreCaseAndDeletedFalse(username).orElseThrow(()-> new NotFoundException("User not found with username: "+username));
     }
 
     @Transactional
     public User updateMyProfile(String username, UpdateProfileRequestDto request){
-        User me = userRepository.findByUsernameIgnoreCase(username).orElseThrow(()-> new NotFoundException("User not found with username: "+username));
+        User me = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(username).orElseThrow(()-> new NotFoundException("User not found with username: "+username));
 
         if(request.birthday()!=null)
             me.setBirthday(request.birthday());
@@ -53,7 +52,7 @@ public class UserService {
 
     @Transactional
     public void changePassword(ChangePasswordRequestDto request, String username){
-        User user = userRepository.findByUsernameIgnoreCase(username).orElseThrow(()-> new NotFoundException("User not found with username: "+username));
+        User user = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(username).orElseThrow(()-> new NotFoundException("User not found with username: "+username));
 
         if(!passwordEncoder.matches(request.currentPassword(),user.getPasswordHash())){
             throw new BadCredentialsException("Incorrect current password");

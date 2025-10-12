@@ -66,5 +66,5 @@ public class User {
 
     @Column(name = "is_deleted",nullable = false)
     @Builder.Default
-    private boolean isDeleted=false;
+    private boolean deleted=false;
 }
