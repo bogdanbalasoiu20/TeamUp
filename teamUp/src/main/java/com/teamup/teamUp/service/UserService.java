@@ -68,4 +68,10 @@ public class UserService {
 
         userRepository.save(user);
     }
+
+    @Transactional
+    public void deleteProfile(String username){
+        User user = findByUsername(username);
+        userRepository.delete(user);
+    }
 }

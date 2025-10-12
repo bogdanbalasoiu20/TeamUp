@@ -9,6 +9,8 @@ import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -54,5 +56,12 @@ public class UserController {
     public ResponseEntity<ResponseApi<Void>> changePassword(@Valid @RequestBody ChangePasswordRequestDto request, Authentication auth){
         userService.changePassword(request, auth.getName());
         return ResponseEntity.ok(new ResponseApi<>("Password changed successfully",null,true));
+    }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<ResponseApi<Void>> deleteMyProfile(Authentication auth){
+        String username = auth.getName();
+        userService.deleteProfile(username);
+        return ResponseEntity.ok(new ResponseApi<>("User deleted successfully",null,true));
     }
 }

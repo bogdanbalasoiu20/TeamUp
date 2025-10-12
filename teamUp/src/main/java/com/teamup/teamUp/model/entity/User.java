@@ -63,4 +63,8 @@ public class User {
 
     private Instant passwordChangedAt;
     private Integer tokenVersion;
+
+    @Column(name = "is_deleted",nullable = false)
+    @Builder.Default
+    private boolean isDeleted=false;
 }
