@@ -1,12 +1,17 @@
 package com.teamup.teamUp.model.entity;
 
 
+import com.teamup.teamUp.model.enums.VenueSource;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -36,8 +41,20 @@ public class Venue {
     private Double latitude;
     private Double longitude;
 
-    @Column(name = "place_id")
-    private String placeId;
+    @Column(name = "osm_type",length = 16)
+    private String osmType;
+
+    @Column(name = "osm_id")
+    private Long osmId;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "tags_json", columnDefinition = "jsonb")
+    private Map<String, Object> tagsJson;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source", nullable = false)
+    private VenueSource source = VenueSource.OSM;
 
     @Builder.Default
     @Column(name = "is_active", nullable = false)
