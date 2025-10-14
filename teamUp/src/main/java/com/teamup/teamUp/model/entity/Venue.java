@@ -6,7 +6,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
@@ -42,19 +41,20 @@ public class Venue {
     private Double longitude;
 
     @Column(name = "osm_type",length = 16)
-    private String osmType;
+    private String osmType;  //tipul obiectului OSM(Overpass returneaza node -> terenul apare pe harta ca un punct, way sau relation -> apare pe harta forma desenata a terneului)
 
     @Column(name = "osm_id")
-    private Long osmId;
+    private Long osmId;  //id-ul obiectului din OpenStreetMap
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "tags_json", columnDefinition = "jsonb")
-    private Map<String, Object> tagsJson;
+    private Map<String, Object> tagsJson;//toate tag-urile OSM atasate obiectului, sub forma de jsonb
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "source", nullable = false)
-    private VenueSource source = VenueSource.OSM;
+    private VenueSource source = VenueSource.OSM; //locul de unde vine inregistrarea terenului( OSM , de la client/admin/owner)
+
 
     @Builder.Default
     @Column(name = "is_active", nullable = false)
