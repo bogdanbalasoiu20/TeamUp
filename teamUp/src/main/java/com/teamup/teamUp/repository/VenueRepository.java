@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.UUID;
 
 
@@ -19,4 +20,15 @@ public interface VenueRepository extends JpaRepository<Venue, UUID> {
       ORDER BY v.name ASC
     """)
     Page<Venue> search(@Param("city") String city ,@Param("q") String q, @Param("activeOnly") boolean activeOnly, Pageable pageable);
+
+    @Query("""
+        select v from Venue v
+        where v.isActive = true
+        and v.latitude between :minLat and :maxLat
+        and v.longitude between  :minLng and :maxLng
+    """)
+    List<Venue> findInBBox (@Param("minLat") double minLat,
+                           @Param("maxLat") double maxLat,
+                           @Param("minLng") double minLng,
+                           @Param("maxLng") double maxLng);
 }

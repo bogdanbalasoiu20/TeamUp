@@ -1,5 +1,6 @@
 package com.teamup.teamUp.controller;
 
+import com.teamup.teamUp.mapper.VenueMapper;
 import com.teamup.teamUp.model.dto.venue.VenueResponseDto;
 import com.teamup.teamUp.service.VenueService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,10 +19,12 @@ import java.util.UUID;
 @RequestMapping("/api/venues")
 public class VenueController {
     private final VenueService venueService;
+    private final VenueMapper venueMapper;
 
     @Autowired
-    public VenueController(VenueService venueService) {
+    public VenueController(VenueService venueService, VenueMapper venueMapper) {
         this.venueService = venueService;
+        this.venueMapper = venueMapper;
     }
 
     @GetMapping
@@ -39,5 +42,15 @@ public class VenueController {
                                                                             @RequestParam(defaultValue = "50") int limit){
         var page = venueService.search(city,query,activeOnly, PageRequest.of(0, Math.min(limit, 100), Sort.by("name").ascending()));//cer doar primele N rezultate potrivite pentru harta(nu paginez)
         return ResponseEntity.ok(new ResponseApi<>("venues generated",page.getContent(),true));
+    }
+
+    @GetMapping
+    public ResponseEntity<ResponseApi<List<VenueResponseDto>>> nearby(@RequestParam double lat,
+                                                                      @RequestParam double lng,
+                                                                      @RequestParam(defaultValue = "2000") double radiusMeters,
+                                                                      @RequestParam(defaultValue = "300") int limit){
+        var data = venueService.nearby(lat,lng,radiusMeters,limit);
+        var dataToDto = data.stream().map(venueMapper::toDto).toList();
+        return ResponseEntity.ok(new ResponseApi<>("venues nearby",dataToDto,true));
     }
 }
