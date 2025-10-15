@@ -2,7 +2,10 @@ package com.teamup.teamUp.controller;
 
 import com.teamup.teamUp.mapper.VenueMapper;
 import com.teamup.teamUp.model.dto.venue.VenueResponseDto;
+import com.teamup.teamUp.model.dto.venue.VenueUpsertRequestDto;
+import com.teamup.teamUp.model.entity.Venue;
 import com.teamup.teamUp.service.VenueService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -52,5 +55,11 @@ public class VenueController {
         var data = venueService.nearby(lat,lng,radiusMeters,limit);
         var dataToDto = data.stream().map(venueMapper::toDto).toList();
         return ResponseEntity.ok(new ResponseApi<>("venues nearby",dataToDto,true));
+    }
+
+    @PostMapping("/upsert")
+    public ResponseEntity<ResponseApi<VenueResponseDto>> upsert(@Valid @RequestBody VenueUpsertRequestDto request){
+        Venue venueUpserted = venueService.upsert(request);
+        return ResponseEntity.ok(new ResponseApi<>("Upserted venue",venueMapper.toDto(venueUpserted),true));
     }
 }

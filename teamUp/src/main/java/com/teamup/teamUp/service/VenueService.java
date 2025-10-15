@@ -2,6 +2,7 @@ package com.teamup.teamUp.service;
 
 import com.teamup.teamUp.mapper.VenueMapper;
 import com.teamup.teamUp.model.dto.venue.VenueResponseDto;
+import com.teamup.teamUp.model.dto.venue.VenueUpsertRequestDto;
 import com.teamup.teamUp.model.entity.Venue;
 import com.teamup.teamUp.repository.VenueRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +30,7 @@ public class VenueService {
     }
 
     public List<Venue> nearby(double lat, double lng, double radiusMeters, int limit){
-        double dLat = radiusMeters / 111_320d; // ~ m per grad lat
+        double dLat = radiusMeters / 111_320d;
         double metersPerDegLon = 111_320d * Math.cos(Math.toRadians(lat));
         double dLng = radiusMeters / Math.max(metersPerDegLon, 1e-6);
 
@@ -40,6 +41,17 @@ public class VenueService {
         return list.stream()
                 .limit(Math.max(1, Math.min(limit, 500)))
                 .toList();
+    }
+
+    public Venue upsert(VenueUpsertRequestDto request){
+        Venue venue;
+        if(request.osmId()!=null&&request.osmType()!=null){
+            venue = venueRepository.findByOsmTypeAndOsmId(request.osmType(), request.osmId());
+        }else{
+            venue = new Venue();
+
+        }
+
     }
 
 }

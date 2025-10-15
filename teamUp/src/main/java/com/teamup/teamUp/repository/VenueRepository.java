@@ -31,4 +31,6 @@ public interface VenueRepository extends JpaRepository<Venue, UUID> {
                            @Param("maxLat") double maxLat,
                            @Param("minLng") double minLng,
                            @Param("maxLng") double maxLng);
+
+    Venue findByOsmTypeAndOsmId(String osmType, Long osmId);
 }
