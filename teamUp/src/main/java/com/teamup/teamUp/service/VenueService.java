@@ -4,11 +4,13 @@ import com.teamup.teamUp.mapper.VenueMapper;
 import com.teamup.teamUp.model.dto.venue.VenueResponseDto;
 import com.teamup.teamUp.model.dto.venue.VenueUpsertRequestDto;
 import com.teamup.teamUp.model.entity.Venue;
+import com.teamup.teamUp.model.enums.VenueSource;
 import com.teamup.teamUp.repository.VenueRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -43,15 +45,55 @@ public class VenueService {
                 .toList();
     }
 
-    public Venue upsert(VenueUpsertRequestDto request){
-        Venue venue;
-        if(request.osmId()!=null&&request.osmType()!=null){
-            venue = venueRepository.findByOsmTypeAndOsmId(request.osmType(), request.osmId());
-        }else{
-            venue = new Venue();
-
+    @Transactional
+    public Venue upsert(VenueUpsertRequestDto request) {
+        boolean hasOsm = request.osmType() != null || request.osmId() != null;
+        if ((request.osmType() == null) != (request.osmId() == null)) {
+            throw new IllegalArgumentException("Both osmType and osmId must be provided together or both null.");
         }
 
+        Venue v = hasOsm
+                ? venueRepository.findByOsmTypeAndOsmId(request.osmType(), request.osmId())
+                .orElseGet(() -> {
+                    var nv = new Venue();
+                    nv.setOsmType(request.osmType());
+                    nv.setOsmId(request.osmId());
+                    nv.setSource(VenueSource.OSM);
+                    return nv;
+                })
+                : new Venue();
+
+        boolean isNew = v.getId() == null;
+
+        String name = trimOrNull(request.name());
+        if (name == null || name.isBlank()) {
+            Object tagsName = request.tagsJson() != null ? request.tagsJson().get("name") : null;
+            name = tagsName instanceof String ? ((String) tagsName).trim() : null;
+        }
+        if (name == null || name.isBlank()) {
+            name = "Unknown venue";
+        }
+
+        v.setName(name);
+        v.setAddress(trimOrNull(request.address()));
+        v.setPhoneNumber(trimOrNull(request.phoneNumber()));
+        v.setCity(trimOrNull(request.city()));
+        v.setLatitude(request.latitude());
+        v.setLongitude(request.longitude());
+        v.setTagsJson(request.tagsJson());
+
+        if (isNew && !hasOsm) {
+            v.setSource(VenueSource.ADMIN);
+        }
+        if (v.getIsActive() == null) v.setIsActive(true);
+
+        return venueRepository.save(v);
+    }
+
+    private String trimOrNull(String s) {
+        if (s == null) return null;
+        String t = s.trim();
+        return t.isEmpty() ? null : t;
     }
 
 }

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 
@@ -32,5 +33,5 @@ public interface VenueRepository extends JpaRepository<Venue, UUID> {
                            @Param("minLng") double minLng,
                            @Param("maxLng") double maxLng);
 
-    Venue findByOsmTypeAndOsmId(String osmType, Long osmId);
+    Optional<Venue> findByOsmTypeAndOsmId(String osmType, Long osmId);
 }
