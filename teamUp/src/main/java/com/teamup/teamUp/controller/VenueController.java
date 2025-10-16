@@ -47,7 +47,7 @@ public class VenueController {
         return ResponseEntity.ok(new ResponseApi<>("venues generated",page.getContent(),true));
     }
 
-    @GetMapping
+    @GetMapping("/nearby")
     public ResponseEntity<ResponseApi<List<VenueResponseDto>>> nearby(@RequestParam double lat,
                                                                       @RequestParam double lng,
                                                                       @RequestParam(defaultValue = "2000") double radiusMeters,

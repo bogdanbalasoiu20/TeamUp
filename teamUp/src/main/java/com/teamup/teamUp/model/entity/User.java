@@ -2,6 +2,7 @@ package com.teamup.teamUp.model.entity;
 
 
 import com.teamup.teamUp.model.enums.Position;
+import com.teamup.teamUp.model.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -71,4 +72,9 @@ public class User {
     @Column(name = "is_deleted",nullable = false)
     @Builder.Default
     private boolean deleted=false;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserRole role = UserRole.USER;
 }

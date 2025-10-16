@@ -48,6 +48,7 @@ public class AuthService {
         claims.put("pwdChangedAt", user.getPasswordChangedAt() == null
                 ? 0L
                 : user.getPasswordChangedAt().getEpochSecond());
+        claims.put("role",user.getRole().name());
 
         var token = jwtService.generate(user.getId().toString(), claims);
 
@@ -84,6 +85,7 @@ public class AuthService {
             claims.put("tokenVersion", userSaved.getTokenVersion() == null ? 0 : userSaved.getTokenVersion());
             claims.put("pwdChangedAt", userSaved.getPasswordChangedAt() == null ? 0L
                     : userSaved.getPasswordChangedAt().getEpochSecond());
+            claims.put("role",userSaved.getRole().name());
 
             var token = jwtService.generate(
                     userSaved.getId().toString(),

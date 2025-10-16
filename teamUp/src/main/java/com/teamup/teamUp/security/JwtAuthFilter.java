@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -28,7 +29,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest req) {
         // Exclude endpoints publice / static / auth
         String p = req.getServletPath();
-        return p.startsWith("/auth/") || p.startsWith("/public/") || "OPTIONS".equals(req.getMethod());
+        return p.startsWith("/api/auth/") || p.startsWith("/public/") || "OPTIONS".equals(req.getMethod());
     }
 
     @Override
@@ -73,12 +74,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 }
 
                 // 5) Setează Authentication doar dacă nu e deja setat
+                var role = user.getRole(); // UserRole enum: USER / ADMIN
+                var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+
                 if (SecurityContextHolder.getContext().getAuthentication() == null) {
                     // Dacă ai roluri, pune-le aici; dacă nu, List.of()
                     var auth = new UsernamePasswordAuthenticationToken(
                             user.getUsername(), // principal (poți folosi și un UserDetails propriu)
                             null,
-                            List.of()
+                            authorities
                     );
                     auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
                     SecurityContextHolder.getContext().setAuthentication(auth);
