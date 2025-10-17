@@ -18,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/venues")
@@ -77,5 +78,11 @@ public class VenueController {
     ){
         var result = venueImportService.importFromBBox(minLat, minLng, maxLat, maxLng);
         return ResponseEntity.ok(new ResponseApi<>("OSM import done", result, true));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ResponseApi<VenueResponseDto>> getById(@PathVariable UUID id){
+        Venue venue = venueService.findById(id);
+        return ResponseEntity.ok(new ResponseApi<>("Venue found",venueMapper.toDto(venue),true));
     }
 }

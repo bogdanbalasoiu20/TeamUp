@@ -1,5 +1,6 @@
 package com.teamup.teamUp.service;
 
+import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.mapper.VenueMapper;
 import com.teamup.teamUp.model.dto.venue.VenueResponseDto;
 import com.teamup.teamUp.model.dto.venue.VenueUpsertRequestDto;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class VenueService {
@@ -23,6 +25,10 @@ public class VenueService {
     public VenueService(VenueRepository venueRepository, VenueMapper venueMapper) {
         this.venueRepository = venueRepository;
         this.venueMapper = venueMapper;
+    }
+
+    public Venue findById(UUID id){
+        return venueRepository.findById(id).orElseThrow(()->new NotFoundException("Venue not found"));
     }
 
     public Page<VenueResponseDto> search(String city, String q, boolean activeOnly, Pageable pageable){
