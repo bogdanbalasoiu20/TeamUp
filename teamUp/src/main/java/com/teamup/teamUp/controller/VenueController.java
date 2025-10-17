@@ -5,6 +5,7 @@ import com.teamup.teamUp.model.dto.venue.VenueResponseDto;
 import com.teamup.teamUp.model.dto.venue.VenueUpsertRequestDto;
 import com.teamup.teamUp.model.entity.Venue;
 import com.teamup.teamUp.service.VenueService;
+import com.teamup.teamUp.service.importers.VenueImportService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -13,21 +14,23 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/venues")
 public class VenueController {
     private final VenueService venueService;
     private final VenueMapper venueMapper;
+    private final VenueImportService venueImportService;
 
     @Autowired
-    public VenueController(VenueService venueService, VenueMapper venueMapper) {
+    public VenueController(VenueService venueService, VenueMapper venueMapper, VenueImportService venueImportService) {
         this.venueService = venueService;
         this.venueMapper = venueMapper;
+        this.venueImportService = venueImportService;
     }
 
     @GetMapping
@@ -61,5 +64,18 @@ public class VenueController {
     public ResponseEntity<ResponseApi<VenueResponseDto>> upsert(@Valid @RequestBody VenueUpsertRequestDto request){
         Venue venueUpserted = venueService.upsert(request);
         return ResponseEntity.ok(new ResponseApi<>("Upserted venue",venueMapper.toDto(venueUpserted),true));
+    }
+
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/import/osm")
+    public ResponseEntity<ResponseApi<VenueImportService.ImportResult>> importOsm(
+            @RequestParam double minLat,
+            @RequestParam double minLng,
+            @RequestParam double maxLat,
+            @RequestParam double maxLng
+    ){
+        var result = venueImportService.importFromBBox(minLat, minLng, maxLat, maxLng);
+        return ResponseEntity.ok(new ResponseApi<>("OSM import done", result, true));
     }
 }
