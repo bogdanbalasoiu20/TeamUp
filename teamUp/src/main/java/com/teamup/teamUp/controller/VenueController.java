@@ -8,6 +8,10 @@ import com.teamup.teamUp.model.entity.Venue;
 import com.teamup.teamUp.service.VenueService;
 import com.teamup.teamUp.service.importers.VenueImportService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Positive;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -16,11 +20,13 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
+@Validated
 @RestController
 @RequestMapping("/api/venues")
 public class VenueController {
@@ -36,11 +42,11 @@ public class VenueController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<VenueResponseDto>> search(@RequestParam(required = false) String city,
+    public ResponseEntity<ResponseApi<Page<VenueResponseDto>>> search(@RequestParam(required = false) String city,
                                                          @RequestParam(required = false,name = "q") String query,
                                                          @RequestParam(defaultValue = "true") boolean activeOnly,
                                                          @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable) {
-        return ResponseEntity.ok(venueService.search(city,query,activeOnly,pageable));
+        return ResponseEntity.ok(new ResponseApi<>("venues pagination generated",venueService.search(city,query,activeOnly,pageable),true));
     }
 
     @GetMapping("/search-map")
@@ -53,10 +59,10 @@ public class VenueController {
     }
 
     @GetMapping("/nearby")
-    public ResponseEntity<ResponseApi<List<VenueResponseDto>>> nearby(@RequestParam double lat,
-                                                                      @RequestParam double lng,
-                                                                      @RequestParam(defaultValue = "2000") double radiusMeters,
-                                                                      @RequestParam(defaultValue = "300") int limit){
+    public ResponseEntity<ResponseApi<List<VenueResponseDto>>> nearby(@RequestParam @DecimalMin("-90") @DecimalMax("90") double lat,
+                                                                      @RequestParam @DecimalMin("-180") @DecimalMax("180") double lng,
+                                                                      @RequestParam(defaultValue = "2000") @Positive double radiusMeters,
+                                                                      @RequestParam(defaultValue = "300") @Positive @Max(500) int limit){
         var data = venueService.nearby(lat,lng,radiusMeters,limit);
         var dataToDto = data.stream().map(venueMapper::toDto).toList();
         return ResponseEntity.ok(new ResponseApi<>("venues nearby",dataToDto,true));
@@ -92,5 +98,12 @@ public class VenueController {
     public ResponseEntity<ResponseApi<VenueResponseDto>> update(@PathVariable UUID id, @Valid @RequestBody VenueAdminUpdateRequestDto request){
         Venue venue = venueService.update(id,request);
         return ResponseEntity.ok(new ResponseApi<>("Venue updated by admin", venueMapper.toDto(venue),true));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{id}/active")
+    public ResponseEntity<ResponseApi<Void>> setActive(@PathVariable UUID id, @RequestParam Boolean isActive){
+        venueService.setActive(id,isActive);
+        return ResponseEntity.ok(new ResponseApi<>(isActive?"Venue activated":"Venue deactivated",null,true));
     }
 }

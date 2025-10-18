@@ -119,6 +119,12 @@ public class VenueService {
         if(request.city()!=null){
             venue.setCity(blankToNull(request.city()));
         }
+        if(request.latitude()!=null){
+            venue.setLatitude(request.latitude());
+        }
+        if(request.longitude()!=null){
+            venue.setLongitude(request.longitude());
+        }
 
         venue.setSource(VenueSource.ADMIN);
         return venue;
@@ -128,6 +134,14 @@ public class VenueService {
         if(s==null) return null;
         var context = s.trim();
         return context.isEmpty()?null:context;
+    }
+
+    @Transactional
+    public Venue setActive(UUID id, Boolean isActive){
+        Venue venue = findById(id);
+        if(isActive!=null)
+            venue.setIsActive(isActive);
+        return venue;
     }
 
 }

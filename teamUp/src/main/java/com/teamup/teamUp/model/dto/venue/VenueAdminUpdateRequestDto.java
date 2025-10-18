@@ -13,6 +13,5 @@ public record VenueAdminUpdateRequestDto(
         Double latitude,
         @DecimalMin(value = "-180", message = "Longitude must be >= -180")
         @DecimalMax(value = "180",  message = "Longitude must be <= 180")
-        Double longitude,
-        boolean isActive
+        Double longitude
 ) {}
