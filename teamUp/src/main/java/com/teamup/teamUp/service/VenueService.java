@@ -2,6 +2,7 @@ package com.teamup.teamUp.service;
 
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.mapper.VenueMapper;
+import com.teamup.teamUp.model.dto.venue.VenueAdminUpdateRequestDto;
 import com.teamup.teamUp.model.dto.venue.VenueResponseDto;
 import com.teamup.teamUp.model.dto.venue.VenueUpsertRequestDto;
 import com.teamup.teamUp.model.entity.Venue;
@@ -100,6 +101,33 @@ public class VenueService {
         if (s == null) return null;
         String t = s.trim();
         return t.isEmpty() ? null : t;
+    }
+
+    @Transactional
+    public Venue update(UUID id, VenueAdminUpdateRequestDto request) {
+        Venue venue = venueRepository.findById(id).orElseThrow(()->new NotFoundException("Venue not found"));
+
+        if(request.name()!=null){
+            venue.setName(request.name().trim());
+        }
+        if(request.address()!=null){
+            venue.setAddress(blankToNull(request.address()));
+        }
+        if(request.phoneNumber()!=null){
+            venue.setPhoneNumber(blankToNull(request.phoneNumber()));
+        }
+        if(request.city()!=null){
+            venue.setCity(blankToNull(request.city()));
+        }
+
+        venue.setSource(VenueSource.ADMIN);
+        return venue;
+    }
+
+    private String blankToNull(String s) {
+        if(s==null) return null;
+        var context = s.trim();
+        return context.isEmpty()?null:context;
     }
 
 }

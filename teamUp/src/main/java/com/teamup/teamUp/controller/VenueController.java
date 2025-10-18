@@ -1,6 +1,7 @@
 package com.teamup.teamUp.controller;
 
 import com.teamup.teamUp.mapper.VenueMapper;
+import com.teamup.teamUp.model.dto.venue.VenueAdminUpdateRequestDto;
 import com.teamup.teamUp.model.dto.venue.VenueResponseDto;
 import com.teamup.teamUp.model.dto.venue.VenueUpsertRequestDto;
 import com.teamup.teamUp.model.entity.Venue;
@@ -84,5 +85,12 @@ public class VenueController {
     public ResponseEntity<ResponseApi<VenueResponseDto>> getById(@PathVariable UUID id){
         Venue venue = venueService.findById(id);
         return ResponseEntity.ok(new ResponseApi<>("Venue found",venueMapper.toDto(venue),true));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{id}")
+    public ResponseEntity<ResponseApi<VenueResponseDto>> update(@PathVariable UUID id, @Valid @RequestBody VenueAdminUpdateRequestDto request){
+        Venue venue = venueService.update(id,request);
+        return ResponseEntity.ok(new ResponseApi<>("Venue updated by admin", venueMapper.toDto(venue),true));
     }
 }
