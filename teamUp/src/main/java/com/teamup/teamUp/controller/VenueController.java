@@ -106,4 +106,15 @@ public class VenueController {
         venueService.setActive(id,isActive);
         return ResponseEntity.ok(new ResponseApi<>(isActive?"Venue activated":"Venue deactivated",null,true));
     }
+
+    @GetMapping("/nearby-bbox")
+    public ResponseEntity<ResponseApi<List<VenueResponseDto>>> inBBox(@RequestParam @DecimalMin("-90") @DecimalMax("90") double minLat,
+                                                                      @RequestParam @DecimalMin("-180") @DecimalMax("180") double minLng,
+                                                                      @RequestParam @DecimalMin("-90") @DecimalMax("90") double maxLat,
+                                                                      @RequestParam @DecimalMin("-180") @DecimalMax("180") double maxLng,
+                                                                      @RequestParam(defaultValue="300") @Positive @Max(500) int limit){
+        var list = venueService.inBBox(minLat, minLng, maxLat, maxLng, limit)
+                .stream().map(venueMapper::toDto).toList();
+        return ResponseEntity.ok(new ResponseApi<>("ok",list,true));
+    }
 }

@@ -52,7 +52,7 @@ public class VenueService {
 //                .toList();
 
         int lim = Math.max(1, Math.min(limit,500));
-        return venueRepository.findNearbyOrdered(lat, lng, radiusMeters, limit);
+        return venueRepository.findNearbyOrdered(lat, lng, radiusMeters, lim);
     }
 
     @Transactional
@@ -145,6 +145,11 @@ public class VenueService {
         if(isActive!=null)
             venue.setIsActive(isActive);
         return venue;
+    }
+
+    public List<Venue> inBBox(double minLat, double minLng, double maxLat, double maxLng, int limit){
+        int lim = Math.max(1,Math.min(limit,500));
+        return venueRepository.findInBBoxPostgis(minLat, minLng, maxLat, maxLng, lim);
     }
 
 }

@@ -57,4 +57,19 @@ public interface VenueRepository extends JpaRepository<Venue, UUID> {
                                   @Param("radiusMeters") double radiusMeters,
                                   @Param("limit") int limit);
 
+
+    @Query(value = """
+        select v.* from venues v 
+        where v.is_active = true
+        and v.geom is not null
+        and v.geom && ST_MakeEnvelope(:minLng, :minLat, :maxLng, :maxLat, 4326)
+        order by v.name asc
+        limit :limit
+""",nativeQuery = true)
+    List<Venue> findInBBoxPostgis(@Param("minLat") double minLat,
+                                  @Param("minLng") double minLng,
+                                  @Param("maxLat") double maxLat,
+                                  @Param("maxLng") double maxLng,
+                                  @Param("limit") int limit);
+
 }
