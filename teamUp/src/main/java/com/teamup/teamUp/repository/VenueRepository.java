@@ -34,4 +34,27 @@ public interface VenueRepository extends JpaRepository<Venue, UUID> {
                            @Param("maxLng") double maxLng);
 
     Optional<Venue> findByOsmTypeAndOsmId(String osmType, Long osmId);
+
+
+    @Query(value = """
+      select v.*
+      from venues v
+      where v.is_active = true
+        and v.geom is not null
+        and st_dwithin(
+              v.geom::geography,
+              st_setsrid(st_makepoint(:lng, :lat), 4326)::geography,
+              :radiusmeters
+            )
+      order by st_distancesphere(
+              v.geom,
+              st_setsrid(st_makepoint(:lng, :lat), 4326)
+            )
+      limit :limit
+""", nativeQuery = true)
+    List<Venue> findNearbyOrdered(@Param("lat") double lat,
+                                  @Param("lng") double lng,
+                                  @Param("radiusMeters") double radiusMeters,
+                                  @Param("limit") int limit);
+
 }

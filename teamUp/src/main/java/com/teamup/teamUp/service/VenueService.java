@@ -39,17 +39,20 @@ public class VenueService {
     }
 
     public List<Venue> nearby(double lat, double lng, double radiusMeters, int limit){
-        double dLat = radiusMeters / 111_320d;
-        double metersPerDegLon = 111_320d * Math.cos(Math.toRadians(lat));
-        double dLng = radiusMeters / Math.max(metersPerDegLon, 1e-6);
+//        double dLat = radiusMeters / 111_320d;
+//        double metersPerDegLon = 111_320d * Math.cos(Math.toRadians(lat));
+//        double dLng = radiusMeters / Math.max(metersPerDegLon, 1e-6);
+//
+//        double minLat = lat - dLat, maxLat = lat + dLat;
+//        double minLng = lng - dLng, maxLng = lng + dLng;
+//
+//        var list = venueRepository.findInBBox(minLat, maxLat, minLng, maxLng);
+//        return list.stream()
+//                .limit(Math.max(1, Math.min(limit, 500)))
+//                .toList();
 
-        double minLat = lat - dLat, maxLat = lat + dLat;
-        double minLng = lng - dLng, maxLng = lng + dLng;
-
-        var list = venueRepository.findInBBox(minLat, maxLat, minLng, maxLng);
-        return list.stream()
-                .limit(Math.max(1, Math.min(limit, 500)))
-                .toList();
+        int lim = Math.max(1, Math.min(limit,500));
+        return venueRepository.findNearbyOrdered(lat, lng, radiusMeters, limit);
     }
 
     @Transactional
