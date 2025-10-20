@@ -88,4 +88,22 @@ public interface VenueRepository extends JpaRepository<Venue, UUID> {
                         @Param("limit") int limit,
                         @Param("cityHint") String cityHint);
 
+
+    @Query(value = """
+      select json_build_object(
+               'type', 'Feature',
+               'geometry', ST_AsGeoJSON(COALESCE(area_geom, geom), 6)::json,
+               'properties', json_build_object(
+                   'id', id,
+                   'name', name,
+                   'city', city
+               )
+             )::text
+      from venues
+      where id = :id
+        and COALESCE(area_geom, geom) is not null
+    """, nativeQuery = true)
+    String getShapeAsGeoJson(@Param("id") UUID id);
+
+
 }

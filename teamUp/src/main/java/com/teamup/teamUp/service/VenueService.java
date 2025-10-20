@@ -163,4 +163,8 @@ public class VenueService {
         return venueRepository.suggest(query, lim, hint);
     }
 
+    public String getShape(UUID id){
+        return venueRepository.getShapeAsGeoJson(id);
+    }
+
 }

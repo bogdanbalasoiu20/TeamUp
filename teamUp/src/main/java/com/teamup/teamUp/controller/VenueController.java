@@ -19,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -126,5 +127,13 @@ public class VenueController {
         var venues = venueService.suggest(q,limit,cityHint);
         var dtos = venues.stream().map(venueMapper::toDto).toList();
         return ResponseEntity.ok(new ResponseApi<>("venues suggested",dtos,true));
+    }
+
+    @GetMapping("/{id}/shape")
+    public ResponseEntity<String> shape(@PathVariable UUID id){
+        String shape = venueService.getShape(id);
+        if(shape == null) return ResponseEntity.noContent().build();
+
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(shape);
     }
 }
