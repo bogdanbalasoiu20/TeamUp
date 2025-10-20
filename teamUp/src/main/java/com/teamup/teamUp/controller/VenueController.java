@@ -7,6 +7,7 @@ import com.teamup.teamUp.model.dto.venue.VenueUpsertRequestDto;
 import com.teamup.teamUp.model.entity.Venue;
 import com.teamup.teamUp.service.VenueService;
 import com.teamup.teamUp.service.importers.VenueImportService;
+import io.micrometer.common.lang.Nullable;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -116,5 +117,14 @@ public class VenueController {
         var list = venueService.inBBox(minLat, minLng, maxLat, maxLng, limit)
                 .stream().map(venueMapper::toDto).toList();
         return ResponseEntity.ok(new ResponseApi<>("ok",list,true));
+    }
+
+    @GetMapping("/suggest")
+    public ResponseEntity<ResponseApi<List<VenueResponseDto>>> suggest(@RequestParam String q,
+                                                                       @RequestParam(defaultValue = "10") @Max(20) int limit,
+                                                                       @RequestParam (required = false) String cityHint){
+        var venues = venueService.suggest(q,limit,cityHint);
+        var dtos = venues.stream().map(venueMapper::toDto).toList();
+        return ResponseEntity.ok(new ResponseApi<>("venues suggested",dtos,true));
     }
 }

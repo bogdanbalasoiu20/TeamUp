@@ -152,4 +152,15 @@ public class VenueService {
         return venueRepository.findInBBoxPostgis(minLat, minLng, maxLat, maxLng, lim);
     }
 
+    public List<Venue> suggest(String q, int limit, String cityHint){
+        String query = (q == null) ? "" : q.trim();
+        if(query.isEmpty()) return List.of();
+
+        int lim = Math.max(1,Math.min(limit,20));
+
+        String hint = (cityHint==null||cityHint.isBlank()) ? null : cityHint.trim();
+
+        return venueRepository.suggest(query, lim, hint);
+    }
+
 }

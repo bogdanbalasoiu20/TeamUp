@@ -72,4 +72,20 @@ public interface VenueRepository extends JpaRepository<Venue, UUID> {
                                   @Param("maxLng") double maxLng,
                                   @Param("limit") int limit);
 
+
+    @Query(value = """
+        select v.* from venues v 
+        where  v.is_active = true
+        and ( v.name ilike concat('%', :q, '%')
+            or v.city ilike concat('%', :q, '%'))
+        order by 
+            case when :cityHint is not null and lower(v.city) = lower(:cityHint) then 1 else 0 end desc,
+            greatest(similarity(v.name, :q), similarity(v.city, :q)) desc,
+            v.name asc
+        limit :limit
+""",nativeQuery = true)
+    List<Venue> suggest(@Param("q") String q,
+                        @Param("limit") int limit,
+                        @Param("cityHint") String cityHint);
+
 }
