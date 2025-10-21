@@ -28,13 +28,19 @@ public class VenueImportService {
         }
 
         for (var el : resp.elements) {
-            var dto = osmMapper.toUpsert(el);
+            var mapped = osmMapper.toUpsertWithShape(el);
+            var dto    = mapped.dto();
+            var shape  = mapped.shapeGeoJson();
 
             boolean existed = venueRepository
                     .findByOsmTypeAndOsmId(dto.osmType(), dto.osmId())
                     .isPresent();
 
-            venueService.upsert(dto);
+            var saved = venueService.upsert(dto);
+
+            if (shape != null) {
+                venueRepository.updateAreaGeomFromGeoJson(saved.getId(), shape);
+            }
 
             if (existed) updated++; else created++;
         }
@@ -43,4 +49,5 @@ public class VenueImportService {
 
     public record ImportResult(int created, int updated) {}
 }
+
 

@@ -41,7 +41,7 @@ public class OverpassClient {
           way["leisure"="sports_centre"](%s);
           relation["leisure"="sports_centre"](%s);
         );
-        out center tags;
+        out tags geom;
         """.formatted(bbox,bbox,bbox, bbox,bbox,bbox, bbox,bbox,bbox);
     }
 
@@ -75,10 +75,20 @@ public class OverpassClient {
         public String type;
         public Double lat;
         public Double lon;
-        public Center center;
         public Map<String,Object> tags;
 
+        public List<Coord> geometry;
+
+        public List<Member> members;
+
         @JsonIgnoreProperties(ignoreUnknown = true)
-        public static class Center { public Double lat; public Double lon; }
+        public static class Coord { public Double lat; public Double lon; }
+
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        public static class Member {
+            public String type;
+            public long ref;
+            public String role;
+        }
     }
 }

@@ -4,6 +4,7 @@ import com.teamup.teamUp.model.entity.Venue;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -104,6 +105,16 @@ public interface VenueRepository extends JpaRepository<Venue, UUID> {
         and COALESCE(area_geom, geom) is not null
     """, nativeQuery = true)
     String getShapeAsGeoJson(@Param("id") UUID id);
+
+
+    @Modifying
+    @Query(value = """
+      update venues
+      set area_geom = ST_SetSRID(ST_GeomFromGeoJSON(:geojson), 4326)
+      where id = :id
+    """, nativeQuery = true)
+    int updateAreaGeomFromGeoJson(@Param("id") UUID id,
+                                  @Param("geojson") String geojson);
 
 
 }

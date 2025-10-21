@@ -1,5 +1,6 @@
 package com.teamup.teamUp.controller;
 
+import com.teamup.teamUp.client.nominatim.NominatimClient;
 import com.teamup.teamUp.mapper.VenueMapper;
 import com.teamup.teamUp.model.dto.venue.VenueAdminUpdateRequestDto;
 import com.teamup.teamUp.model.dto.venue.VenueResponseDto;
@@ -35,12 +36,14 @@ public class VenueController {
     private final VenueService venueService;
     private final VenueMapper venueMapper;
     private final VenueImportService venueImportService;
+    private final NominatimClient nominatimClient;
 
     @Autowired
-    public VenueController(VenueService venueService, VenueMapper venueMapper, VenueImportService venueImportService) {
+    public VenueController(VenueService venueService, VenueMapper venueMapper, VenueImportService venueImportService,NominatimClient nominatimClient) {
         this.venueService = venueService;
         this.venueMapper = venueMapper;
         this.venueImportService = venueImportService;
+        this.nominatimClient = nominatimClient;
     }
 
     @GetMapping
@@ -136,4 +139,18 @@ public class VenueController {
 
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(shape);
     }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/import/osm-by-city")
+    public ResponseEntity<ResponseApi<VenueImportService.ImportResult>> importOsmByCity(
+            @RequestParam String city
+    ){
+        return nominatimClient.cityBbox(city.trim())
+                .map(bb -> {
+                    var r = venueImportService.importFromBBox(bb[0], bb[1], bb[2], bb[3]);
+                    return ResponseEntity.ok(new ResponseApi<>("OSM import done ("+city+")", r, true));
+                })
+                .orElseGet(() -> ResponseEntity.badRequest().body(new ResponseApi<>("City not found", null, false)));
+    }
+
 }
