@@ -38,11 +38,21 @@ public class Match {
     @Column(name = "starts_at", nullable = false)
     private Instant startsAt;
 
+    @Column(name = "ends_at", nullable = false, insertable = false, updatable = false)
+    private Instant endsAt;
+
     @Column(name = "duration_min")
     private Integer durationMinutes;
 
     @Column(name = "max_players", nullable = false)
     private Integer maxPlayers;
+
+    @Builder.Default
+    @Column(name = "current_players", nullable = false)
+    private Integer currentPlayers = 0;
+
+    @Column(name = "join_deadline")
+    private Instant joinDeadline;
 
     private String title;
     private String notes;
@@ -68,6 +78,14 @@ public class Match {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Builder.Default
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
+
     @PrePersist
     @PreUpdate
     private void validate(){
@@ -77,5 +95,16 @@ public class Match {
             throw new IllegalArgumentException("The duration minutes must be greater than 0");
         if(startsAt == null)
             throw new IllegalArgumentException("The starting hour is required");
+
+        if(endsAt!=null && !endsAt.isAfter(startsAt)){
+            throw new IllegalArgumentException("The ending hour must be after the start hour");
+        }
+        if(currentPlayers == null){
+            currentPlayers = 0;
+        }
+        if (currentPlayers < 0 || (maxPlayers != null && currentPlayers > maxPlayers))
+            throw new IllegalArgumentException("currentPlayers must be between 0 and maxPlayers");
+        if (joinDeadline != null && !joinDeadline.isBefore(startsAt))
+            throw new IllegalArgumentException("joinDeadline must be before startsAt");
     }
 }
