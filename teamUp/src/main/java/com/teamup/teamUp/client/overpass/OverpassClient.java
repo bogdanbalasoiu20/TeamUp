@@ -51,7 +51,7 @@ public class OverpassClient {
         String ql = buildQuery(minLat, minLng, maxLat, maxLng);
         HttpRequest req = HttpRequest.newBuilder(ENDPOINT)
                 .header("Content-Type", "application/x-www-form-urlencoded")
-                .header("User-Agent", "TeamUp/1.0 (contact: you@teamup.local)")
+                .header("User-Agent", "TeamUp/1.0 (contact: balasoiu.bogdan@gmail.com)")
                 .POST(HttpRequest.BodyPublishers.ofString("data=" + URLEncoder.encode(ql, StandardCharsets.UTF_8)))
                 .build();
         try {

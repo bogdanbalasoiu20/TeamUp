@@ -34,16 +34,17 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
                 .requestMatchers("/api/venues/import/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/venues/**").permitAll()
                 .anyRequest().authenticated()
         );
 
         http.exceptionHandling(e -> e
-                .authenticationEntryPoint((req, res, ex) -> { // 401 la neautentificat
+                .authenticationEntryPoint((req, res, ex) -> {
                     res.setStatus(401);
                     res.setContentType("application/json");
                     res.getWriter().write("{\"success\":false,\"message\":\"Unauthorized\",\"data\":null}");
                 })
-                .accessDeniedHandler((req, res, ex) -> { // 403 la lipsă permisiuni
+                .accessDeniedHandler((req, res, ex) -> {
                     res.setStatus(403);
                     res.setContentType("application/json");
                     res.getWriter().write("{\"success\":false,\"message\":\"Forbidden\",\"data\":null}");

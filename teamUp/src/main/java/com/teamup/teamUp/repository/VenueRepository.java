@@ -38,20 +38,20 @@ public interface VenueRepository extends JpaRepository<Venue, UUID> {
 
 
     @Query(value = """
-      select v.*
-      from venues v
-      where v.is_active = true
-        and v.geom is not null
-        and st_dwithin(
-              v.geom::geography,
-              st_setsrid(st_makepoint(:lng, :lat), 4326)::geography,
-              :radiusmeters
-            )
-      order by st_distancesphere(
-              v.geom,
-              st_setsrid(st_makepoint(:lng, :lat), 4326)
-            )
-      limit :limit
+  select v.*
+  from venues v
+  where v.is_active = true
+    and v.geom is not null
+    and ST_DWithin(
+          v.geom::geography,
+          ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography,
+          :radiusMeters
+        )
+  order by ST_Distance(
+          v.geom::geography,
+          ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography
+        )
+  limit :limit
 """, nativeQuery = true)
     List<Venue> findNearbyOrdered(@Param("lat") double lat,
                                   @Param("lng") double lng,
@@ -60,13 +60,13 @@ public interface VenueRepository extends JpaRepository<Venue, UUID> {
 
 
     @Query(value = """
-        select v.* from venues v 
-        where v.is_active = true
-        and v.geom is not null
-        and v.geom && ST_MakeEnvelope(:minLng, :minLat, :maxLng, :maxLat, 4326)
-        order by v.name asc
-        limit :limit
-""",nativeQuery = true)
+  select v.* from venues v
+  where v.is_active = true
+    and COALESCE(v.area_geom, v.geom) is not null
+    and COALESCE(v.area_geom, v.geom) && ST_MakeEnvelope(:minLng, :minLat, :maxLng, :maxLat, 4326)
+  order by v.name asc
+  limit :limit
+""", nativeQuery = true)
     List<Venue> findInBBoxPostgis(@Param("minLat") double minLat,
                                   @Param("minLng") double minLng,
                                   @Param("maxLat") double maxLat,
@@ -107,14 +107,21 @@ public interface VenueRepository extends JpaRepository<Venue, UUID> {
     String getShapeAsGeoJson(@Param("id") UUID id);
 
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
-      update venues
-      set area_geom = ST_SetSRID(ST_GeomFromGeoJSON(:geojson), 4326)
-      where id = :id
-    """, nativeQuery = true)
+      UPDATE venues
+      SET area_geom = ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(:geojson), 4326)),
+          geom      = COALESCE(
+                        geom,
+                        ST_Centroid(
+                          ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(:geojson), 4326))
+                        )
+                      )
+      WHERE id = :id
+      """, nativeQuery = true)
     int updateAreaGeomFromGeoJson(@Param("id") UUID id,
                                   @Param("geojson") String geojson);
+
 
 
 }
