@@ -1,6 +1,8 @@
 package com.teamup.teamUp.model.entity;
 
 
+import com.teamup.teamUp.model.enums.MatchStatus;
+import com.teamup.teamUp.model.enums.MatchVisibility;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -46,8 +48,14 @@ public class Match {
     private String notes;
 
     @Builder.Default
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status = "OPEN";
+    private MatchStatus status = MatchStatus.OPEN;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private MatchVisibility visibility =  MatchVisibility.PUBLIC;
 
     @Column(name = "total_price", precision = 10, scale =2)
     private BigDecimal totalPrice;
@@ -67,7 +75,7 @@ public class Match {
             throw new IllegalArgumentException("The number of players must be greater than 0");
         if(durationMinutes != null && durationMinutes<=0)
             throw new IllegalArgumentException("The duration minutes must be greater than 0");
-        if(status != null && !status.matches("OPEN|CANCELED|DONE|FULL"))
-            throw new IllegalArgumentException("Invalid status: "  + status);
+        if(startsAt == null)
+            throw new IllegalArgumentException("The starting hour is required");
     }
 }
