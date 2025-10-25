@@ -7,6 +7,7 @@ import com.teamup.teamUp.model.dto.auth.LoginRequestDto;
 import com.teamup.teamUp.model.dto.auth.RegisterRequestDto;
 import com.teamup.teamUp.model.dto.user.*;
 import com.teamup.teamUp.model.entity.User;
+import com.teamup.teamUp.model.enums.UserRole;
 import com.teamup.teamUp.repository.UserRepository;
 import com.teamup.teamUp.security.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,37 +33,37 @@ public class AuthService {
 
     public AuthResponseDto login(LoginRequestDto request){
         var key = request.emailOrUsername().trim();
-        var user = userRepository.findByUsernameIgnoreCaseOrEmailIgnoreCase(key, key).orElseThrow(()->new UnauthorizedException("Invalid credentials"));
+        var user = userRepository
+                .findByUsernameIgnoreCaseOrEmailIgnoreCase(key, key)
+                .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
 
-        if(!passwordEncoder.matches(request.password(), user.getPasswordHash()))
+        if (!passwordEncoder.matches(request.password(), user.getPasswordHash()))
             throw new UnauthorizedException("Invalid credentials");
 
-        if(user.isDeleted()){
+        if (user.isDeleted())
             throw new UnauthorizedException("Invalid credentials");
-        }
 
         var claims = new HashMap<String, Object>();
         claims.put("username", user.getUsername());
         claims.put("email", user.getEmail());
+        String roleNameLogin = (user.getRole() == null ? "USER" : user.getRole().name());
+        claims.put("role", roleNameLogin);
         claims.put("tokenVersion", user.getTokenVersion() == null ? 0 : user.getTokenVersion());
-        claims.put("pwdChangedAt", user.getPasswordChangedAt() == null
-                ? 0L
-                : user.getPasswordChangedAt().getEpochSecond());
-        claims.put("role",user.getRole().name());
-
-        var token = jwtService.generate(user.getId().toString(), claims);
-
+        if (user.getPasswordChangedAt() != null) {
+            claims.put("pwdChangedAt", user.getPasswordChangedAt().getEpochSecond());
+        }
+        var token = jwtService.generate(user.getUsername(), claims);
         return new AuthResponseDto(token, UserResponseDto.from(user));
     }
 
     @Transactional
     public AuthResponseDto register(RegisterRequestDto request){
         String email = request.email().trim().toLowerCase();
-        if(userRepository.existsByEmailIgnoreCase(email))
+        if (userRepository.existsByEmailIgnoreCase(email))
             throw new ResourceConflictException("Email already exists");
 
         String username = request.username().trim();
-        if(userRepository.existsByUsernameIgnoreCase(username))
+        if (userRepository.existsByUsernameIgnoreCase(username))
             throw new ResourceConflictException("Username already exists");
 
         var user = User.builder()
@@ -74,28 +75,26 @@ public class AuthService {
                 .city(request.city())
                 .position(request.position())
                 .description(request.description())
+                .role(UserRole.USER)
+                .tokenVersion(0)
                 .build();
 
-        try {
-            var userSaved = userRepository.save(user);
+        var saved = userRepository.saveAndFlush(user);
+        var userSaved = userRepository.findById(saved.getId())
+                .orElseThrow(() -> new IllegalStateException("User just saved not found"));
 
-            var claims = new HashMap<String, Object>();
-            claims.put("username", userSaved.getUsername());
-            claims.put("email", userSaved.getEmail());
-            claims.put("tokenVersion", userSaved.getTokenVersion() == null ? 0 : userSaved.getTokenVersion());
-            claims.put("pwdChangedAt", userSaved.getPasswordChangedAt() == null ? 0L
-                    : userSaved.getPasswordChangedAt().getEpochSecond());
-            claims.put("role",userSaved.getRole().name());
-
-            var token = jwtService.generate(
-                    userSaved.getId().toString(),
-                    claims
-            );
-
-            return new AuthResponseDto(token, UserResponseDto.from(userSaved));
-        } catch (DataIntegrityViolationException e) {
-            throw new ResourceConflictException("Email or username already exists");
+        var claims = new HashMap<String, Object>();
+        claims.put("username", userSaved.getUsername());
+        claims.put("email", userSaved.getEmail());
+        String roleNameReg = (userSaved.getRole() == null ? "USER" : userSaved.getRole().name());
+        claims.put("role", roleNameReg);
+        claims.put("tokenVersion", userSaved.getTokenVersion() == null ? 0 : userSaved.getTokenVersion());
+        if (userSaved.getPasswordChangedAt() != null) {
+            claims.put("pwdChangedAt", userSaved.getPasswordChangedAt().getEpochSecond());
         }
+        var token = jwtService.generate(userSaved.getUsername(), claims);
 
+        return new AuthResponseDto(token, UserResponseDto.from(userSaved));
     }
 }
+
