@@ -95,6 +95,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     throw new JwtException("Password changed after token was issued");
                 }
 
+                log.info("JWT OK -> username={}, role={}", user.getUsername(), user.getRole());
+
                 if (SecurityContextHolder.getContext().getAuthentication() == null) {
                     var auth = new UsernamePasswordAuthenticationToken(principal, null, List.of());
                     auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
@@ -102,6 +104,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 }
 
             } catch (JwtException ex) {
+                log.warn("JWT rejected: {}", ex.getMessage());
                 req.setAttribute("jwt_error", ex.getMessage());
                 SecurityContextHolder.clearContext();
                 log.debug("JWT rejected: {}", ex.getMessage());

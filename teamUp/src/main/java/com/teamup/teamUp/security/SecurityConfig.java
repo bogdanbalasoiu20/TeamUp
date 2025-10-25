@@ -14,9 +14,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 
-//Scop: să configureze Spring Security pentru un API stateless cu JWT.
+//Scop: sa configureze Spring Security pentru un API stateless cu JWT.
 @Configuration
-@EnableMethodSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
@@ -32,7 +32,7 @@ public class SecurityConfig {
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
-                .requestMatchers("/api/venues/osm/**").hasRole("ADMIN")
+                .requestMatchers("/api/venues/osm/**", "/api/venues/import/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/venues/**").permitAll()
                 .anyRequest().authenticated()
