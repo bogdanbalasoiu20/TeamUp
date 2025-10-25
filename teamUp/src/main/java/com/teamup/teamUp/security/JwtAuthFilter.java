@@ -61,15 +61,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 // 3) Verifică tokenVersion
                 Integer tvClaim = claims.get("tokenVersion", Integer.class);
                 int tvUser = user.getTokenVersion() == null ? 0 : user.getTokenVersion();
-                if (tvClaim == null || tvUser != tvClaim) {
+                int tvTok = tvClaim == null ? 0 : tvClaim;
+                if (tvUser != tvTok) {
                     throw new JwtException("Token version mismatch");
                 }
 
                 // 4) Verifică pwdChangedAt (epoch seconds)
                 Long pwdClaim = claims.get("pwdChangedAt", Long.class);
                 long pwdUser = user.getPasswordChangedAt() == null ? 0L : user.getPasswordChangedAt().getEpochSecond();
-                // Dacă DB are o dată, iar claim-ul e lipsă sau mai mic -> invalid
-                if (pwdUser > 0 && (pwdClaim == null || pwdClaim < pwdUser)) {
+                if (pwdUser > 0 && pwdClaim != null && pwdClaim < pwdUser) {
                     throw new JwtException("Password changed after token was issued");
                 }
 
