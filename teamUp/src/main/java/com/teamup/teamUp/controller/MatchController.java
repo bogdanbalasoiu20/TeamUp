@@ -3,11 +3,13 @@ package com.teamup.teamUp.controller;
 import com.teamup.teamUp.mapper.MatchMapper;
 import com.teamup.teamUp.model.dto.match.MatchCreateRequestDto;
 import com.teamup.teamUp.model.dto.match.MatchResponseDto;
+import com.teamup.teamUp.model.dto.match.MatchUpdateRequestDto;
 import com.teamup.teamUp.model.entity.Match;
 import com.teamup.teamUp.service.MatchService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,5 +38,12 @@ public class MatchController {
     public ResponseEntity<ResponseApi<MatchResponseDto>> create(@Valid @RequestBody MatchCreateRequestDto request, Authentication auth){
         Match match = matchService.create(request,auth.getName());
         return ResponseEntity.created(URI.create("/api/matches/" + match.getId())).body(new ResponseApi<>("Match created successfully",matchMapper.toDto(match),true));
+    }
+
+    @PreAuthorize("@matchSecurity.canEdit(#id, authentication)")
+    @PatchMapping("/{id}")
+    public ResponseEntity<ResponseApi<MatchResponseDto>> update(@PathVariable UUID id, @RequestBody MatchUpdateRequestDto request){
+        Match matchUpdated = matchService.update(id, request);
+        return ResponseEntity.ok(new ResponseApi<>("Match updated successfully",matchMapper.toDto(matchUpdated),true));
     }
 }

@@ -2,7 +2,9 @@ package com.teamup.teamUp.service;
 
 import com.teamup.teamUp.exceptions.BadRequestException;
 import com.teamup.teamUp.exceptions.NotFoundException;
+import com.teamup.teamUp.exceptions.ResourceConflictException;
 import com.teamup.teamUp.model.dto.match.MatchCreateRequestDto;
+import com.teamup.teamUp.model.dto.match.MatchUpdateRequestDto;
 import com.teamup.teamUp.model.entity.Match;
 import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.model.entity.Venue;
@@ -15,6 +17,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -58,5 +62,58 @@ public class MatchService {
                 .build();
 
         return matchRepository.save(match);
+    }
+
+    @Transactional
+    public Match update(UUID id, MatchUpdateRequestDto request){
+        Match match = findById(id);
+
+        if(Objects.equals(request.version(),match.getVersion())){
+            throw new ResourceConflictException("version conflict");
+        }
+
+        if(request.venueId()!=null && Objects.equals(request.venueId(), match.getVenue().getId())) {
+            Venue venue = venueRepository.findById(request.venueId()).orElseThrow(() -> new NotFoundException("Venue not found"));
+            match.setVenue(venue);
+        }
+
+        if (request.startsAt() != null && !Objects.equals(match.getStartsAt(), request.startsAt())) {
+            match.setStartsAt(request.startsAt());
+        }
+
+        if(request.durationMinutes()!=null && !Objects.equals(match.getDurationMinutes(), request.durationMinutes())){
+            if(request.durationMinutes()<0){
+                throw new BadRequestException("duration minutes can't be negative");
+            }
+            match.setDurationMinutes(request.durationMinutes());
+        }
+        if (request.maxPlayers() != null && !Objects.equals(match.getMaxPlayers(), request.maxPlayers())) {
+            if (request.maxPlayers() <= 0 ||
+                    (match.getCurrentPlayers() != null && request.maxPlayers() < match.getCurrentPlayers())) {
+                throw new BadRequestException("Invalid max players number");
+            }
+            match.setMaxPlayers(request.maxPlayers());
+        }
+        if (request.title() != null && !Objects.equals(match.getTitle(), request.title())) {
+            match.setTitle(request.title());
+        }
+        if (request.notes() != null && !Objects.equals(match.getNotes(), request.notes())) {
+            match.setNotes(request.notes());
+        }
+        if (request.visibility() != null && !Objects.equals(match.getVisibility(), request.visibility())) {
+            match.setVisibility(request.visibility());
+        }
+        if (request.joinDeadline() != null && !Objects.equals(match.getJoinDeadline(), request.joinDeadline())) {
+            Instant effectiveStarts = (request.startsAt() != null) ? request.startsAt() : match.getStartsAt();
+            if (effectiveStarts != null && !request.joinDeadline().isBefore(effectiveStarts)) {
+                throw new BadRequestException("Join deadline must be before start time");
+            }
+            match.setJoinDeadline(request.joinDeadline());
+        }
+        if (request.totalPrice() != null && !Objects.equals(match.getTotalPrice(), request.totalPrice())) {
+            match.setTotalPrice(request.totalPrice());
+        }
+
+        return match;
     }
 }
