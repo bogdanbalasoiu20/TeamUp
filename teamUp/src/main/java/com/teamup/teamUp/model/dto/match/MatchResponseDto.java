@@ -1,5 +1,7 @@
 package com.teamup.teamUp.model.dto.match;
 
+import com.teamup.teamUp.model.dto.user.UserSummaryDto;
+import com.teamup.teamUp.model.dto.venue.VenueSummaryDto;
 import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.model.entity.Venue;
 import com.teamup.teamUp.model.enums.MatchStatus;
@@ -25,7 +27,9 @@ public record MatchResponseDto(
        MatchVisibility visibility,
        BigDecimal totalPrice,
        Instant createdAt,
-       Instant updatedAt
+       Instant updatedAt,
+       UserSummaryDto creator,
+       VenueSummaryDto venue
 ) {
 
 }

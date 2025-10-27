@@ -34,6 +34,7 @@ public class MatchService {
         this.venueRepository = venueRepository;
     }
 
+    @Transactional(readOnly = true)
     public Match findById(UUID id){
         return matchRepository.findByIdAndIsActiveTrue(id).orElseThrow(()-> new NotFoundException("Match not found"));
     }
