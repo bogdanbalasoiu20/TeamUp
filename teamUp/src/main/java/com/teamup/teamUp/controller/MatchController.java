@@ -43,7 +43,14 @@ public class MatchController {
     @PreAuthorize("@matchSecurity.canEdit(#id, authentication)")
     @PatchMapping("/{id}")
     public ResponseEntity<ResponseApi<MatchResponseDto>> update(@PathVariable UUID id, @RequestBody MatchUpdateRequestDto request){
-        MatchResponseDto matchUpdated = matchService.update(id, request);
-        return ResponseEntity.ok(new ResponseApi<>("Match updated successfully",matchUpdated,true));
+        Match matchUpdated = matchService.update(id, request);
+        return ResponseEntity.ok(new ResponseApi<>("Match updated successfully",matchMapper.toDto(matchUpdated),true));
+    }
+
+    @PreAuthorize("@matchSecurity.canEdit(#id, authentication)")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ResponseApi<Void>> delete(@PathVariable UUID id){
+        matchService.delete(id);
+        return  ResponseEntity.ok(new  ResponseApi<>("Match deleted successfully",null,true));
     }
 }
