@@ -35,7 +35,7 @@ public class MatchService {
     }
 
     public Match findById(UUID id){
-        return matchRepository.findById(id).orElseThrow(()-> new NotFoundException("Match not found"));
+        return matchRepository.findByIdAndIsActiveTrue(id).orElseThrow(()-> new NotFoundException("Match not found"));
     }
 
     @Transactional

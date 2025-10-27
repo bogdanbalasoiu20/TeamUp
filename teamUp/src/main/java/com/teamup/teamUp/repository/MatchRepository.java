@@ -11,6 +11,8 @@ import java.util.UUID;
 
 @Component
 public interface MatchRepository extends JpaRepository<Match,UUID> {
+    Optional<Match> findByIdAndIsActiveTrue(UUID id);
+
     @Query("select m.creator.username from Match m where m.id = :id")
     Optional<String> findCreatorUsernameById(@Param("id") UUID id);
 }
