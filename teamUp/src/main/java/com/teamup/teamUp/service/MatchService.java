@@ -3,7 +3,9 @@ package com.teamup.teamUp.service;
 import com.teamup.teamUp.exceptions.BadRequestException;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.exceptions.ResourceConflictException;
+import com.teamup.teamUp.mapper.MatchMapper;
 import com.teamup.teamUp.model.dto.match.MatchCreateRequestDto;
+import com.teamup.teamUp.model.dto.match.MatchResponseDto;
 import com.teamup.teamUp.model.dto.match.MatchUpdateRequestDto;
 import com.teamup.teamUp.model.entity.Match;
 import com.teamup.teamUp.model.entity.User;
@@ -14,10 +16,13 @@ import com.teamup.teamUp.repository.MatchRepository;
 import com.teamup.teamUp.repository.UserRepository;
 import com.teamup.teamUp.repository.VenueRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -26,12 +31,14 @@ public class MatchService {
     private final MatchRepository matchRepository;
     private final UserRepository userRepository;
     private final VenueRepository venueRepository;
+    private final MatchMapper matchMapper;
 
     @Autowired
-    public MatchService(MatchRepository matchRepository,  UserRepository userRepository,  VenueRepository venueRepository) {
+    public MatchService(MatchRepository matchRepository, UserRepository userRepository, VenueRepository venueRepository, MatchMapper matchMapper) {
         this.matchRepository = matchRepository;
         this.userRepository = userRepository;
         this.venueRepository = venueRepository;
+        this.matchMapper = matchMapper;
     }
 
     @Transactional(readOnly = true)
@@ -126,5 +133,9 @@ public class MatchService {
             match.setIsActive(false);
             match.setStatus(MatchStatus.CANCELED);
         }
+    }
+
+    public Page<MatchResponseDto> search(String city, Instant dateFrom, Instant dateTo, Pageable pageable){
+        return matchRepository.searchByCityAndDate(city, dateFrom, dateTo, pageable).map(matchMapper::toDto);
     }
 }
