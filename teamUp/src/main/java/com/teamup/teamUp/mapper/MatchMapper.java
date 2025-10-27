@@ -9,8 +9,8 @@ public class MatchMapper {
     public MatchResponseDto toDto(Match match){
         return new MatchResponseDto(
                 match.getId(),
-                match.getCreator(),
-                match.getVenue(),
+                match.getCreator().getId(),
+                match.getVenue().getId(),
                 match.getStartsAt(),
                 match.getEndsAt(),
                 match.getDurationMinutes(),

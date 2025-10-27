@@ -43,7 +43,7 @@ public class MatchController {
     @PreAuthorize("@matchSecurity.canEdit(#id, authentication)")
     @PatchMapping("/{id}")
     public ResponseEntity<ResponseApi<MatchResponseDto>> update(@PathVariable UUID id, @RequestBody MatchUpdateRequestDto request){
-        Match matchUpdated = matchService.update(id, request);
-        return ResponseEntity.ok(new ResponseApi<>("Match updated successfully",matchMapper.toDto(matchUpdated),true));
+        MatchResponseDto matchUpdated = matchService.update(id, request);
+        return ResponseEntity.ok(new ResponseApi<>("Match updated successfully",matchUpdated,true));
     }
 }

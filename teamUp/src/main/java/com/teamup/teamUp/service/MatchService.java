@@ -3,7 +3,9 @@ package com.teamup.teamUp.service;
 import com.teamup.teamUp.exceptions.BadRequestException;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.exceptions.ResourceConflictException;
+import com.teamup.teamUp.mapper.MatchMapper;
 import com.teamup.teamUp.model.dto.match.MatchCreateRequestDto;
+import com.teamup.teamUp.model.dto.match.MatchResponseDto;
 import com.teamup.teamUp.model.dto.match.MatchUpdateRequestDto;
 import com.teamup.teamUp.model.entity.Match;
 import com.teamup.teamUp.model.entity.User;
@@ -13,7 +15,6 @@ import com.teamup.teamUp.repository.MatchRepository;
 import com.teamup.teamUp.repository.UserRepository;
 import com.teamup.teamUp.repository.VenueRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,12 +27,14 @@ public class MatchService {
     private final MatchRepository matchRepository;
     private final UserRepository userRepository;
     private final VenueRepository venueRepository;
+    private final MatchMapper matchMapper;
 
     @Autowired
-    public MatchService(MatchRepository matchRepository,  UserRepository userRepository,  VenueRepository venueRepository) {
+    public MatchService(MatchRepository matchRepository,  UserRepository userRepository,  VenueRepository venueRepository, MatchMapper matchMapper) {
         this.matchRepository = matchRepository;
         this.userRepository = userRepository;
         this.venueRepository = venueRepository;
+        this.matchMapper = matchMapper;
     }
 
     public Match findById(UUID id){
@@ -65,7 +68,7 @@ public class MatchService {
     }
 
     @Transactional
-    public Match update(UUID id, MatchUpdateRequestDto request){
+    public MatchResponseDto update(UUID id, MatchUpdateRequestDto request){
         Match match = findById(id);
 
         if(Objects.equals(request.version(),match.getVersion())){
@@ -114,6 +117,6 @@ public class MatchService {
             match.setTotalPrice(request.totalPrice());
         }
 
-        return match;
+        return matchMapper.toDto(match);
     }
 }

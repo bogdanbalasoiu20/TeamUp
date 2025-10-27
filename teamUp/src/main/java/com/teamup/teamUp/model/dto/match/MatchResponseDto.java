@@ -11,8 +11,8 @@ import java.util.UUID;
 
 public record MatchResponseDto(
        UUID id,
-       User creator,
-       Venue venue,
+       UUID creatorId,
+       UUID venueId,
        Instant startsAt,
        Instant endsAt,
        Integer durationMinutes,
