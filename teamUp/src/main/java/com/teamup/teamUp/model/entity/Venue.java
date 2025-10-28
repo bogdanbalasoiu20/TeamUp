@@ -36,7 +36,9 @@ public class Venue {
     @Column(name = "phone_number")
     private String phoneNumber;
 
-    private String city;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "city_id", foreignKey = @ForeignKey(name = "fk_venue_city"))
+    private City city;
     private Double latitude;
     private Double longitude;
 

@@ -75,6 +75,7 @@ public class MatchController {
 
     }
 
+    @GetMapping("/nearby-bbox")
     public ResponseEntity<ResponseApi<List<MatchMapPinDto>>> nearbyBBox(@RequestParam double minLat,
                                                                         @RequestParam double minLng,
                                                                         @RequestParam double maxLat,

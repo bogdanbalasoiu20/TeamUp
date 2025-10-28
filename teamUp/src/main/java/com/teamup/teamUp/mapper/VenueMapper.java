@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 public class VenueMapper {
     public VenueResponseDto toDto(Venue v){
         return new VenueResponseDto(
-                v.getId(), v.getName(), v.getAddress(), v.getPhoneNumber(), v.getCity(),
+                v.getId(), v.getName(), v.getAddress(), v.getPhoneNumber(), v.getCity().getSlug(),
                 v.getLatitude(), v.getLongitude(),
                 v.getOsmType(), v.getOsmId(),
                 v.getTagsJson(),
