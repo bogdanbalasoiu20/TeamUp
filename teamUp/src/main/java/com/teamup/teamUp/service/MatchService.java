@@ -79,11 +79,11 @@ public class MatchService {
     public Match update(UUID id, MatchUpdateRequestDto request){
         Match match = findById(id);
 
-        if(Objects.equals(request.version(),match.getVersion())){
+        if (request.version() != null && !Objects.equals(request.version(), match.getVersion())) {
             throw new ResourceConflictException("version conflict");
         }
 
-        if(request.venueId()!=null && Objects.equals(request.venueId(), match.getVenue().getId())) {
+        if(request.venueId()!=null && !Objects.equals(request.venueId(), match.getVenue().getId())) {
             Venue venue = venueRepository.findById(request.venueId()).orElseThrow(() -> new NotFoundException("Venue not found"));
             match.setVenue(venue);
         }
@@ -143,7 +143,7 @@ public class MatchService {
     }
 
     @Transactional(readOnly = true)
-    public List<MatchMapPinDto> nearbyPins(double minLat, double minLng, double maxLat, double maxLng, Instant dateFrom, Instant dateTo, int limit){
+    public Page<MatchMapPinDto> nearbyPins(double minLat, double minLng, double maxLat, double maxLng, Instant dateFrom, Instant dateTo, int limit){
         var pageable = PageRequest.of(0, Math.min(limit,500), Sort.by("startsAt").ascending());
         return matchRepository.findPinsInBBOx(minLat, minLng, maxLat, maxLng, dateFrom, dateTo, pageable);
     }

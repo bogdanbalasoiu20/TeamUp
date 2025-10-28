@@ -19,7 +19,7 @@ public interface VenueRepository extends JpaRepository<Venue, UUID> {
     @Query("""
       SELECT v FROM Venue v
       LEFT JOIN v.city c
-      WHERE (:city IS NULL OR c.slug = LOWER(:city))
+      WHERE (:city IS NULL OR lower(c.slug) = lower(:city))
         AND (:q IS NULL OR LOWER(v.name) LIKE LOWER(CONCAT('%', :q, '%')))
         AND (:activeOnly = FALSE OR v.isActive = TRUE)
       ORDER BY v.name ASC

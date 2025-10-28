@@ -17,7 +17,7 @@ import java.util.UUID;
 
 @Component
 public interface MatchRepository extends JpaRepository<Match,UUID> {
-    @EntityGraph(attributePaths = {"creator", "venue"})
+    @EntityGraph(attributePaths = {"creator", "venue","venue.city"})
     Optional<Match> findByIdAndIsActiveTrue(UUID id);
 
     @Query("select m.creator.username from Match m where m.id = :id")
@@ -28,7 +28,7 @@ public interface MatchRepository extends JpaRepository<Match,UUID> {
       join m.venue v
       left join v.city c
       where m.isActive = true
-        and (:city is null or c.slug = LOWER(:city))
+        and (:city is null or lower(c.slug) = lower(:city))
         and (:dateFrom is null or m.startsAt >= :dateFrom)
         and (:dateTo   is null or m.startsAt <  :dateTo)
       order by m.startsAt asc
@@ -38,7 +38,7 @@ public interface MatchRepository extends JpaRepository<Match,UUID> {
       join m.venue v
       left join v.city c
       where m.isActive = true
-        and (:city is null or c.slug = LOWER(:city))
+        and (:city is null or lower(c.slug) = lower(:city))
         and (:dateFrom is null or m.startsAt >= :dateFrom)
         and (:dateTo   is null or m.startsAt <  :dateTo)
 """)
@@ -59,5 +59,5 @@ select new com.teamup.teamUp.model.dto.match.MatchMapPinDto(
     and (:dateTo   is null or m.startsAt <  :dateTo)
   order by m.startsAt asc
 """)
-    List<MatchMapPinDto> findPinsInBBOx(double minLat, double minLng, double maxLat, double maxLng, Instant dateFrom, Instant dateTo, Pageable pageable);
+    Page<MatchMapPinDto> findPinsInBBOx(double minLat, double minLng, double maxLat, double maxLng, Instant dateFrom, Instant dateTo, Pageable pageable);
 }
