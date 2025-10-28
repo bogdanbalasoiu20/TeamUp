@@ -2,11 +2,13 @@ package com.teamup.teamUp.controller;
 
 import com.teamup.teamUp.mapper.MatchMapper;
 import com.teamup.teamUp.model.dto.match.MatchCreateRequestDto;
+import com.teamup.teamUp.model.dto.match.MatchMapPinDto;
 import com.teamup.teamUp.model.dto.match.MatchResponseDto;
 import com.teamup.teamUp.model.dto.match.MatchUpdateRequestDto;
 import com.teamup.teamUp.model.entity.Match;
 import com.teamup.teamUp.service.MatchService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -71,5 +73,18 @@ public class MatchController {
         return ResponseEntity.ok(new ResponseApi<>("Matches found successfully",page,true));
 
 
+    }
+
+    public ResponseEntity<ResponseApi<List<MatchMapPinDto>>> nearbyBBox(@RequestParam double minLat,
+                                                                        @RequestParam double minLng,
+                                                                        @RequestParam double maxLat,
+                                                                        @RequestParam double maxLng,
+                                                                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant dateFrom,
+                                                                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant dateTo,
+                                                                        @RequestParam(defaultValue = "300") @Max(500) int limit) {
+
+
+        List<MatchMapPinDto> pins = matchService.nearbyPins(minLat, minLng, maxLat, maxLng, dateFrom, dateTo, limit);
+        return ResponseEntity.ok(new ResponseApi<>("pins", pins, true));
     }
 }

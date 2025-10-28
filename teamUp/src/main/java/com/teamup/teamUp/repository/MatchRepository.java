@@ -1,5 +1,6 @@
 package com.teamup.teamUp.repository;
 
+import com.teamup.teamUp.model.dto.match.MatchMapPinDto;
 import com.teamup.teamUp.model.entity.Match;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -40,4 +41,21 @@ public interface MatchRepository extends JpaRepository<Match,UUID> {
        and (:dateTo   is null or m.startsAt <  :dateTo)
     """)
     Page<Match> searchByCityAndDate(String city, Instant dateFrom, Instant dateTo, Pageable pageable);
+
+
+
+    @Query("""
+select new com.teamup.teamUp.model.dto.match.MatchMapPinDto(
+     m.id, v.latitude, v.longitude, m.title, m.startsAt, m.currentPlayers, m.maxPlayers, v.name
+  )
+  from Match m
+  join m.venue v
+  where m.isActive = true
+    and v.latitude  between :minLat and :maxLat
+    and v.longitude between :minLng and :maxLng
+    and (:dateFrom is null or m.startsAt >= :dateFrom)
+    and (:dateTo   is null or m.startsAt <  :dateTo)
+  order by m.startsAt asc
+""")
+    List<MatchMapPinDto> findPinsInBBOx(double minLat, double minLng, double maxLat, double maxLng, Instant dateFrom, Instant dateTo, Pageable pageable);
 }

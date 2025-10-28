@@ -5,6 +5,7 @@ import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.exceptions.ResourceConflictException;
 import com.teamup.teamUp.mapper.MatchMapper;
 import com.teamup.teamUp.model.dto.match.MatchCreateRequestDto;
+import com.teamup.teamUp.model.dto.match.MatchMapPinDto;
 import com.teamup.teamUp.model.dto.match.MatchResponseDto;
 import com.teamup.teamUp.model.dto.match.MatchUpdateRequestDto;
 import com.teamup.teamUp.model.entity.Match;
@@ -17,7 +18,9 @@ import com.teamup.teamUp.repository.UserRepository;
 import com.teamup.teamUp.repository.VenueRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -137,5 +140,11 @@ public class MatchService {
 
     public Page<MatchResponseDto> search(String city, Instant dateFrom, Instant dateTo, Pageable pageable){
         return matchRepository.searchByCityAndDate(city, dateFrom, dateTo, pageable).map(matchMapper::toDto);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MatchMapPinDto> nearbyPins(double minLat, double minLng, double maxLat, double maxLng, Instant dateFrom, Instant dateTo, int limit){
+        var pageable = PageRequest.of(0, Math.min(limit,500), Sort.by("startsAt").ascending());
+        return matchRepository.findPinsInBBOx(minLat, minLng, maxLat, maxLng, dateFrom, dateTo, pageable);
     }
 }
