@@ -3,6 +3,7 @@ package com.teamup.teamUp.repository;
 import com.teamup.teamUp.model.entity.Venue;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -14,13 +15,15 @@ import java.util.UUID;
 
 
 public interface VenueRepository extends JpaRepository<Venue, UUID> {
+    @EntityGraph(attributePaths = "city")
     @Query("""
       SELECT v FROM Venue v
-      WHERE (:city IS NULL OR LOWER(v.city) = LOWER(:city))
+      LEFT JOIN v.city c
+      WHERE (:city IS NULL OR c.slug = LOWER(:city))
         AND (:q IS NULL OR LOWER(v.name) LIKE LOWER(CONCAT('%', :q, '%')))
         AND (:activeOnly = FALSE OR v.isActive = TRUE)
       ORDER BY v.name ASC
-    """)
+""")
     Page<Venue> search(@Param("city") String city ,@Param("q") String q, @Param("activeOnly") boolean activeOnly, Pageable pageable);
 
     @Query("""
@@ -75,16 +78,20 @@ public interface VenueRepository extends JpaRepository<Venue, UUID> {
 
 
     @Query(value = """
-        select v.* from venues v 
-        where  v.is_active = true
-        and ( v.name ilike concat('%', :q, '%')
-            or v.city ilike concat('%', :q, '%'))
-        order by 
-            case when :cityHint is not null and lower(v.city) = lower(:cityHint) then 1 else 0 end desc,
-            greatest(similarity(v.name, :q), similarity(v.city, :q)) desc,
-            v.name asc
-        limit :limit
-""",nativeQuery = true)
+      select v.*
+      from venues v
+      left join cities c on c.id = v.city_id
+      where v.is_active = true
+        and (
+             v.name ilike concat('%', :q, '%')
+             or (c.name is not null and c.name ilike concat('%', :q, '%'))
+        )
+      order by
+        case when :cityHint is not null and c.slug = lower(:cityHint) then 1 else 0 end desc,
+        greatest(similarity(v.name, :q), similarity(coalesce(c.name,''), :q)) desc,
+        v.name asc
+      limit :limit
+""", nativeQuery = true)
     List<Venue> suggest(@Param("q") String q,
                         @Param("limit") int limit,
                         @Param("cityHint") String cityHint);
@@ -93,16 +100,17 @@ public interface VenueRepository extends JpaRepository<Venue, UUID> {
     @Query(value = """
       select json_build_object(
                'type', 'Feature',
-               'geometry', ST_AsGeoJSON(COALESCE(area_geom, geom), 6)::json,
+               'geometry', ST_AsGeoJSON(COALESCE(v.area_geom, v.geom), 6)::json,
                'properties', json_build_object(
-                   'id', id,
-                   'name', name,
-                   'city', city
+                   'id', v.id,
+                   'name', v.name,
+                   'city', c.slug
                )
              )::text
-      from venues
-      where id = :id
-        and COALESCE(area_geom, geom) is not null
+      from venues v
+      left join cities c on c.id = v.city_id
+      where v.id = :id
+        and COALESCE(v.area_geom, v.geom) is not null
     """, nativeQuery = true)
     String getShapeAsGeoJson(@Param("id") UUID id);
 

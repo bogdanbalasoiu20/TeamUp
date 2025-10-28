@@ -24,22 +24,24 @@ public interface MatchRepository extends JpaRepository<Match,UUID> {
     Optional<String> findCreatorUsernameById(@Param("id") UUID id);
 
     @Query(value = """
-    select m from Match m
-    join m.venue v 
-    where m.isActive = true
-    and (:city is null or upper(v.city) = upper(:city))
-    and(:dateFrom is null or m.startsAt>=:dateFrom)
-    and(:dateTo is null or m.startsAt<:dateTo)
-    order by m.startsAt asc
-    """,
-            countQuery = """
-    select count(m) from Match m
+      select m from Match m
       join m.venue v
-     where m.isActive = true
-       and (:city is null or upper(v.city) = upper(:city))
-       and (:dateFrom is null or m.startsAt >= :dateFrom)
-       and (:dateTo   is null or m.startsAt <  :dateTo)
-    """)
+      left join v.city c
+      where m.isActive = true
+        and (:city is null or c.slug = LOWER(:city))
+        and (:dateFrom is null or m.startsAt >= :dateFrom)
+        and (:dateTo   is null or m.startsAt <  :dateTo)
+      order by m.startsAt asc
+    """,
+                countQuery = """
+      select count(m) from Match m
+      join m.venue v
+      left join v.city c
+      where m.isActive = true
+        and (:city is null or c.slug = LOWER(:city))
+        and (:dateFrom is null or m.startsAt >= :dateFrom)
+        and (:dateTo   is null or m.startsAt <  :dateTo)
+""")
     Page<Match> searchByCityAndDate(String city, Instant dateFrom, Instant dateTo, Pageable pageable);
 
 

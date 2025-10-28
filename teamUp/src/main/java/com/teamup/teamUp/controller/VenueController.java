@@ -94,8 +94,7 @@ public class VenueController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ResponseApi<VenueResponseDto>> getById(@PathVariable UUID id){
-        Venue venue = venueService.findById(id);
-        return ResponseEntity.ok(new ResponseApi<>("Venue found",venueMapper.toDto(venue),true));
+        return ResponseEntity.ok(new ResponseApi<>("Venue found",venueService.findById(id),true));
     }
 
     @PreAuthorize("hasRole('ADMIN')")

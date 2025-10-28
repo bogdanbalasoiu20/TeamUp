@@ -7,6 +7,7 @@ import com.teamup.teamUp.model.dto.venue.VenueResponseDto;
 import com.teamup.teamUp.model.dto.venue.VenueUpsertRequestDto;
 import com.teamup.teamUp.model.entity.Venue;
 import com.teamup.teamUp.model.enums.VenueSource;
+import com.teamup.teamUp.repository.CityRepository;
 import com.teamup.teamUp.repository.VenueRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -21,15 +22,19 @@ import java.util.UUID;
 public class VenueService {
     private final VenueRepository venueRepository;
     private final VenueMapper venueMapper;
+    private final CityRepository cityRepository;
 
     @Autowired
-    public VenueService(VenueRepository venueRepository, VenueMapper venueMapper) {
+    public VenueService(VenueRepository venueRepository, VenueMapper venueMapper,  CityRepository cityRepository) {
         this.venueRepository = venueRepository;
         this.venueMapper = venueMapper;
+        this.cityRepository = cityRepository;
     }
 
-    public Venue findById(UUID id){
-        return venueRepository.findById(id).orElseThrow(()->new NotFoundException("Venue not found"));
+    @Transactional(readOnly = true)
+    public VenueResponseDto findById(UUID id){
+        var v = venueRepository.findById(id).orElseThrow(()->new NotFoundException("Venue not found"));
+        return venueMapper.toDto(v);
     }
 
     public Page<VenueResponseDto> search(String city, String q, boolean activeOnly, Pageable pageable){
@@ -87,7 +92,14 @@ public class VenueService {
         v.setName(name);
         v.setAddress(trimOrNull(request.address()));
         v.setPhoneNumber(trimOrNull(request.phoneNumber()));
-        v.setCity(trimOrNull(request.city()));
+        if (request.city() != null && !request.city().isBlank()) {
+            String slug = request.city().trim();
+            var city = cityRepository.findBySlug(slug)
+                    .orElseThrow(() -> new NotFoundException("City not found: " + slug));
+            v.setCity(city);
+        } else {
+            v.setCity(null);
+        }
         v.setLatitude(request.latitude());
         v.setLongitude(request.longitude());
         v.setTagsJson(request.tagsJson());
@@ -119,8 +131,15 @@ public class VenueService {
         if(request.phoneNumber()!=null){
             venue.setPhoneNumber(blankToNull(request.phoneNumber()));
         }
-        if(request.city()!=null){
-            venue.setCity(blankToNull(request.city()));
+        if (request.city() != null) {
+            String val = request.city().trim();
+            if (val.isEmpty()) {
+                venue.setCity(null);
+            } else {
+                var city = cityRepository.findBySlug(val)
+                        .orElseThrow(() -> new NotFoundException("City not found: " + val));
+                venue.setCity(city);
+            }
         }
         if(request.latitude()!=null){
             venue.setLatitude(request.latitude());
@@ -141,7 +160,7 @@ public class VenueService {
 
     @Transactional
     public Venue setActive(UUID id, Boolean isActive){
-        Venue venue = findById(id);
+        Venue venue = venueRepository.findById(id).orElseThrow(()->new NotFoundException("Venue not found: " + id));
         if(isActive!=null)
             venue.setIsActive(isActive);
         return venue;

@@ -19,7 +19,7 @@ public class MatchMapper {
         var venue = new VenueSummaryDto(
                 match.getVenue().getId(),
                 match.getVenue().getName(),
-                match.getVenue().getCity(),
+                match.getVenue().getCity().getSlug(),
                 match.getVenue().getLatitude(),
                 match.getVenue().getLongitude()
         );
