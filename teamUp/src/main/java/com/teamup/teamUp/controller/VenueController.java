@@ -152,4 +152,14 @@ public class VenueController {
                 .orElseGet(() -> ResponseEntity.badRequest().body(new ResponseApi<>("City not found", null, false)));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/import/osm-by-city-slug")
+    public ResponseEntity<ResponseApi<VenueImportService.ImportResult>> importOsmByCitySlug(
+            @RequestParam String slug) {
+
+        var result = venueImportService.importFromCitySlug(slug);
+        return ResponseEntity.ok(new ResponseApi<>("OSM import done (" + slug + ")", result, true));
+    }
+
+
 }

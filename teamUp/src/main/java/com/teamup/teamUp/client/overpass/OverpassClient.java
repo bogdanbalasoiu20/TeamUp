@@ -23,27 +23,34 @@ public class OverpassClient {
             .connectTimeout(Duration.ofSeconds(15)).build();
     private final ObjectMapper om = new ObjectMapper();
 
-    // interogare pe BBox: terenuri de fotbal, stadioane, sports_centre
+    // interogare pe BBox cu filtre suplimentare pentru fotbal
     private String buildQuery(double minLat, double minLng, double maxLat, double maxLng) {
         String bbox = minLat + "," + minLng + "," + maxLat + "," + maxLng;
         return """
-        [out:json][timeout:25];
-        (
-          node["leisure"="pitch"]["sport"~"soccer|football"](%s);
-          way["leisure"="pitch"]["sport"~"soccer|football"](%s);
-          relation["leisure"="pitch"]["sport"~"soccer|football"](%s);
+    [out:json][timeout:30];
+    (
+      /* Terenuri marcate explicit pentru fotbal (inclusiv futsal) */
+      nwr["leisure"="pitch"]["sport"~"^(soccer|football|futsal)$"]["sport"!="american_football"](%s);
 
-          node["amenity"="stadium"](%s);
-          way["amenity"="stadium"](%s);
-          relation["amenity"="stadium"](%s);
+      /* Terenuri fără sport setat, dar cu nume care sugerează fotbal */
+      nwr["leisure"="pitch"]["name"~"(\\\\bFotbal\\\\b|\\\\bFootball\\\\b|\\\\bSoccer\\\\b)", i](%s);
 
-          node["leisure"="sports_centre"](%s);
-          way["leisure"="sports_centre"](%s);
-          relation["leisure"="sports_centre"](%s);
-        );
-        out tags geom;
-        """.formatted(bbox,bbox,bbox, bbox,bbox,bbox, bbox,bbox,bbox);
+      /* Preferă suprafețe tipice pentru fotbal (nu obligatoriu, dar util) */
+      nwr["leisure"="pitch"]["surface"~"^(grass|artificial_turf|synthetic|turf)$"](%s);
+
+      /* Stadioane cu sport fotbal */
+      nwr["amenity"="stadium"]["sport"~"^(soccer|football)$"](%s);
+
+      /* Sports centres în care e specificat fotbal/futsal */
+      nwr["leisure"="sports_centre"]["sport"~"^(soccer|football|futsal)$"](%s);
+
+      /* Cluburi de fotbal care au deseori propriile terenuri cartografiate */
+      nwr["club"="sport"]["sport"~"^(soccer|football)$"](%s);
+    );
+    out tags geom;
+    """.formatted(bbox, bbox, bbox, bbox, bbox, bbox);
     }
+
 
 
     //trimiterea cererii si parsarea raspunsului
