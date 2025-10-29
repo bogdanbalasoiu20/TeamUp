@@ -138,6 +138,7 @@ public class MatchService {
         }
     }
 
+    @Transactional(readOnly = true)
     public Page<MatchResponseDto> search(String city, Instant dateFrom, Instant dateTo, Pageable pageable){
         return matchRepository.searchByCityAndDate(city, dateFrom, dateTo, pageable).map(matchMapper::toDto);
     }

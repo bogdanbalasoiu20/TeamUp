@@ -71,8 +71,6 @@ public class MatchController {
                                                                       @PageableDefault(size = 20, sort="startsAt", direction = Sort.Direction.ASC) Pageable pageable){
         var page = matchService.search(city, dateFrom, dateTo, pageable);
         return ResponseEntity.ok(new ResponseApi<>("Matches found successfully",page,true));
-
-
     }
 
     @GetMapping("/nearby-bbox")

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -93,9 +94,13 @@ public class VenueService {
         v.setAddress(trimOrNull(request.address()));
         v.setPhoneNumber(trimOrNull(request.phoneNumber()));
         if (request.city() != null && !request.city().isBlank()) {
-            String slug = request.city().trim();
-            var city = cityRepository.findBySlug(slug)
-                    .orElseThrow(() -> new NotFoundException("City not found: " + slug));
+            String raw = request.city().trim();
+            String asSlug = slugify(raw);
+
+            var city = cityRepository.findBySlug(asSlug)
+                    .or(() -> cityRepository.findByNameIgnoreCase(raw))
+                    .orElseThrow(() -> new NotFoundException("City not found: " + raw));
+
             v.setCity(city);
         } else {
             v.setCity(null);
@@ -185,5 +190,14 @@ public class VenueService {
     public String getShape(UUID id){
         return venueRepository.getShapeAsGeoJson(id);
     }
+
+    private static String slugify(String s) {
+        String n = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+        n = n.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("(^-|-$)", "");
+        return n;
+    }
+
 
 }
