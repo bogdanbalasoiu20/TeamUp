@@ -38,4 +38,18 @@ public class CityController {
     public ResponseEntity<ResponseApi<CityDto>> upsert(@Valid @RequestBody CityUpsertRequestDto request) {
         return ResponseEntity.ok(new ResponseApi<>("saved", cityService.upsert(request), true));
     }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{slug}/import-geom")
+    public ResponseEntity<ResponseApi<Void>> importGeom(@PathVariable String slug){
+        cityService.importGeometryByCitySlug(slug);
+        return ResponseEntity.ok(new ResponseApi<>("City geometry imported", null, true));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/assign-venues-by-geom")
+    public ResponseEntity<ResponseApi<Integer>> assignVenues(){
+        int updated = cityService.assignCitiesToVenuesByGeometry();
+        return ResponseEntity.ok(new ResponseApi<>("Venues assigned to cities", updated, true));
+    }
 }

@@ -144,7 +144,7 @@ public class MatchService {
     }
 
     @Transactional(readOnly = true)
-    public Page<MatchMapPinDto> nearbyPins(double minLat, double minLng, double maxLat, double maxLng, Instant dateFrom, Instant dateTo, int limit){
+    public List<MatchMapPinDto> nearbyPins(double minLat, double minLng, double maxLat, double maxLng, Instant dateFrom, Instant dateTo, int limit){
         var pageable = PageRequest.of(0, Math.min(limit,500), Sort.by("startsAt").ascending());
         return matchRepository.findPinsInBBOx(minLat, minLng, maxLat, maxLng, dateFrom, dateTo, pageable);
     }

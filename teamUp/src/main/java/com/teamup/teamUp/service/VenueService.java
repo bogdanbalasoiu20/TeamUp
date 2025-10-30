@@ -93,6 +93,10 @@ public class VenueService {
         v.setName(name);
         v.setAddress(trimOrNull(request.address()));
         v.setPhoneNumber(trimOrNull(request.phoneNumber()));
+        v.setLatitude(request.latitude());
+        v.setLongitude(request.longitude());
+        v.setTagsJson(request.tagsJson());
+
         if (request.city() != null && !request.city().isBlank()) {
             String raw = request.city().trim();
             String asSlug = slugify(raw);
@@ -105,9 +109,11 @@ public class VenueService {
         } else {
             v.setCity(null);
         }
-        v.setLatitude(request.latitude());
-        v.setLongitude(request.longitude());
-        v.setTagsJson(request.tagsJson());
+
+        if (v.getCity() == null && v.getLatitude() != null && v.getLongitude() != null) {
+            cityRepository.findByPointGeom(v.getLatitude(), v.getLongitude())
+                    .ifPresent(v::setCity);
+        }
 
         if (isNew && !hasOsm) {
             v.setSource(VenueSource.ADMIN);

@@ -74,7 +74,7 @@ public class MatchController {
     }
 
     @GetMapping("/nearby-bbox")
-    public ResponseEntity<ResponseApi<Page<MatchMapPinDto>>> nearbyBBox(@RequestParam double minLat,
+    public ResponseEntity<ResponseApi<List<MatchMapPinDto>>> nearbyBBox(@RequestParam double minLat,
                                                                         @RequestParam double minLng,
                                                                         @RequestParam double maxLat,
                                                                         @RequestParam double maxLng,
@@ -83,7 +83,7 @@ public class MatchController {
                                                                         @RequestParam(defaultValue = "300") @Max(500) int limit) {
 
 
-        Page<MatchMapPinDto> pins = matchService.nearbyPins(minLat, minLng, maxLat, maxLng, dateFrom, dateTo, limit);
+        List<MatchMapPinDto> pins = matchService.nearbyPins(minLat, minLng, maxLat, maxLng, dateFrom, dateTo, limit);
         return ResponseEntity.ok(new ResponseApi<>("pins", pins, true));
     }
 }

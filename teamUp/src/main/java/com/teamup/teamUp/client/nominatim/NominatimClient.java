@@ -36,5 +36,27 @@ public class NominatimClient {
             return Optional.of(new double[]{ south, west, north, east });
         } catch (Exception e) { return Optional.empty(); }
     }
+
+    public Optional<String> cityPolygonGeoJson(String query){
+        try {
+            String url = ENDPOINT
+                    + "?format=json&limit=1&polygon_geojson=1&q="
+                    + URLEncoder.encode(query, StandardCharsets.UTF_8);
+            var req = HttpRequest.newBuilder(URI.create(url))
+                    .header("User-Agent","TeamUp/1.0 (contact: you@teamup.local)")
+                    .GET().build();
+            var res = http.send(req, HttpResponse.BodyHandlers.ofString());
+            if (res.statusCode()/100 != 2) return Optional.empty();
+
+            var arr = om.readTree(res.body());
+            if (!arr.isArray() || arr.isEmpty()) return Optional.empty();
+
+            var gj = arr.get(0).get("geojson");
+            if (gj == null || gj.isNull()) return Optional.empty();
+            return Optional.of(gj.toString());
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
 }
 
