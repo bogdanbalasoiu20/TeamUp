@@ -13,4 +13,6 @@ public interface MatchParticipantRepository extends JpaRepository<MatchParticipa
 
     @Query("select mp.user.id from MatchParticipant mp where mp.match.id = :matchId")
     List<UUID> findParticipantsIDs(UUID matchId);
+
+    int deleteByMatchIdAndUserId(UUID matchId, UUID userId);
 }
