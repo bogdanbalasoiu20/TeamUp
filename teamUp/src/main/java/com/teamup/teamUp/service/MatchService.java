@@ -13,6 +13,7 @@ import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.model.entity.Venue;
 import com.teamup.teamUp.model.enums.MatchStatus;
 import com.teamup.teamUp.model.enums.MatchVisibility;
+import com.teamup.teamUp.repository.MatchParticipantRepository;
 import com.teamup.teamUp.repository.MatchRepository;
 import com.teamup.teamUp.repository.UserRepository;
 import com.teamup.teamUp.repository.VenueRepository;
@@ -35,13 +36,15 @@ public class MatchService {
     private final UserRepository userRepository;
     private final VenueRepository venueRepository;
     private final MatchMapper matchMapper;
+    private final MatchParticipantRepository matchParticipantRepository;
 
     @Autowired
-    public MatchService(MatchRepository matchRepository, UserRepository userRepository, VenueRepository venueRepository, MatchMapper matchMapper) {
+    public MatchService(MatchRepository matchRepository, UserRepository userRepository, VenueRepository venueRepository, MatchMapper matchMapper, MatchParticipantRepository matchParticipantRepository) {
         this.matchRepository = matchRepository;
         this.userRepository = userRepository;
         this.venueRepository = venueRepository;
         this.matchMapper = matchMapper;
+        this.matchParticipantRepository = matchParticipantRepository;
     }
 
     @Transactional(readOnly = true)
@@ -83,7 +86,12 @@ public class MatchService {
             throw new ResourceConflictException("version conflict");
         }
 
+        long participantsNumber = matchParticipantRepository.countByMatchId(id);
+
         if(request.venueId()!=null && !Objects.equals(request.venueId(), match.getVenue().getId())) {
+            if(participantsNumber>1){
+                throw new BadRequestException("Can not change the venue after participants have joined");
+            }
             Venue venue = venueRepository.findById(request.venueId()).orElseThrow(() -> new NotFoundException("Venue not found"));
             match.setVenue(venue);
         }
@@ -99,9 +107,11 @@ public class MatchService {
             match.setDurationMinutes(request.durationMinutes());
         }
         if (request.maxPlayers() != null && !Objects.equals(match.getMaxPlayers(), request.maxPlayers())) {
-            if (request.maxPlayers() <= 0 ||
-                    (match.getCurrentPlayers() != null && request.maxPlayers() < match.getCurrentPlayers())) {
+            if (request.maxPlayers() <= 1) {
                 throw new BadRequestException("Invalid max players number");
+            }
+            if (request.maxPlayers() < participantsNumber) {
+                throw new BadRequestException("maxPlayers cannot be less than current participants (" + participantsNumber + ")");
             }
             match.setMaxPlayers(request.maxPlayers());
         }
@@ -114,7 +124,7 @@ public class MatchService {
         if (request.visibility() != null && !Objects.equals(match.getVisibility(), request.visibility())) {
             match.setVisibility(request.visibility());
         }
-        if (request.joinDeadline() != null && !Objects.equals(match.getJoinDeadline(), request.joinDeadline())) {
+        if (request.joinDeadline() != null) {
             Instant effectiveStarts = (request.startsAt() != null) ? request.startsAt() : match.getStartsAt();
             if (effectiveStarts != null && !request.joinDeadline().isBefore(effectiveStarts)) {
                 throw new BadRequestException("Join deadline must be before start time");
