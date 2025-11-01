@@ -4,5 +4,6 @@ public enum MatchParticipantStatus {
     REQUESTED,
     ACCEPTED,
     DECLINED,
-    LEFT
+    LEFT,
+    INVITED
 }

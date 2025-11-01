@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/matches")
+@RequestMapping("/api/matches/{matchId}/participants")
 public class MatchParticipantController {
     private final MatchParticipantService matchParticipantService;
 
@@ -22,15 +22,24 @@ public class MatchParticipantController {
         this.matchParticipantService = matchParticipantService;
     }
 
-    @PostMapping("/{matchId}/join")
+    @PostMapping("/join")
     public ResponseEntity<ResponseApi<JoinResponseDto>> join(@PathVariable UUID matchId, @RequestBody(required = false) @Valid JoinRequestDto request, Authentication auth) {
         var response = matchParticipantService.join(matchId,auth.getName(),request);
         return ResponseEntity.ok(new ResponseApi<>("User joined",response,true));
     }
 
-    @DeleteMapping("/{matchId}/leave")
+    @DeleteMapping("/leave")
     public ResponseEntity<ResponseApi<JoinResponseDto>> leave(@PathVariable UUID matchId, Authentication auth) {
         var response = matchParticipantService.leave(matchId,auth.getName());
         return ResponseEntity.ok(new ResponseApi<>("User left ",response,true));
+    }
+
+    @PostMapping("/{userId}/approve")
+    public ResponseEntity<ResponseApi<JoinResponseDto>> approve(
+            @PathVariable UUID matchId,
+            @PathVariable UUID userId,
+            Authentication auth) {
+        var response = matchParticipantService.approve(matchId, userId, auth.getName());
+        return ResponseEntity.ok(new ResponseApi<>("Request approved", response, true));
     }
 }

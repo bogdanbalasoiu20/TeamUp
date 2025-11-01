@@ -1,6 +1,7 @@
 package com.teamup.teamUp.service;
 
 import com.teamup.teamUp.exceptions.BadRequestException;
+import com.teamup.teamUp.exceptions.ForbiddenException;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.mapper.MatchParticipantMapper;
 import com.teamup.teamUp.model.dto.matchParticipant.JoinRequestDto;
@@ -103,5 +104,52 @@ public class MatchParticipantService {
         long participants = matchParticipantRepository.countById_MatchId(matchId);
         return MatchParticipantMapper.toDto(matchId,(int)participants,match.getMaxPlayers() == null ? Integer.MAX_VALUE : match.getMaxPlayers());
     }
+
+    @Transactional
+    public JoinResponseDto approve(UUID matchId, UUID userId, String approverUsername) {
+        Match match = matchRepository.findByIdAndIsActiveTrue(matchId)
+                .orElseThrow(() -> new NotFoundException("Match not found"));
+
+        // permisiuni: doar creatorul
+        User approver = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(approverUsername)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+        if (match.getCreator() == null || !match.getCreator().getId().equals(approver.getId())) {
+            throw new ForbiddenException("Only the match creator can approve requests");
+        }
+
+        // nu aproba dupa start/deadline
+        Instant now = Instant.now();
+        if (match.getStartsAt()!=null && !now.isBefore(match.getStartsAt())) {
+            throw new BadRequestException("The match has already started");
+        }
+        if (match.getJoinDeadline()!=null && !now.isBefore(match.getJoinDeadline())) {
+            throw new BadRequestException("Join deadline passed");
+        }
+
+        MatchParticipant mp = matchParticipantRepository
+                .findById_MatchIdAndId_UserId(matchId, userId)
+                .orElseThrow(() -> new NotFoundException("Request not found"));
+
+        //dacă e deja APPROVED, returnam starea actuala
+        if (mp.getStatus() == MatchParticipantStatus.ACCEPTED) {
+            int approved = (int) matchParticipantRepository.countById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED);
+            int cap = match.getMaxPlayers() == null ? Integer.MAX_VALUE : match.getMaxPlayers();
+            return new JoinResponseDto(match.getId(), approved, cap);
+        }
+
+        long approvedNow = matchParticipantRepository.countById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED);
+        if (match.getMaxPlayers()!=null && approvedNow >= match.getMaxPlayers()) {
+            throw new BadRequestException("Match is full");
+        }
+
+        // tranzitie de stare
+        mp.setStatus(MatchParticipantStatus.ACCEPTED);
+        matchParticipantRepository.save(mp);
+
+        int after = (int) (approvedNow + 1);
+        int cap = match.getMaxPlayers() == null ? Integer.MAX_VALUE : match.getMaxPlayers();
+        return new JoinResponseDto(match.getId(), after, cap);
+    }
+
 
 }
