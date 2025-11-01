@@ -61,13 +61,6 @@ public class MatchParticipant {
     @PrePersist
     @PreUpdate
     private void beforeSave() {
-        if (id == null && match != null && user != null) {
-            id = MatchParticipantId.builder()
-                    .matchId(match.getId())
-                    .userId(user.getId())
-                    .build();
-        }
-
         if (status == null) {
             throw new IllegalArgumentException("status cannot be null");
         }

@@ -53,7 +53,7 @@ public class MatchService {
     }
 
     @Transactional
-    public Match create(MatchCreateRequestDto request, String authUsername){
+    public MatchResponseDto create(MatchCreateRequestDto request, String authUsername){
         User user = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(authUsername).orElseThrow(() -> new NotFoundException("User not found"));
         Venue venue = venueRepository.findById(request.venueId()).orElseThrow(() -> new NotFoundException("Venue not found"));
         if(Boolean.FALSE.equals(venue.getIsActive())){
@@ -75,7 +75,8 @@ public class MatchService {
                 .totalPrice(request.totalPrice())
                 .build();
 
-        return matchRepository.save(match);
+        matchRepository.save(match);
+        return matchMapper.toDto(match);
     }
 
     @Transactional
@@ -86,7 +87,7 @@ public class MatchService {
             throw new ResourceConflictException("version conflict");
         }
 
-        long participantsNumber = matchParticipantRepository.countByMatchId(id);
+        long participantsNumber = matchParticipantRepository.countById_MatchId(id);
 
         if(request.venueId()!=null && !Objects.equals(request.venueId(), match.getVenue().getId())) {
             if(participantsNumber>1){

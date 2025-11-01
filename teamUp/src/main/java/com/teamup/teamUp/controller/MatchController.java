@@ -46,8 +46,8 @@ public class MatchController {
 
     @PostMapping
     public ResponseEntity<ResponseApi<MatchResponseDto>> create(@Valid @RequestBody MatchCreateRequestDto request, Authentication auth){
-        Match match = matchService.create(request,auth.getName());
-        return ResponseEntity.created(URI.create("/api/matches/" + match.getId())).body(new ResponseApi<>("Match created successfully",matchMapper.toDto(match),true));
+        MatchResponseDto match = matchService.create(request,auth.getName());
+        return ResponseEntity.created(URI.create("/api/matches/" + match.id())).body(new ResponseApi<>("Match created successfully",match,true));
     }
 
     @PreAuthorize("@matchSecurity.canEdit(#id, authentication)")

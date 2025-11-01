@@ -2,6 +2,7 @@ package com.teamup.teamUp.service;
 
 import com.teamup.teamUp.exceptions.BadRequestException;
 import com.teamup.teamUp.exceptions.NotFoundException;
+import com.teamup.teamUp.mapper.MatchParticipantMapper;
 import com.teamup.teamUp.model.dto.matchParticipant.JoinRequestDto;
 import com.teamup.teamUp.model.dto.matchParticipant.JoinResponseDto;
 import com.teamup.teamUp.model.entity.Match;
@@ -9,6 +10,7 @@ import com.teamup.teamUp.model.entity.MatchParticipant;
 import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.model.enums.MatchParticipantStatus;
 import com.teamup.teamUp.model.enums.MatchStatus;
+import com.teamup.teamUp.model.id.MatchParticipantId;
 import com.teamup.teamUp.repository.MatchParticipantRepository;
 import com.teamup.teamUp.repository.MatchRepository;
 import com.teamup.teamUp.repository.UserRepository;
@@ -51,20 +53,29 @@ public class MatchParticipantService {
             throw new BadRequestException("Join deadline passed");
         }
 
-        if(matchParticipantRepository.existsByMatchIdAndUserId(matchId, user.getId())){
+        if(matchParticipantRepository.existsById_MatchIdAndId_UserId(matchId, user.getId())){
             throw new BadRequestException("User "+user.getUsername()+" is already joined");
         }
 
-        long participants = matchParticipantRepository.countByMatchId(matchId);
+        long participants = matchParticipantRepository.countById_MatchId(matchId);
         if(match.getMaxPlayers()!=null && match.getMaxPlayers()<=participants){
             throw new BadRequestException("Match is full");
         }
 
+        String message = (request != null && request.message() != null)
+                ? request.message().trim()
+                : null;
+        boolean bringsBall = request != null && Boolean.TRUE.equals(request.bringsBall());
+
         MatchParticipant mp = MatchParticipant.builder()
+                .id(MatchParticipantId.builder()
+                        .matchId(match.getId())
+                        .userId(user.getId())
+                        .build())
                 .match(match)
                 .user(user)
-                .message(request.message())
-                .bringsBall(request.bringsBall())
+                .message(message)
+                .bringsBall(bringsBall)
                 .status(MatchParticipantStatus.REQUESTED)
                 .build();
 
@@ -73,6 +84,24 @@ public class MatchParticipantService {
         int after = (int) participants+1;
         return new JoinResponseDto(match.getId(),after,match.getMaxPlayers() == null ? Integer.MAX_VALUE : match.getMaxPlayers());
 
+    }
+
+    @Transactional
+    public JoinResponseDto leave(UUID matchId, String authUsername) {
+        Match match = matchRepository.findByIdAndIsActiveTrue(matchId).orElseThrow(()->new NotFoundException("Match not found"));
+        User user = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(authUsername).orElseThrow(()->new NotFoundException("User not found"));
+
+        if(match.getCreator() != null && match.getCreator().getId().equals(user.getId())){
+            throw new BadRequestException("Creator can not leave the match");
+        }
+
+        int deleted = matchParticipantRepository.deleteByMatchIdAndUserId(matchId, user.getId());
+        if(deleted==0){
+            throw new NotFoundException("You are not a participant");
+        }
+
+        long participants = matchParticipantRepository.countById_MatchId(matchId);
+        return MatchParticipantMapper.toDto(matchId,(int)participants,match.getMaxPlayers() == null ? Integer.MAX_VALUE : match.getMaxPlayers());
     }
 
 }
