@@ -134,7 +134,7 @@ public class MatchParticipantService {
         if (mp.getStatus() == MatchParticipantStatus.ACCEPTED) {
             int approved = (int) matchParticipantRepository.countById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED);
             int cap = match.getMaxPlayers() == null ? Integer.MAX_VALUE : match.getMaxPlayers();
-            return new JoinResponseDto(match.getId(), approved, cap);
+            return MatchParticipantMapper.toDto(match.getId(),approved,cap);
         }
 
         long approvedNow = matchParticipantRepository.countById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED);
@@ -148,8 +148,53 @@ public class MatchParticipantService {
 
         int after = (int) (approvedNow + 1);
         int cap = match.getMaxPlayers() == null ? Integer.MAX_VALUE : match.getMaxPlayers();
-        return new JoinResponseDto(match.getId(), after, cap);
+        return MatchParticipantMapper.toDto(match.getId(),after,cap);
     }
+
+    @Transactional
+    public JoinResponseDto reject(UUID matchId, UUID userId, String moderatorUsername) {
+        Match match = matchRepository.findByIdAndIsActiveTrue(matchId)
+                .orElseThrow(() -> new NotFoundException("Match not found"));
+
+        User moderator = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(moderatorUsername)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        // doar creatorul
+        if (match.getCreator() == null || !match.getCreator().getId().equals(moderator.getId())) {
+            throw new ForbiddenException("Only the match creator can reject requests");
+        }
+
+        Instant now = Instant.now();
+        if (match.getStartsAt()!=null && !now.isBefore(match.getStartsAt())) {
+            throw new BadRequestException("The match has already started");
+        }
+
+        MatchParticipant mp = matchParticipantRepository
+                .findById_MatchIdAndId_UserId(matchId, userId)
+                .orElseThrow(() -> new NotFoundException("Request not found"));
+
+        // idempotent
+        if (mp.getStatus() == MatchParticipantStatus.DECLINED) {
+            int approved = (int) matchParticipantRepository
+                    .countById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED);
+            int cap = match.getMaxPlayers()==null ? Integer.MAX_VALUE : match.getMaxPlayers();
+            return MatchParticipantMapper.toDto(match.getId(),approved,cap);
+        }
+
+        // pentru cineva deja APPROVED -> folosește kick
+        if (mp.getStatus() == MatchParticipantStatus.ACCEPTED) {
+            throw new BadRequestException("Participant already approved. Use kick instead.");
+        }
+
+        mp.setStatus(MatchParticipantStatus.DECLINED);
+        matchParticipantRepository.save(mp);
+
+        int approvedAfter = (int) matchParticipantRepository
+                .countById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED);
+        int cap = match.getMaxPlayers()==null ? Integer.MAX_VALUE : match.getMaxPlayers();
+        return MatchParticipantMapper.toDto(match.getId(),approvedAfter,cap);
+    }
+
 
 
 }

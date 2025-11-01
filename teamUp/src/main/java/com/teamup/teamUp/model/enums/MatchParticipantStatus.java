@@ -5,5 +5,6 @@ public enum MatchParticipantStatus {
     ACCEPTED,
     DECLINED,
     LEFT,
-    INVITED
+    INVITED,
+    KICK
 }
