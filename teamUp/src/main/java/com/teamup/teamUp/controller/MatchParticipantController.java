@@ -54,4 +54,13 @@ public class MatchParticipantController {
         return ResponseEntity.ok(new ResponseApi<>("Request rejected", resp, true));
     }
 
+    @PostMapping("/{userId}/invite")
+    public ResponseEntity<ResponseApi<JoinResponseDto>> invite(
+            @PathVariable UUID matchId,
+            @PathVariable UUID userId,
+            Authentication auth) {
+        var resp = matchParticipantService.invite(matchId, userId, auth.getName());
+        return ResponseEntity.ok(new ResponseApi<>("User invited", resp, true));
+    }
+
 }

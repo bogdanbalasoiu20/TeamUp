@@ -196,5 +196,50 @@ public class MatchParticipantService {
     }
 
 
+    @Transactional
+    public JoinResponseDto invite(UUID matchId, UUID targetUserId,String organizerUsername){
+        Match match = matchRepository.findByIdAndIsActiveTrue(matchId).orElseThrow(() -> new NotFoundException("Match not found"));
+        User organizer = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(organizerUsername).orElseThrow(() -> new NotFoundException("Match organizer not found"));
+
+        if(match.getCreator()==null || !match.getCreator().getId().equals(organizer.getId())) {
+            throw new ForbiddenException("Only the match creator can invite players");
+        }
+
+        if(match.getStartsAt()!=null && match.getStartsAt().isBefore(Instant.now())) {
+            throw new BadRequestException("The match has already started");
+        }
+
+        User target = userRepository.findById(targetUserId).orElseThrow(() -> new NotFoundException("Target user not found"));
+
+        MatchParticipant mp = matchParticipantRepository.findById_MatchIdAndId_UserId(matchId,targetUserId).orElse(null);
+
+        if(mp==null){
+            mp = MatchParticipant.builder()
+                    .id(MatchParticipantId.builder()
+                            .matchId(match.getId())
+                            .userId(target.getId())
+                            .build())
+                    .match(match)
+                    .user(target)
+                    .status(MatchParticipantStatus.INVITED)
+                    .build();
+        }else {
+            //daca e deja ACCEPTED -> ok; daca e REQUESTED -> promovez la INVITED sau laș cum e
+            if (mp.getStatus() == MatchParticipantStatus.ACCEPTED) {
+                int approved = (int) matchParticipantRepository.countById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED;
+                int cap = match.getMaxPlayers()==null ? Integer.MAX_VALUE : match.getMaxPlayers();
+                return MatchParticipantMapper.toDto(match.getId(),approved,cap);
+            }
+            mp.setStatus(MatchParticipantStatus.INVITED);
+        }
+
+        matchParticipantRepository.save(mp);
+
+        int approved = (int) matchParticipantRepository.countById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED);
+        int cap = match.getMaxPlayers()==null ? Integer.MAX_VALUE : match.getMaxPlayers();
+        return MatchParticipantMapper.toDto(match.getId(),approved,cap);
+    }
+
+
 
 }
