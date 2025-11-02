@@ -288,6 +288,38 @@ public class MatchParticipantService {
     }
 
 
+    @Transactional
+    public JoinResponseDto declineInvite(UUID matchId, String authUsername) {
+        Match match = matchRepository.findByIdAndIsActiveTrue(matchId)
+                .orElseThrow(() -> new NotFoundException("Match not found"));
+
+        User user = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(authUsername)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        MatchParticipant mp = matchParticipantRepository
+                .findById_MatchIdAndId_UserId(matchId, user.getId())
+                .orElseThrow(() -> new NotFoundException("Invitation not found"));
+
+        if (mp.getStatus() == MatchParticipantStatus.DECLINED|| mp.getStatus()==MatchParticipantStatus.LEFT) {
+            int approved = (int) matchParticipantRepository.countById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED);
+            int cap = match.getMaxPlayers()==null ? Integer.MAX_VALUE : match.getMaxPlayers();
+            return MatchParticipantMapper.toDto(match.getId(),approved,cap);
+        }
+
+        if (mp.getStatus() == MatchParticipantStatus.ACCEPTED) {
+            throw new BadRequestException("You are already approved. Use leave instead.");
+        }
+
+        mp.setStatus(MatchParticipantStatus.DECLINED);
+        matchParticipantRepository.save(mp);
+
+        int approved = (int) matchParticipantRepository.countById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED);
+        int cap = match.getMaxPlayers()==null ? Integer.MAX_VALUE : match.getMaxPlayers();
+        return MatchParticipantMapper.toDto(match.getId(),approved,cap);
+    }
+
+
+
 
 
 }

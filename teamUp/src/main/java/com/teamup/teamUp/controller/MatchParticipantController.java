@@ -71,4 +71,12 @@ public class MatchParticipantController {
         return ResponseEntity.ok(new ResponseApi<>("Invitation accepted", resp, true));
     }
 
+    @PostMapping("/decline")
+    public ResponseEntity<ResponseApi<JoinResponseDto>> decline(
+            @PathVariable UUID matchId,
+            Authentication auth) {
+        var resp = matchParticipantService.declineInvite(matchId, auth.getName());
+        return ResponseEntity.ok(new ResponseApi<>("Invitation declined", resp, true));
+    }
+
 }
