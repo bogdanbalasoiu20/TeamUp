@@ -226,7 +226,7 @@ public class MatchParticipantService {
         }else {
             //daca e deja ACCEPTED -> ok; daca e REQUESTED -> promovez la INVITED sau laș cum e
             if (mp.getStatus() == MatchParticipantStatus.ACCEPTED) {
-                int approved = (int) matchParticipantRepository.countById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED;
+                int approved = (int) matchParticipantRepository.countById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED);
                 int cap = match.getMaxPlayers()==null ? Integer.MAX_VALUE : match.getMaxPlayers();
                 return MatchParticipantMapper.toDto(match.getId(),approved,cap);
             }
@@ -239,6 +239,54 @@ public class MatchParticipantService {
         int cap = match.getMaxPlayers()==null ? Integer.MAX_VALUE : match.getMaxPlayers();
         return MatchParticipantMapper.toDto(match.getId(),approved,cap);
     }
+
+
+    @Transactional
+    public JoinResponseDto acceptInvite(UUID matchId, String authUsername) {
+        Match match = matchRepository.findByIdAndIsActiveTrue(matchId)
+                .orElseThrow(() -> new NotFoundException("Match not found"));
+
+        User user = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(authUsername)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        Instant now = Instant.now();
+        if (match.getStartsAt()!=null && !now.isBefore(match.getStartsAt())) {
+            throw new BadRequestException("The match has already started");
+        }
+        if (match.getJoinDeadline()!=null && !now.isBefore(match.getJoinDeadline())) {
+            throw new BadRequestException("Join deadline passed");
+        }
+
+        MatchParticipant mp = matchParticipantRepository
+                .findById_MatchIdAndId_UserId(matchId, user.getId())
+                .orElseThrow(() -> new NotFoundException("Invitation or request not found"));
+
+        if (mp.getStatus() == MatchParticipantStatus.ACCEPTED) {
+            int approved = (int) matchParticipantRepository.countById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED);
+            int cap = match.getMaxPlayers()==null ? Integer.MAX_VALUE : match.getMaxPlayers();
+            return MatchParticipantMapper.toDto(match.getId(),approved,cap);
+        }
+
+        if (mp.getStatus() != MatchParticipantStatus.INVITED && mp.getStatus() != MatchParticipantStatus.REQUESTED) {
+            throw new BadRequestException("You have no pending invitation to accept");
+        }
+
+        long approvedNow = matchParticipantRepository.countById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED);
+        if (match.getMaxPlayers()!=null && approvedNow >= match.getMaxPlayers()) {
+            // pun userul pe WAITLIST
+            mp.setStatus(MatchParticipantStatus.WAITLIST);
+            matchParticipantRepository.save(mp);
+            throw new BadRequestException("Match is full. You were added to the waitlist");
+        }
+
+        mp.setStatus(MatchParticipantStatus.ACCEPTED);
+        matchParticipantRepository.save(mp);
+
+        int after = (int) (approvedNow + 1);
+        int cap = match.getMaxPlayers()==null ? Integer.MAX_VALUE : match.getMaxPlayers();
+        return MatchParticipantMapper.toDto(match.getId(),after,cap);
+    }
+
 
 
 

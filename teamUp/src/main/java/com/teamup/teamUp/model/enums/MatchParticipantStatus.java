@@ -6,5 +6,6 @@ public enum MatchParticipantStatus {
     DECLINED,
     LEFT,
     INVITED,
-    KICK
+    KICK,
+    WAITLIST
 }
