@@ -1,8 +1,11 @@
 package com.teamup.teamUp.repository;
 
+import com.teamup.teamUp.model.dto.matchParticipant.ParticipantDto;
 import com.teamup.teamUp.model.entity.MatchParticipant;
 import com.teamup.teamUp.model.enums.MatchParticipantStatus;
 import com.teamup.teamUp.model.id.MatchParticipantId;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -25,4 +28,26 @@ public interface MatchParticipantRepository extends JpaRepository<MatchParticipa
     Optional<MatchParticipant> findById_MatchIdAndId_UserId(UUID matchId, UUID userId);
 
     long countById_MatchIdAndStatus(UUID matchId, MatchParticipantStatus status);
+
+
+    @Query(value = """
+   select new com.teamup.teamUp.model.dto.matchParticipant.ParticipantDto(
+     mp.user.id,
+     mp.user.username,
+     mp.status,
+     mp.bringsBall,
+     mp.createdAt
+   )
+   from MatchParticipant mp
+   where mp.id.matchId = :matchId
+     and (:status is null or mp.status = :status)
+   order by mp.createdAt asc
+""",
+            countQuery = """
+   select count(mp)
+   from MatchParticipant mp
+   where mp.id.matchId = :matchId
+     and (:status is null or mp.status = :status)
+""")
+    Page<ParticipantDto> findParticipants(UUID matchId, MatchParticipantStatus status, Pageable pageable);
 }

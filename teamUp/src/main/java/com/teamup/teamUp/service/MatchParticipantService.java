@@ -6,6 +6,7 @@ import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.mapper.MatchParticipantMapper;
 import com.teamup.teamUp.model.dto.matchParticipant.JoinRequestDto;
 import com.teamup.teamUp.model.dto.matchParticipant.JoinResponseDto;
+import com.teamup.teamUp.model.dto.matchParticipant.ParticipantDto;
 import com.teamup.teamUp.model.entity.Match;
 import com.teamup.teamUp.model.entity.MatchParticipant;
 import com.teamup.teamUp.model.entity.User;
@@ -15,7 +16,12 @@ import com.teamup.teamUp.model.id.MatchParticipantId;
 import com.teamup.teamUp.repository.MatchParticipantRepository;
 import com.teamup.teamUp.repository.MatchRepository;
 import com.teamup.teamUp.repository.UserRepository;
+import io.micrometer.common.lang.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -316,6 +322,21 @@ public class MatchParticipantService {
         int approved = (int) matchParticipantRepository.countById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED);
         int cap = match.getMaxPlayers()==null ? Integer.MAX_VALUE : match.getMaxPlayers();
         return MatchParticipantMapper.toDto(match.getId(),approved,cap);
+    }
+
+
+    @Transactional(readOnly = true)
+    public Page<ParticipantDto> listByStatus(UUID matchId, @Nullable MatchParticipantStatus status, Pageable pageable) {
+        Match match = matchRepository.findByIdAndIsActiveTrue(matchId).orElseThrow(() -> new NotFoundException("Match not found"));
+
+        Pageable p = pageable;
+        if (pageable.getSort().isUnsorted()) {
+            p = PageRequest.of(pageable.getPageNumber(),
+                    Math.min(pageable.getPageSize(), 100),
+                    Sort.by(Sort.Direction.ASC, "createdAt"));
+        }
+
+        return matchParticipantRepository.findParticipants(matchId, status, p);
     }
 
 

@@ -3,9 +3,14 @@ package com.teamup.teamUp.controller;
 
 import com.teamup.teamUp.model.dto.matchParticipant.JoinRequestDto;
 import com.teamup.teamUp.model.dto.matchParticipant.JoinResponseDto;
+import com.teamup.teamUp.model.dto.matchParticipant.ParticipantDto;
+import com.teamup.teamUp.model.enums.MatchParticipantStatus;
 import com.teamup.teamUp.service.MatchParticipantService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -77,6 +82,16 @@ public class MatchParticipantController {
             Authentication auth) {
         var resp = matchParticipantService.declineInvite(matchId, auth.getName());
         return ResponseEntity.ok(new ResponseApi<>("Invitation declined", resp, true));
+    }
+
+    @GetMapping
+    public ResponseEntity<ResponseApi<Page<ParticipantDto>>> list(
+            @PathVariable UUID matchId,
+            @RequestParam(required = false) MatchParticipantStatus status,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        var page = matchParticipantService.listByStatus(matchId, status, pageable);
+        return ResponseEntity.ok(new ResponseApi<>("Participants fetched", page, true));
     }
 
 }
