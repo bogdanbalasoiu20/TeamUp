@@ -94,4 +94,15 @@ public class MatchParticipantController {
         return ResponseEntity.ok(new ResponseApi<>("Participants fetched", page, true));
     }
 
+
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<ResponseApi<JoinResponseDto>> kick(
+            @PathVariable UUID matchId,
+            @PathVariable UUID userId,
+            Authentication auth) {
+        var resp = matchParticipantService.kick(matchId, userId, auth.getName());
+        return ResponseEntity.ok(new ResponseApi<>("Participant kicked", resp, true));
+    }
+
+
 }

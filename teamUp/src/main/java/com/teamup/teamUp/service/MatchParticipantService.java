@@ -340,6 +340,41 @@ public class MatchParticipantService {
     }
 
 
+    @Transactional
+    public JoinResponseDto kick(UUID matchId, UUID userId, String actorUsername) {
+        Match match = matchRepository.findByIdAndIsActiveTrue(matchId)
+                .orElseThrow(() -> new NotFoundException("Match not found"));
+
+        User actor = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(actorUsername)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        if (match.getCreator() == null || !match.getCreator().getId().equals(actor.getId())) {
+            throw new ForbiddenException("Only the match creator can kick participants");
+        }
+
+        MatchParticipant mp = matchParticipantRepository
+                .findById_MatchIdAndId_UserId(matchId, userId)
+                .orElseThrow(() -> new NotFoundException("Participant not found"));
+
+        if (mp.getStatus() != MatchParticipantStatus.ACCEPTED) {
+            if (mp.getStatus() == MatchParticipantStatus.KICKED || mp.getStatus() == MatchParticipantStatus.LEFT) {
+                int approved = (int) matchParticipantRepository.countById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED);
+                int cap = match.getMaxPlayers()==null ? Integer.MAX_VALUE : match.getMaxPlayers();
+                return MatchParticipantMapper.toDto(match.getId(),approved,cap);
+            }
+            throw new BadRequestException("User is not approved; use reject");
+        }
+
+        mp.setStatus(MatchParticipantStatus.KICKED);
+        matchParticipantRepository.save(mp);
+
+        int approvedAfter = (int) matchParticipantRepository.countById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED);
+        int cap = match.getMaxPlayers()==null ? Integer.MAX_VALUE : match.getMaxPlayers();
+        return MatchParticipantMapper.toDto(match.getId(),approvedAfter,cap);
+    }
+
+
+
 
 
 
