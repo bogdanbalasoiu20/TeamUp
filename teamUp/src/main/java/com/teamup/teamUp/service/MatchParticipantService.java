@@ -230,7 +230,7 @@ public class MatchParticipantService {
                     .status(MatchParticipantStatus.INVITED)
                     .build();
         }else {
-            //daca e deja ACCEPTED -> ok; daca e REQUESTED -> promovez la INVITED sau laș cum e
+            //daca e deja ACCEPTED -> ok; daca e REQUESTED -> promovez la INVITED sau las cum e
             if (mp.getStatus() == MatchParticipantStatus.ACCEPTED) {
                 int approved = (int) matchParticipantRepository.countById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED);
                 int cap = match.getMaxPlayers()==null ? Integer.MAX_VALUE : match.getMaxPlayers();

@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/matches/{matchId}/participants")
+@RequestMapping("/api/matches")
 public class MatchParticipantController {
     private final MatchParticipantService matchParticipantService;
 
@@ -28,19 +28,19 @@ public class MatchParticipantController {
         this.matchParticipantService = matchParticipantService;
     }
 
-    @PostMapping("/join")
+    @PostMapping("/{matchId}/participants/join")
     public ResponseEntity<ResponseApi<JoinResponseDto>> join(@PathVariable UUID matchId, @RequestBody(required = false) @Valid JoinRequestDto request, Authentication auth) {
         var response = matchParticipantService.join(matchId,auth.getName(),request);
-        return ResponseEntity.ok(new ResponseApi<>("User joined",response,true));
+        return ResponseEntity.ok(new ResponseApi<>("User requested to join",response,true));
     }
 
-    @DeleteMapping("/leave")
+    @DeleteMapping("/{matchId}/participants/leave")
     public ResponseEntity<ResponseApi<JoinResponseDto>> leave(@PathVariable UUID matchId, Authentication auth) {
         var response = matchParticipantService.leave(matchId,auth.getName());
         return ResponseEntity.ok(new ResponseApi<>("User left ",response,true));
     }
 
-    @PostMapping("/{userId}/approve")
+    @PostMapping("/{matchId}/participants/{userId}/approve")
     public ResponseEntity<ResponseApi<JoinResponseDto>> approve(
             @PathVariable UUID matchId,
             @PathVariable UUID userId,
@@ -50,7 +50,7 @@ public class MatchParticipantController {
     }
 
 
-    @PostMapping("/{userId}/reject")
+    @PostMapping("/{matchId}/participants/{userId}/reject")
     public ResponseEntity<ResponseApi<JoinResponseDto>> reject(
             @PathVariable UUID matchId,
             @PathVariable UUID userId,
@@ -59,7 +59,7 @@ public class MatchParticipantController {
         return ResponseEntity.ok(new ResponseApi<>("Request rejected", resp, true));
     }
 
-    @PostMapping("/{userId}/invite")
+    @PostMapping("/{matchId}/participants/{userId}/invite")
     public ResponseEntity<ResponseApi<JoinResponseDto>> invite(
             @PathVariable UUID matchId,
             @PathVariable UUID userId,
@@ -68,7 +68,7 @@ public class MatchParticipantController {
         return ResponseEntity.ok(new ResponseApi<>("User invited", resp, true));
     }
 
-    @PostMapping("/accept")
+    @PostMapping("/{matchId}/participants/accept")
     public ResponseEntity<ResponseApi<JoinResponseDto>> accept(
             @PathVariable UUID matchId,
             Authentication auth) {
@@ -76,7 +76,7 @@ public class MatchParticipantController {
         return ResponseEntity.ok(new ResponseApi<>("Invitation accepted", resp, true));
     }
 
-    @PostMapping("/decline")
+    @PostMapping("/{matchId}/participants/decline")
     public ResponseEntity<ResponseApi<JoinResponseDto>> decline(
             @PathVariable UUID matchId,
             Authentication auth) {
@@ -84,7 +84,7 @@ public class MatchParticipantController {
         return ResponseEntity.ok(new ResponseApi<>("Invitation declined", resp, true));
     }
 
-    @GetMapping
+    @GetMapping("/{matchId}/participants")
     public ResponseEntity<ResponseApi<Page<ParticipantDto>>> list(
             @PathVariable UUID matchId,
             @RequestParam(required = false) MatchParticipantStatus status,
@@ -95,7 +95,7 @@ public class MatchParticipantController {
     }
 
 
-    @DeleteMapping("/{userId}")
+    @DeleteMapping("/{matchId}/participants/{userId}")
     public ResponseEntity<ResponseApi<JoinResponseDto>> kick(
             @PathVariable UUID matchId,
             @PathVariable UUID userId,
