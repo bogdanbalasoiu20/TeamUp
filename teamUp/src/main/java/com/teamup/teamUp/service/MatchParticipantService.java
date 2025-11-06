@@ -372,10 +372,4 @@ public class MatchParticipantService {
         int cap = match.getMaxPlayers()==null ? Integer.MAX_VALUE : match.getMaxPlayers();
         return MatchParticipantMapper.toDto(match.getId(),approvedAfter,cap);
     }
-
-
-
-
-
-
 }
