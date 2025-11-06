@@ -9,6 +9,7 @@ import com.teamup.teamUp.model.entity.MatchChatMessage;
 import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.model.enums.MatchParticipantStatus;
 import com.teamup.teamUp.repository.MatchChatRepository;
+import com.teamup.teamUp.repository.MatchParticipantRepository;
 import com.teamup.teamUp.repository.MatchRepository;
 import com.teamup.teamUp.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,12 +26,14 @@ public class MatchChatService {
     private final MatchChatRepository  matchChatRepository;
     private final MatchRepository matchRepository;
     private final UserRepository userRepository;
+    private final MatchParticipantRepository matchParticipantRepository;
 
     @Autowired
-    public MatchChatService(MatchChatRepository matchChatRepository, MatchRepository matchRepository, UserRepository userRepository) {
+    public MatchChatService(MatchChatRepository matchChatRepository, MatchRepository matchRepository, UserRepository userRepository, MatchParticipantRepository matchParticipantRepository) {
         this.matchChatRepository = matchChatRepository;
         this.matchRepository = matchRepository;
         this.userRepository = userRepository;
+        this.matchParticipantRepository = matchParticipantRepository;
     }
 
     private void assertCanReadAndWrite(UUID matchId, UUID userId){
@@ -38,7 +41,7 @@ public class MatchChatService {
 
         if(match.getCreator()!=null && match.getCreator().getId().equals(userId)) return;
 
-        boolean ok = matchChatRepository.existsById_MatchIdAndId_UserIdAndStatus(matchId,userId, MatchParticipantStatus.ACCEPTED);
+        boolean ok = matchParticipantRepository.existsById_MatchIdAndId_UserIdAndStatus(matchId,userId, MatchParticipantStatus.ACCEPTED);
         if(!ok){
             throw new ForbiddenException("You must be a participant in this match for using the chat");
         }
@@ -61,6 +64,7 @@ public class MatchChatService {
         return MatchChatMapper.toDto(message);
     }
 
+    @Transactional(readOnly = true)
     public Page<MessageResponseDto> list(UUID matchId, String authUsername, Instant after, Pageable pageable) {
         User user = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(authUsername).orElseThrow(()->new NotFoundException("User not found"));
         assertCanReadAndWrite(matchId,user.getId());
