@@ -1,0 +1,1 @@
+create index if not exists idx_mcm_match_created_id_asc on match_chat_messages(match_id, created_at asc, id);

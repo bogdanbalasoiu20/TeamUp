@@ -2,7 +2,9 @@ package com.teamup.teamUp.mapper;
 
 import com.teamup.teamUp.model.dto.chat.MessageResponseDto;
 import com.teamup.teamUp.model.entity.MatchChatMessage;
+import org.springframework.stereotype.Component;
 
+@Component
 public class MatchChatMapper {
     public static MessageResponseDto toDto(MatchChatMessage message){
         return new MessageResponseDto(
