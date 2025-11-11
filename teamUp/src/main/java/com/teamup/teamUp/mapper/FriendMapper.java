@@ -4,7 +4,9 @@ import com.teamup.teamUp.model.dto.friend.FriendRequestResponseDto;
 import com.teamup.teamUp.model.dto.friend.FriendshipResponseDto;
 import com.teamup.teamUp.model.entity.FriendRequest;
 import com.teamup.teamUp.model.entity.Friendship;
+import org.springframework.stereotype.Component;
 
+@Component
 public class FriendMapper {
     public static FriendRequestResponseDto toFriendRequestResponseDto(FriendRequest fr) {
         return new FriendRequestResponseDto(
