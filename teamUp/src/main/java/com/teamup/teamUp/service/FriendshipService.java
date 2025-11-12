@@ -3,6 +3,7 @@ package com.teamup.teamUp.service;
 import com.teamup.teamUp.exceptions.BadRequestException;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.mapper.FriendMapper;
+import com.teamup.teamUp.model.dto.friend.FriendRequestCreateDto;
 import com.teamup.teamUp.model.dto.friend.FriendRequestResponseDto;
 import com.teamup.teamUp.model.dto.friend.FriendshipResponseDto;
 import com.teamup.teamUp.model.entity.FriendRequest;
@@ -37,33 +38,42 @@ public class FriendshipService {
     }
 
     @Transactional
-    public void sendFriendRequest(String senderUsername, UUID addresseeId, String message){
-        User sender = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(senderUsername)
-                .orElseThrow(() -> new NotFoundException("User not found"));
-        User addressee = userRepository.findById(addresseeId)
+    public FriendRequestResponseDto sendRequest(String requesterUsername, FriendRequestCreateDto dto) {
+        User requester = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(requesterUsername)
+                .orElseThrow(() -> new NotFoundException("Requester not found"));
+        User addressee = userRepository.findById(dto.addresseeId())
                 .orElseThrow(() -> new NotFoundException("Addressee not found"));
 
-        if (sender.getId().equals(addressee.getId()))
-            throw new BadRequestException("You cannot send a request to yourself");
+        if (requester.getId().equals(addressee.getId()))
+            throw new BadRequestException("You cannot send a friend request to yourself");
 
-        if (friendshipRepository.existsByUserAIdAndUserBId(sender.getId(), addressee.getId()))
+        if (friendshipRepository.existsByUserAIdAndUserBId(requester.getId(), addressee.getId()))
             throw new BadRequestException("You are already friends");
 
-        if (friendRequestRepository.existsByRequesterIdAndAddresseeIdAndStatus(sender.getId(), addressee.getId(), FriendRequestStatus.PENDING))
-            throw new BadRequestException("Request already pending");
+        boolean pendingExists = friendRequestRepository.findBetweenUsers(requester.getId(), addressee.getId())
+                .filter(fr -> fr.getStatus() == FriendRequestStatus.PENDING)
+                .isPresent();
+        if (pendingExists)
+            throw new BadRequestException("Pending request already exists between users");
 
         FriendRequest request = FriendRequest.builder()
-                .requester(sender)
+                .requester(requester)
                 .addressee(addressee)
-                .message(message)
+                .message(dto.message())
+                .status(FriendRequestStatus.PENDING)
                 .build();
 
         friendRequestRepository.save(request);
+        return FriendMapper.toFriendRequestResponseDto(request);
     }
 
-    public void respondToFriendRequest(UUID requestId, boolean accept) {
+    @Transactional
+    public void respondToRequest(UUID requestId, String responderUsername, boolean accept) {
         FriendRequest request = friendRequestRepository.findById(requestId)
                 .orElseThrow(() -> new NotFoundException("Request not found"));
+
+        if (!request.getAddressee().getUsername().equalsIgnoreCase(responderUsername))
+            throw new BadRequestException("You cannot respond to a request not addressed to you");
 
         request.setStatus(accept ? FriendRequestStatus.ACCEPTED : FriendRequestStatus.DECLINED);
         request.setRespondedAt(Instant.now());
@@ -76,6 +86,7 @@ public class FriendshipService {
         }
     }
 
+    @Transactional(readOnly = true)
     public Page<FriendshipResponseDto> listFriends(String username, Pageable pageable) {
         User user = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(username)
                 .orElseThrow(() -> new NotFoundException("User not found"));
@@ -92,6 +103,8 @@ public class FriendshipService {
         return new PageImpl<>(paged, pageable, friends.size());
     }
 
+
+    @Transactional(readOnly = true)
     public Page<FriendRequestResponseDto> getIncomingRequests(String username, Pageable pageable) {
         UUID userId = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(username)
                 .orElseThrow(() -> new NotFoundException("User not found"))
@@ -104,6 +117,8 @@ public class FriendshipService {
         return new PageImpl<>(list, pageable, list.size());
     }
 
+
+    @Transactional(readOnly = true)
     public Page<FriendRequestResponseDto> getOutgoingRequests(String username, Pageable pageable) {
         UUID userId = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(username)
                 .orElseThrow(() -> new NotFoundException("User not found"))
@@ -116,6 +131,7 @@ public class FriendshipService {
         return new PageImpl<>(list, pageable, list.size());
     }
 
+    @Transactional
     public void removeFriend(String username, UUID friendId) {
         User user = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(username)
                 .orElseThrow(() -> new NotFoundException("User not found"));
@@ -129,6 +145,4 @@ public class FriendshipService {
                         () -> { throw new NotFoundException("Friendship not found"); }
                 );
     }
-
-
 }
