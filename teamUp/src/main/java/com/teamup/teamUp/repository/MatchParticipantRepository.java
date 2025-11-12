@@ -52,4 +52,6 @@ public interface MatchParticipantRepository extends JpaRepository<MatchParticipa
     Page<ParticipantDto> findParticipants(UUID matchId, MatchParticipantStatus status, Pageable pageable);
 
     boolean existsById_MatchIdAndId_UserIdAndStatus(UUID matchId, UUID userId, MatchParticipantStatus status);
+
+    List<MatchParticipant> findAllById_MatchId(UUID matchId);
 }
