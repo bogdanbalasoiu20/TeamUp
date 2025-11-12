@@ -91,16 +91,8 @@ public class FriendshipService {
         User user = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(username)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        List<FriendshipResponseDto> friends = friendshipRepository.findAllByUser(user.getId())
-                .stream()
-                .map(f -> FriendMapper.toFriendshipResponseDto(f, username))
-                .toList();
-
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), friends.size());
-        List<FriendshipResponseDto> paged = friends.subList(start, end);
-
-        return new PageImpl<>(paged, pageable, friends.size());
+        return friendshipRepository.findAllByUser(user.getId(), pageable)
+                .map(f -> FriendMapper.toFriendshipResponseDto(f, username));
     }
 
 
@@ -133,16 +125,13 @@ public class FriendshipService {
 
     @Transactional
     public void removeFriend(String username, UUID friendId) {
-        User user = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(username)
-                .orElseThrow(() -> new NotFoundException("User not found"));
-        UUID userId = user.getId();
+        UUID userId = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(username)
+                .orElseThrow(() -> new NotFoundException("User not found"))
+                .getId();
 
-        friendshipRepository.findAllByUser(userId).stream()
-                .filter(f -> f.getUserA().getId().equals(friendId) || f.getUserB().getId().equals(friendId))
-                .findFirst()
-                .ifPresentOrElse(
-                        friendshipRepository::delete,
-                        () -> { throw new NotFoundException("Friendship not found"); }
-                );
+        int deleted = friendshipRepository.deleteByUserIds(userId, friendId);
+        if (deleted == 0)
+            throw new NotFoundException("Friendship not found");
     }
+
 }

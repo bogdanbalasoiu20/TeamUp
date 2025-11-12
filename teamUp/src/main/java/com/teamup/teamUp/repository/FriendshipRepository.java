@@ -3,7 +3,9 @@ package com.teamup.teamUp.repository;
 import com.teamup.teamUp.model.entity.Friendship;
 import com.teamup.teamUp.model.id.FriendshipId;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
@@ -14,7 +16,15 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Friendsh
         select f from Friendship f
         where f.userA.id = :userId or f.userB.id = :userId
     """)
-    Page<Friendship> findAllByUser(UUID userId);
+    Page<Friendship> findAllByUser(UUID userId, Pageable pageable);
 
     boolean existsByUserAIdAndUserBId(UUID userA, UUID userB);
+
+    @Modifying
+    @Query("""
+    delete from Friendship f
+    where (f.userA.id = :userId and f.userB.id = :friendId)
+       or (f.userA.id = :friendId and f.userB.id = :userId)
+""")
+    int deleteByUserIds(UUID userId, UUID friendId);
 }
