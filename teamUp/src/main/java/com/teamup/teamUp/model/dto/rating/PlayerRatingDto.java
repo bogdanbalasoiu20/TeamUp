@@ -7,8 +7,8 @@ public record PlayerRatingDto(
         int pace,
         int shooting,
         int passing,
-        int dribbling,
         int defending,
+        int dribbling,
         int physical,
         String comment
 
