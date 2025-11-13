@@ -47,12 +47,12 @@ public class PlayerStatsService {
                     .match(Match.builder().id(matchId).build())
                     .raterUser(rater)
                     .ratedUser(rated)
-                    .pace(dto.pace())
-                    .shooting(dto.shooting())
-                    .passing(dto.passing())
-                    .defending(dto.defending())
-                    .dribbling(dto.dribbling())
-                    .physical(dto.physical())
+                    .pace((short)dto.pace())
+                    .shooting((short)dto.shooting())
+                    .passing((short)dto.passing())
+                    .defending((short)dto.defending())
+                    .dribbling((short)dto.dribbling())
+                    .physical((short)dto.physical())
                     .comment(dto.comment())
                     .build();
 

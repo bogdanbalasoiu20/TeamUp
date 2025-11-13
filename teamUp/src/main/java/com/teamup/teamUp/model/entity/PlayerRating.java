@@ -37,22 +37,22 @@ public class PlayerRating {
     private User ratedUser;
 
     @Column(nullable = false)
-    private int pace;
+    private short pace;
 
     @Column(nullable = false)
-    private int shooting;
+    private short shooting;
 
     @Column(nullable = false)
-    private int passing;
+    private short passing;
 
     @Column(nullable = false)
-    private int defending;
+    private short defending;
 
     @Column(nullable = false)
-    private int dribbling;
+    private short dribbling;
 
     @Column(nullable = false)
-    private int physical;
+    private short physical;
 
     @Column(length = 500)
     private String comment;
