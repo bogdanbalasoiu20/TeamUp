@@ -42,7 +42,7 @@ public class User {
     private String phoneNumber;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "player_position", columnDefinition = "player_position_enum")
+    @Column(name = "player_position")
     private Position position;
 
     private String city;
