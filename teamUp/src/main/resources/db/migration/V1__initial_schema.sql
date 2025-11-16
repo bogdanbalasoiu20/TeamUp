@@ -8,7 +8,7 @@ CREATE TYPE match_participant_status AS ENUM ('REQUESTED','ACCEPTED','DECLINED',
 CREATE TYPE match_status AS ENUM ('OPEN','CANCELED','DONE','FULL');
 CREATE TYPE match_visibility AS ENUM ('PUBLIC','PRIVATE','FRIENDS');
 CREATE TYPE notification_type AS ENUM ('FRIEND_REQUEST','NEW_MATCH');
-CREATE TYPE position AS ENUM ('GOALKEEPER','DEFENDER','MIDFIELDER','FORWARD');
+CREATE TYPE player_position_enum AS ENUM ('GOALKEEPER','DEFENDER','MIDFIELDER','FORWARD');
 CREATE TYPE user_role AS ENUM ('ADMIN','USER');
 CREATE TYPE venue_source AS ENUM ('OSM','USER','ADMIN','VENUE');
 
@@ -21,7 +21,7 @@ CREATE TABLE users (
                        password_hash VARCHAR(255) NOT NULL,
                        birthday DATE,
                        phone_number VARCHAR(255) NOT NULL,
-                       position position,
+                       player_position player_position_enum,
                        city VARCHAR(255),
                        description VARCHAR(300),
                        rank VARCHAR(255),
@@ -237,7 +237,7 @@ CREATE INDEX idx_venues_active ON venues(is_active);
 CREATE INDEX idx_venues_tags_gin ON venues USING GIN (tags_json);
 
 CREATE INDEX idx_venues_name_trgm ON venues USING gin (name gin_trgm_ops);
-CREATE INDEX idx_venues_city_trgm ON venues USING gin (address gin_trgm_ops);
+
 
 CREATE INDEX idx_venues_geom ON venues USING GIST (geom);
 CREATE INDEX idx_venues_area_geom ON venues USING GIST (area_geom);
