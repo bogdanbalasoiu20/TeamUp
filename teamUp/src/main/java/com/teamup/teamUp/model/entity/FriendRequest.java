@@ -4,7 +4,9 @@ import com.teamup.teamUp.model.enums.FriendRequestStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -35,6 +37,7 @@ public class FriendRequest {
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     private FriendRequestStatus status =  FriendRequestStatus.PENDING;
 
     private String message;

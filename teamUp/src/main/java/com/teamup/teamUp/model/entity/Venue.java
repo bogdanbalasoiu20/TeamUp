@@ -55,6 +55,7 @@ public class Venue {
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "source", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     private VenueSource source = VenueSource.OSM; //locul de unde vine inregistrarea terenului( OSM , de la client/admin/owner)
 
 

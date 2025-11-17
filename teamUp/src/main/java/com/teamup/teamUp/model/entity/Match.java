@@ -6,7 +6,9 @@ import com.teamup.teamUp.model.enums.MatchVisibility;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -60,11 +62,13 @@ public class Match {
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     private MatchStatus status = MatchStatus.OPEN;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     private MatchVisibility visibility =  MatchVisibility.PUBLIC;
 
     @Column(name = "total_price", precision = 10, scale =2)
