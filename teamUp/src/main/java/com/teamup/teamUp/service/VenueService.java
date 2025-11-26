@@ -177,9 +177,9 @@ public class VenueService {
         return venue;
     }
 
-    public List<Venue> inBBox(double minLat, double minLng, double maxLat, double maxLng, int limit){
+    public List<VenueResponseDto> inBBox(double minLat, double minLng, double maxLat, double maxLng, int limit){
         int lim = Math.max(1,Math.min(limit,500));
-        return venueRepository.findInBBoxPostgis(minLat, minLng, maxLat, maxLng, lim);
+        return venueRepository.findInBBoxPostgis(minLat, minLng, maxLat, maxLng, lim).stream().map(venueMapper::toDto).toList();
     }
 
     public List<Venue> suggest(String q, int limit, String cityHint){

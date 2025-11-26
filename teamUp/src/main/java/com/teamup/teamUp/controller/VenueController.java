@@ -117,8 +117,7 @@ public class VenueController {
                                                                       @RequestParam @DecimalMin("-90") @DecimalMax("90") double maxLat,
                                                                       @RequestParam @DecimalMin("-180") @DecimalMax("180") double maxLng,
                                                                       @RequestParam(defaultValue="300") @Positive @Max(500) int limit){
-        var list = venueService.inBBox(minLat, minLng, maxLat, maxLng, limit)
-                .stream().map(venueMapper::toDto).toList();
+        var list = venueService.inBBox(minLat, minLng, maxLat, maxLng, limit);
         return ResponseEntity.ok(new ResponseApi<>("ok",list,true));
     }
 
