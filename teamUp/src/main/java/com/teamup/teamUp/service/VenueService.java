@@ -177,6 +177,7 @@ public class VenueService {
         return venue;
     }
 
+    @Transactional(readOnly = true)
     public List<VenueResponseDto> inBBox(double minLat, double minLng, double maxLat, double maxLng, int limit){
         int lim = Math.max(1,Math.min(limit,500));
         return venueRepository.findInBBoxPostgis(minLat, minLng, maxLat, maxLng, lim).stream().map(venueMapper::toDto).toList();
