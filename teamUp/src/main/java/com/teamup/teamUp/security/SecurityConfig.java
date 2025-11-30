@@ -35,6 +35,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/venues/osm/**", "/api/venues/import/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/venues/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/matches/nearby-bbox").permitAll()
                 .anyRequest().authenticated()
         );
 
