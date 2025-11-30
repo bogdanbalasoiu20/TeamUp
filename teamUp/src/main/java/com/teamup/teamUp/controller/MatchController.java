@@ -86,4 +86,14 @@ public class MatchController {
         List<MatchMapPinDto> pins = matchService.nearbyPins(minLat, minLng, maxLat, maxLng, dateFrom, dateTo, limit);
         return ResponseEntity.ok(new ResponseApi<>("pins", pins, true));
     }
+
+    @GetMapping
+    public ResponseEntity<ResponseApi<Page<MatchResponseDto>>> getAll(
+            @PageableDefault(size = 20, sort = "startsAt", direction = Sort.Direction.ASC)
+            Pageable pageable
+    ) {
+        var page = matchService.findAll(pageable);
+        return ResponseEntity.ok(new ResponseApi<>("Matches found", page, true));
+    }
+
 }

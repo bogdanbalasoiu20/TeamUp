@@ -53,6 +53,13 @@ public class MatchService {
     }
 
     @Transactional
+    public Page<MatchResponseDto> findAll(Pageable pageable) {
+        return matchRepository.findAll(pageable)
+                .map(matchMapper::toDto);
+    }
+
+
+    @Transactional
     public MatchResponseDto create(MatchCreateRequestDto request, String authUsername){
         User user = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(authUsername).orElseThrow(() -> new NotFoundException("User not found"));
         Venue venue = venueRepository.findById(request.venueId()).orElseThrow(() -> new NotFoundException("Venue not found"));
