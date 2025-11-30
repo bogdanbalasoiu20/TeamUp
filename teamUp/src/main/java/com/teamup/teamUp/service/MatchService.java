@@ -162,8 +162,20 @@ public class MatchService {
     }
 
     @Transactional(readOnly = true)
-    public List<MatchMapPinDto> nearbyPins(double minLat, double minLng, double maxLat, double maxLng, Instant dateFrom, Instant dateTo, int limit){
-        var pageable = PageRequest.of(0, Math.min(limit,500), Sort.by("startsAt").ascending());
-        return matchRepository.findPinsInBBOx(minLat, minLng, maxLat, maxLng, dateFrom, dateTo, pageable);
+    public List<MatchMapPinDto> nearbyPins(double minLat, double minLng, double maxLat, double maxLng,
+                                           Instant dateFrom, Instant dateTo, int limit) {
+
+        if (dateFrom == null) dateFrom = Instant.EPOCH;
+        if (dateTo == null) dateTo = Instant.parse("2100-01-01T00:00:00Z");
+
+        Pageable pageable = PageRequest.of(0, Math.min(limit, 500),
+                Sort.by("startsAt").ascending());
+
+        return matchRepository.findPinsInBBOx(
+                minLat, minLng, maxLat, maxLng,
+                dateFrom, dateTo,
+                pageable
+        );
     }
+
 }

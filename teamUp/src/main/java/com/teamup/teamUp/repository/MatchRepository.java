@@ -55,9 +55,18 @@ select new com.teamup.teamUp.model.dto.match.MatchMapPinDto(
   where m.isActive = true
     and v.latitude  between :minLat and :maxLat
     and v.longitude between :minLng and :maxLng
-    and (:dateFrom is null or m.startsAt >= :dateFrom)
-    and (:dateTo   is null or m.startsAt <  :dateTo)
+    and m.startsAt >= :dateFrom
+    and m.startsAt <  :dateTo
   order by m.startsAt asc
 """)
-    List<MatchMapPinDto> findPinsInBBOx(double minLat, double minLng, double maxLat, double maxLng, Instant dateFrom, Instant dateTo, Pageable pageable);
+    List<MatchMapPinDto> findPinsInBBOx(
+            double minLat,
+            double minLng,
+            double maxLat,
+            double maxLng,
+            Instant dateFrom,
+            Instant dateTo,
+            Pageable pageable
+    );
+
 }
