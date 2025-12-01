@@ -1,5 +1,6 @@
 package com.teamup.teamUp.model.dto.match;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -11,7 +12,9 @@ public record MatchMapPinDto(
         Instant startsAt,
         Integer currentPlayers,
         Integer maxPlayers,
-        String venueName
-
+        String venueName,
+        Integer durationMinutes,
+        BigDecimal totalPrice,
+        String notes
 ) {
 }

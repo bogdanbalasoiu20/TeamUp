@@ -48,7 +48,7 @@ public interface MatchRepository extends JpaRepository<Match,UUID> {
 
     @Query("""
 select new com.teamup.teamUp.model.dto.match.MatchMapPinDto(
-     m.id, v.latitude, v.longitude, m.title, m.startsAt, m.currentPlayers, m.maxPlayers, v.name
+     m.id, v.latitude, v.longitude, m.title, m.startsAt, m.currentPlayers, m.maxPlayers, v.name, m.durationMinutes, m.totalPrice, m.notes
   )
   from Match m
   join m.venue v
