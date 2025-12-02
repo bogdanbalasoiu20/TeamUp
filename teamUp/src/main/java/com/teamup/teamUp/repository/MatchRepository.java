@@ -56,7 +56,7 @@ select new com.teamup.teamUp.model.dto.match.MatchMapPinDto(
      (select cast(count(mp) as long)
         from MatchParticipant mp
         where mp.match.id = m.id
-          and mp.status = com.teamup.teamUp.model.enums.MatchParticipantStatus.ACCEPTED),
+          and mp.status = 'ACCEPTED'),
      m.maxPlayers,
      v.name,
      m.durationMinutes,
