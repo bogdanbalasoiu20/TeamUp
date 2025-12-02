@@ -22,6 +22,9 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<lombok.version>1.18.32</lombok.version>
+
+		<!-- FIX pentru Render: folosim o versiune stabila si mica de ByteBuddy -->
+		<bytebuddy.version>1.15.0</bytebuddy.version>
 	</properties>
 
 	<dependencies>
@@ -85,7 +88,7 @@
 			<artifactId>flyway-database-postgresql</artifactId>
 		</dependency>
 
-		<!-- DevTools (doar la dev) -->
+		<!-- DevTools -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
@@ -113,19 +116,19 @@
 			<scope>test</scope>
 		</dependency>
 
-		<!-- (opțional) springdoc-openapi pentru Swagger UI -->
-		<!--
-        <dependency>
-          <groupId>org.springdoc</groupId>
-          <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-          <version>2.6.0</version>
-        </dependency>
-        -->
-
+		<!-- WebSocket -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-websocket</artifactId>
 		</dependency>
+
+		<!-- FIX: ByteBuddy (necesar pentru Security/JWT, evita versiunea uriasa 1.17.7) -->
+		<dependency>
+			<groupId>net.bytebuddy</groupId>
+			<artifactId>byte-buddy</artifactId>
+			<version>${bytebuddy.version}</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
