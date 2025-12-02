@@ -6,15 +6,14 @@ import java.util.UUID;
 
 public record MatchMapPinDto(
         UUID matchId,
-        double lat,
-        double lng,
+        Double lat,
+        Double lng,
         String title,
         Instant startsAt,
-        Integer currentPlayers,
+        Long currentPlayers,
         Integer maxPlayers,
         String venueName,
         Integer durationMinutes,
         BigDecimal totalPrice,
         String notes
-) {
-}
+) {}

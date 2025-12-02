@@ -48,28 +48,29 @@ public interface MatchRepository extends JpaRepository<Match,UUID> {
 
     @Query("""
 select new com.teamup.teamUp.model.dto.match.MatchMapPinDto(
-     m.id, 
-     v.latitude, 
+     m.id,
+     v.latitude,
      v.longitude,
-     m.title, 
-     m.startsAt, 
-     (select count(mp) from MatchParticipant mp
-                               where mp.match.id = m.id
-                                 and mp.status = com.teamup.teamUp.model.enums.MatchParticipantStatus.ACCEPTED), 
-     m.maxPlayers, 
-     v.name, 
-     m.durationMinutes, 
-     m.totalPrice, 
+     m.title,
+     m.startsAt,
+     (select cast(count(mp) as long)
+        from MatchParticipant mp
+        where mp.match.id = m.id
+          and mp.status = com.teamup.teamUp.model.enums.MatchParticipantStatus.ACCEPTED),
+     m.maxPlayers,
+     v.name,
+     m.durationMinutes,
+     m.totalPrice,
      m.notes
-  )
-  from Match m
-  join m.venue v
-  where m.isActive = true
-    and v.latitude  between :minLat and :maxLat
-    and v.longitude between :minLng and :maxLng
-    and m.startsAt >= :dateFrom
-    and m.startsAt <  :dateTo
-  order by m.startsAt asc
+)
+from Match m
+join m.venue v
+where m.isActive = true
+  and v.latitude between :minLat and :maxLat
+  and v.longitude between :minLng and :maxLng
+  and m.startsAt >= :dateFrom
+  and m.startsAt < :dateTo
+order by m.startsAt asc
 """)
     List<MatchMapPinDto> findPinsInBBOx(
             double minLat,
