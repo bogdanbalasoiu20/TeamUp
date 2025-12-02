@@ -9,10 +9,13 @@ import com.teamup.teamUp.model.dto.match.MatchMapPinDto;
 import com.teamup.teamUp.model.dto.match.MatchResponseDto;
 import com.teamup.teamUp.model.dto.match.MatchUpdateRequestDto;
 import com.teamup.teamUp.model.entity.Match;
+import com.teamup.teamUp.model.entity.MatchParticipant;
 import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.model.entity.Venue;
+import com.teamup.teamUp.model.enums.MatchParticipantStatus;
 import com.teamup.teamUp.model.enums.MatchStatus;
 import com.teamup.teamUp.model.enums.MatchVisibility;
+import com.teamup.teamUp.model.id.MatchParticipantId;
 import com.teamup.teamUp.repository.MatchParticipantRepository;
 import com.teamup.teamUp.repository.MatchRepository;
 import com.teamup.teamUp.repository.UserRepository;
@@ -83,6 +86,17 @@ public class MatchService {
                 .build();
 
         matchRepository.save(match);
+
+        MatchParticipant mp = MatchParticipant.builder()
+                .id(new MatchParticipantId(match.getId(), user.getId()))
+                .match(match)
+                .user(user)
+                .status(MatchParticipantStatus.ACCEPTED)
+                .bringsBall(false)
+                .message(null)
+                .build();
+
+        matchParticipantRepository.save(mp);
         return matchMapper.toDto(match);
     }
 
