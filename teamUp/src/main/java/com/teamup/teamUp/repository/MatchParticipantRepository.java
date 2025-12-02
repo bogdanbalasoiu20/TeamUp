@@ -40,7 +40,7 @@ public interface MatchParticipantRepository extends JpaRepository<MatchParticipa
    )
    from MatchParticipant mp
    where mp.id.matchId = :matchId
-     and (:status is null or mp.status = :status)
+     and (CAST(:status AS string) IS NULL OR mp.status = :status)
    order by mp.createdAt asc
 """,
             countQuery = """
