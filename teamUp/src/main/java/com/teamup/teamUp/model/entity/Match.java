@@ -41,7 +41,7 @@ public class Match {
     @Column(name = "starts_at", nullable = false)
     private Instant startsAt;
 
-    @Formula("starts_at + (duration_minutes || ' minutes')::interval")
+    @Formula("starts_at + (duration_min || ' minutes')::interval")
     private Instant endsAt;
 
     @Column(name = "duration_min")
@@ -99,15 +99,6 @@ public class Match {
             throw new IllegalArgumentException("The duration minutes must be greater than 0");
         if(startsAt == null)
             throw new IllegalArgumentException("The starting hour is required");
-
-        if(endsAt!=null && !endsAt.isAfter(startsAt)){
-            throw new IllegalArgumentException("The ending hour must be after the start hour");
-        }
-        if(currentPlayers == null){
-            currentPlayers = 0;
-        }
-        if (currentPlayers < 0 || (maxPlayers != null && currentPlayers > maxPlayers))
-            throw new IllegalArgumentException("currentPlayers must be between 0 and maxPlayers");
         if (joinDeadline != null && !joinDeadline.isBefore(startsAt))
             throw new IllegalArgumentException("joinDeadline must be before startsAt");
     }
