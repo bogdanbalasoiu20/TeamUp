@@ -50,7 +50,7 @@ public class Match {
     @Column(name = "max_players", nullable = false)
     private Integer maxPlayers;
 
-    @Formula("(select cast(count(*) as int) from match_participant mp where mp.match_id = id and mp.status = 'ACCEPTED')")
+    @Formula("(select cast(count(*) as int) from match_participants mp where mp.match_id = id and mp.status = 'ACCEPTED')")
     private Integer currentPlayers;
 
     @Column(name = "join_deadline")
