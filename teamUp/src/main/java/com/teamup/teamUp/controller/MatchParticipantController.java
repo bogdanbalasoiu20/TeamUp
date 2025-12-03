@@ -3,16 +3,17 @@ package com.teamup.teamUp.controller;
 
 import com.teamup.teamUp.model.dto.matchParticipant.JoinRequestDto;
 import com.teamup.teamUp.model.dto.matchParticipant.JoinResponseDto;
-import com.teamup.teamUp.model.dto.matchParticipant.ParticipantDto;
+import com.teamup.teamUp.model.dto.matchParticipant.MatchParticipantsResponse;
+import com.teamup.teamUp.model.entity.Match;
 import com.teamup.teamUp.model.enums.MatchParticipantStatus;
 import com.teamup.teamUp.service.MatchParticipantService;
+import com.teamup.teamUp.service.MatchService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,10 +23,12 @@ import java.util.UUID;
 @RequestMapping("/api/matches")
 public class MatchParticipantController {
     private final MatchParticipantService matchParticipantService;
+    private final MatchService matchService;
 
     @Autowired
-    public MatchParticipantController(MatchParticipantService matchParticipantService) {
+    public MatchParticipantController(MatchParticipantService matchParticipantService, MatchService matchService) {
         this.matchParticipantService = matchParticipantService;
+        this.matchService = matchService;
     }
 
     @PostMapping("/{matchId}/participants/join")
@@ -85,13 +88,18 @@ public class MatchParticipantController {
     }
 
     @GetMapping("/{matchId}/participants")
-    public ResponseEntity<ResponseApi<Page<ParticipantDto>>> list(
+    public ResponseEntity<ResponseApi<MatchParticipantsResponse>> list(
             @PathVariable UUID matchId,
             @RequestParam(required = false) MatchParticipantStatus status,
             @PageableDefault(size = 20) Pageable pageable
     ) {
         var page = matchParticipantService.listByStatus(matchId, status, pageable);
-        return ResponseEntity.ok(new ResponseApi<>("Participants fetched", page, true));
+
+        Match match = matchService.findById(matchId);
+        UUID creatorId = match.getCreator().getId();
+        var resp = new MatchParticipantsResponse(creatorId, page);
+
+        return ResponseEntity.ok(new ResponseApi<>("Participants fetched", resp, true));
     }
 
 
