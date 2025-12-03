@@ -6,6 +6,7 @@ import com.teamup.teamUp.model.enums.MatchVisibility;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Formula;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
@@ -40,7 +41,7 @@ public class Match {
     @Column(name = "starts_at", nullable = false)
     private Instant startsAt;
 
-    @Column(name = "ends_at", nullable = false, insertable = false, updatable = false)
+    @Formula("starts_at + (duration_minutes || ' minutes')::interval")
     private Instant endsAt;
 
     @Column(name = "duration_min")
@@ -49,9 +50,8 @@ public class Match {
     @Column(name = "max_players", nullable = false)
     private Integer maxPlayers;
 
-    @Builder.Default
-    @Column(name = "current_players", nullable = false)
-    private Integer currentPlayers = 0;
+    @Formula("(select cast(count(*) as int) from match_participant mp where mp.match_id = id and mp.status = 'ACCEPTED')")
+    private Integer currentPlayers;
 
     @Column(name = "join_deadline")
     private Instant joinDeadline;
