@@ -1,9 +1,7 @@
 package com.teamup.teamUp.controller;
 
 
-import com.teamup.teamUp.model.dto.matchParticipant.JoinRequestDto;
-import com.teamup.teamUp.model.dto.matchParticipant.JoinResponseDto;
-import com.teamup.teamUp.model.dto.matchParticipant.MatchParticipantsResponse;
+import com.teamup.teamUp.model.dto.matchParticipant.*;
 import com.teamup.teamUp.model.entity.Match;
 import com.teamup.teamUp.model.enums.MatchParticipantStatus;
 import com.teamup.teamUp.service.MatchParticipantService;
@@ -32,7 +30,7 @@ public class MatchParticipantController {
     }
 
     @PostMapping("/{matchId}/participants/join")
-    public ResponseEntity<ResponseApi<JoinResponseDto>> join(@PathVariable UUID matchId, @RequestBody(required = false) @Valid JoinRequestDto request, Authentication auth) {
+    public ResponseEntity<ResponseApi<JoinWithStatusResponseDto>> join(@PathVariable UUID matchId, @RequestBody(required = false) @Valid JoinRequestDto request, Authentication auth) {
         var response = matchParticipantService.join(matchId,auth.getName(),request);
         return ResponseEntity.ok(new ResponseApi<>("User requested to join",response,true));
     }
@@ -111,6 +109,25 @@ public class MatchParticipantController {
         var resp = matchParticipantService.kick(matchId, userId, auth.getName());
         return ResponseEntity.ok(new ResponseApi<>("Participant kicked", resp, true));
     }
+
+
+    @PostMapping("/{matchId}/participants/{userId}/promote")
+    public ResponseEntity<ResponseApi<ParticipantDto>> promoteFromWaitlist(
+            @PathVariable UUID matchId,
+            @PathVariable UUID userId,
+            Authentication auth) {
+
+        ParticipantDto dto = matchParticipantService.promoteFromWaitlist(
+                matchId,
+                userId,
+                auth.getName()
+        );
+
+        return ResponseEntity.ok(
+                new ResponseApi<>("User promoted from waitlist", dto, true)
+        );
+    }
+
 
 
 }

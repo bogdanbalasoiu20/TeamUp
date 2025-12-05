@@ -6,6 +6,7 @@ import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.mapper.MatchParticipantMapper;
 import com.teamup.teamUp.model.dto.matchParticipant.JoinRequestDto;
 import com.teamup.teamUp.model.dto.matchParticipant.JoinResponseDto;
+import com.teamup.teamUp.model.dto.matchParticipant.JoinWithStatusResponseDto;
 import com.teamup.teamUp.model.dto.matchParticipant.ParticipantDto;
 import com.teamup.teamUp.model.entity.Match;
 import com.teamup.teamUp.model.entity.MatchParticipant;
@@ -42,56 +43,72 @@ public class MatchParticipantService {
     }
 
     @Transactional
-    public JoinResponseDto join(UUID matchId, String authUsername, JoinRequestDto request){
-        Match match = matchRepository.findByIdAndIsActiveTrue(matchId).orElseThrow(()->new NotFoundException("Match not found"));
+    public JoinWithStatusResponseDto join(UUID matchId, String authUsername, JoinRequestDto request) {
 
-        if(match.getStatus() == MatchStatus.CANCELED){
+        Match match = matchRepository.findByIdAndIsActiveTrue(matchId)
+                .orElseThrow(() -> new NotFoundException("Match not found"));
+
+        if (match.getStatus() == MatchStatus.CANCELED) {
             throw new BadRequestException("Match not active");
         }
 
-        User user = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(authUsername).orElseThrow(()->new NotFoundException("User not found"));
+        User user = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(authUsername)
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         Instant now = Instant.now();
-        if (match.getStartsAt()!=null && !now.isBefore(match.getStartsAt())){
+        if (match.getStartsAt() != null && !now.isBefore(match.getStartsAt())) {
             throw new BadRequestException("The match has already started");
         }
 
-        if(match.getJoinDeadline()!=null && !now.isBefore(match.getJoinDeadline())){
+        if (match.getJoinDeadline() != null && !now.isBefore(match.getJoinDeadline())) {
             throw new BadRequestException("Join deadline passed");
         }
 
-        if(matchParticipantRepository.existsById_MatchIdAndId_UserId(matchId, user.getId())){
-            throw new BadRequestException("User "+user.getUsername()+" is already joined");
+        if (matchParticipantRepository.existsById_MatchIdAndId_UserId(matchId, user.getId())) {
+            throw new BadRequestException("User " + user.getUsername() + " is already joined");
         }
 
-        long participants = matchParticipantRepository.countById_MatchId(matchId);
-        if(match.getMaxPlayers()!=null && match.getMaxPlayers()<=participants){
-            throw new BadRequestException("Match is full");
-        }
+
+        long acceptedPlayers = matchParticipantRepository.countById_MatchIdAndStatus(
+                matchId,
+                MatchParticipantStatus.ACCEPTED
+        );
+
+
+        boolean full = match.getMaxPlayers() != null && acceptedPlayers >= match.getMaxPlayers();
+
+
+        MatchParticipantStatus status = full
+                ? MatchParticipantStatus.WAITLIST
+                : MatchParticipantStatus.REQUESTED;
 
         String message = (request != null && request.message() != null)
                 ? request.message().trim()
                 : null;
+
         boolean bringsBall = request != null && Boolean.TRUE.equals(request.bringsBall());
 
         MatchParticipant mp = MatchParticipant.builder()
-                .id(MatchParticipantId.builder()
-                        .matchId(match.getId())
-                        .userId(user.getId())
-                        .build())
+                .id(new MatchParticipantId(match.getId(), user.getId()))
                 .match(match)
                 .user(user)
                 .message(message)
                 .bringsBall(bringsBall)
-                .status(MatchParticipantStatus.REQUESTED)
+                .status(status)
                 .build();
 
         matchParticipantRepository.save(mp);
 
-        int after = (int) participants+1;
-        return new JoinResponseDto(match.getId(),after,match.getMaxPlayers() == null ? Integer.MAX_VALUE : match.getMaxPlayers());
+        long totalParticipants = matchParticipantRepository.countById_MatchId(matchId);
 
+        return new JoinWithStatusResponseDto(
+                match.getId(),
+                (int) totalParticipants,
+                match.getMaxPlayers(),
+                status == MatchParticipantStatus.WAITLIST
+        );
     }
+
 
     @Transactional
     public JoinResponseDto leave(UUID matchId, String authUsername) {
@@ -372,4 +389,46 @@ public class MatchParticipantService {
         int cap = match.getMaxPlayers()==null ? Integer.MAX_VALUE : match.getMaxPlayers();
         return MatchParticipantMapper.toDto(match.getId(),approvedAfter,cap);
     }
+
+
+    @Transactional
+    public ParticipantDto promoteFromWaitlist(UUID matchId, UUID userId, String adminUsername) {
+
+        Match match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new NotFoundException("Match not found"));
+
+        // doar creatorul poate promova
+        if (!match.getCreator().getUsername().equals(adminUsername)) {
+            throw new ForbiddenException("Only the match creator can manage waitlist");
+        }
+
+        MatchParticipant participant = matchParticipantRepository
+                .findById(new MatchParticipantId(matchId, userId))
+                .orElseThrow(() -> new NotFoundException("User not found in match"));
+
+        if (participant.getStatus() != MatchParticipantStatus.WAITLIST) {
+            throw new BadRequestException("User is not on the waitlist");
+        }
+
+        long acceptedCount = matchParticipantRepository.countById_MatchIdAndStatus(
+                matchId,
+                MatchParticipantStatus.ACCEPTED
+        );
+
+        if (match.getMaxPlayers() != null && acceptedCount >= match.getMaxPlayers()) {
+            throw new BadRequestException("Match is full");
+        }
+
+        participant.setStatus(MatchParticipantStatus.ACCEPTED);
+        matchParticipantRepository.save(participant);
+
+        return new ParticipantDto(
+                participant.getUser().getId(),
+                participant.getUser().getUsername(),
+                participant.getStatus(),
+                participant.getBringsBall(),
+                participant.getCreatedAt()
+        );
+    }
+
 }
