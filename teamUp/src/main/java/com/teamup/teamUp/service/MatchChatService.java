@@ -71,9 +71,16 @@ public class MatchChatService {
 
         assertCanReadAndWrite(matchId, user.getId());
 
-        var page = matchChatRepository.findByMatchId(matchId, after, pageable);
+        Page<MatchChatMessage> page;
+
+        if (after == null) {
+            page = matchChatRepository.findInitialMessages(matchId, pageable);
+        } else {
+            page = matchChatRepository.findByMatchIdAndCreatedAtAfter(matchId, after, pageable);
+        }
 
         return page.map(MatchChatMapper::toDto);
     }
+
 
 }
