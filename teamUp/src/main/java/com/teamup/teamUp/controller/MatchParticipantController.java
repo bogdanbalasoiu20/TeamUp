@@ -129,5 +129,16 @@ public class MatchParticipantController {
     }
 
 
+    @PostMapping("/{matchId}/participants/move-requests-to-waitlist")
+    public ResponseEntity<ResponseApi<Void>> moveRequestsToWaitlist(
+            @PathVariable UUID matchId,
+            Authentication auth
+    ) {
+        matchParticipantService.moveRequestsToWaitlist(matchId, auth.getName());
+        return ResponseEntity.ok(new ResponseApi<>("user moved to waitlist",null,true));
+    }
+
+
+
 
 }
