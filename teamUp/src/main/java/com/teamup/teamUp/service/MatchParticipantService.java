@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -133,14 +134,12 @@ public class MatchParticipantService {
         Match match = matchRepository.findByIdAndIsActiveTrue(matchId)
                 .orElseThrow(() -> new NotFoundException("Match not found"));
 
-        // permisiuni: doar creatorul
         User approver = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(approverUsername)
                 .orElseThrow(() -> new NotFoundException("User not found"));
         if (match.getCreator() == null || !match.getCreator().getId().equals(approver.getId())) {
             throw new ForbiddenException("Only the match creator can approve requests");
         }
 
-        // nu aproba dupa start/deadline
         Instant now = Instant.now();
         if (match.getStartsAt()!=null && !now.isBefore(match.getStartsAt())) {
             throw new BadRequestException("The match has already started");
@@ -153,26 +152,43 @@ public class MatchParticipantService {
                 .findById_MatchIdAndId_UserId(matchId, userId)
                 .orElseThrow(() -> new NotFoundException("Request not found"));
 
-        //dacă e deja APPROVED, returnam starea actuala
         if (mp.getStatus() == MatchParticipantStatus.ACCEPTED) {
             int approved = (int) matchParticipantRepository.countById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED);
             int cap = match.getMaxPlayers() == null ? Integer.MAX_VALUE : match.getMaxPlayers();
             return MatchParticipantMapper.toDto(match.getId(),approved,cap);
         }
 
-        long approvedNow = matchParticipantRepository.countById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED);
+        long approvedNow = matchParticipantRepository.countById_MatchIdAndStatus(
+                matchId, MatchParticipantStatus.ACCEPTED
+        );
+
         if (match.getMaxPlayers()!=null && approvedNow >= match.getMaxPlayers()) {
             throw new BadRequestException("Match is full");
         }
 
-        // tranzitie de stare
         mp.setStatus(MatchParticipantStatus.ACCEPTED);
         matchParticipantRepository.save(mp);
 
-        int after = (int) (approvedNow + 1);
+        long approvedAfter = approvedNow + 1;
         int cap = match.getMaxPlayers() == null ? Integer.MAX_VALUE : match.getMaxPlayers();
-        return MatchParticipantMapper.toDto(match.getId(),after,cap);
+
+        // daca meciul devine full → mutam userii REQUESTED ramasi în WAITLIST
+        if (match.getMaxPlayers() != null && approvedAfter >= match.getMaxPlayers()) {
+
+            List<MatchParticipant> remainingRequests =
+                    matchParticipantRepository.findAllById_MatchIdAndStatus(
+                            matchId, MatchParticipantStatus.REQUESTED);
+
+            for (MatchParticipant pending : remainingRequests) {
+                pending.setStatus(MatchParticipantStatus.WAITLIST);
+            }
+
+            matchParticipantRepository.saveAll(remainingRequests);
+        }
+
+        return MatchParticipantMapper.toDto(match.getId(), (int) approvedAfter, cap);
     }
+
 
     @Transactional
     public JoinResponseDto reject(UUID matchId, UUID userId, String moderatorUsername) {

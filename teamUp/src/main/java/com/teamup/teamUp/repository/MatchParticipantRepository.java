@@ -55,4 +55,6 @@ public interface MatchParticipantRepository extends JpaRepository<MatchParticipa
 
     List<MatchParticipant> findAllById_MatchId(UUID matchId);
 
+    List<MatchParticipant> findAllById_MatchIdAndStatus(UUID matchId, MatchParticipantStatus status);
+
 }
