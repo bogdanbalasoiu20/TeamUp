@@ -68,7 +68,15 @@ public class MatchChatService {
     public Page<MessageResponseDto> list(UUID matchId, String authUsername, Instant after, Pageable pageable) {
         User user = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(authUsername).orElseThrow(()->new NotFoundException("User not found"));
         assertCanReadAndWrite(matchId,user.getId());
-        return matchChatRepository.findByMatchIdAfter(matchId, after,pageable).map(MatchChatMapper::toDto);
+        Page<MatchChatMessage> page;
+
+        if (after == null) {
+            page = matchChatRepository.findByMatchId(matchId, pageable);
+        } else {
+            page = matchChatRepository.findByMatchIdAndCreatedAtAfter(matchId, after, pageable);
+        }
+
+        return page.map(MatchChatMapper::toDto);
     }
 
 }

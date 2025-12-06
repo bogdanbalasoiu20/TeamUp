@@ -20,6 +20,12 @@ and(:after is null or m.createdAt>:after)
 order by m.createdAt asc , m.id asc
 
 """)
-    Page<MatchChatMessage> findByMatchIdAfter(UUID matchId, Instant after, Pageable pageable);  //after este folosit pentru a-i spune serverului sa imi dea doar mesajele mai noi decat timestamp-ul X(adica: du-ma la primul mesaj necitit, nu incerca toata converstaia de la inceput)
+    Page<MatchChatMessage> findByMatchId(UUID matchId, Pageable pageable);
+
+    Page<MatchChatMessage> findByMatchIdAndCreatedAtAfter(
+            UUID matchId,
+            Instant createdAt,
+            Pageable pageable
+    );
 
 }
