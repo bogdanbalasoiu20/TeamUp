@@ -1,6 +1,13 @@
 package com.teamup.teamUp.model.enums;
 
 public enum NotificationType {
-    FRIEND_REQUEST,
-    NEW_MATCH
+    FRIEND_REQUEST_RECEIVED,
+    FRIEND_REQUEST_ACCEPTED,
+
+    MATCH_INVITE_RECEIVED,
+    MATCH_INVITE_ACCEPTED,
+
+    MATCH_UPDATED,
+    MATCH_CANCELLED,
+    MATCH_STARTING_SOON
 }
