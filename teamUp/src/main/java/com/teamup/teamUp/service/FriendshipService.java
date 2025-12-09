@@ -1,5 +1,6 @@
 package com.teamup.teamUp.service;
 
+import com.teamup.teamUp.events.NotificationEvents;
 import com.teamup.teamUp.exceptions.BadRequestException;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.mapper.FriendMapper;
@@ -29,12 +30,14 @@ public class FriendshipService {
     private final FriendshipRepository friendshipRepository;
     private final FriendRequestRepository friendRequestRepository;
     private final UserRepository userRepository;
+    private final NotificationEvents notificationEvents;
 
     @Autowired
-    public FriendshipService(FriendshipRepository friendshipRepository, FriendRequestRepository friendRequestRepository, UserRepository userRepository) {
+    public FriendshipService(FriendshipRepository friendshipRepository, FriendRequestRepository friendRequestRepository, UserRepository userRepository, NotificationEvents notificationEvents) {
         this.friendshipRepository = friendshipRepository;
         this.friendRequestRepository = friendRequestRepository;
         this.userRepository = userRepository;
+        this.notificationEvents = notificationEvents;
     }
 
     @Transactional
@@ -64,6 +67,7 @@ public class FriendshipService {
                 .build();
 
         friendRequestRepository.save(request);
+        notificationEvents.friendRequestReceived(requester,addressee);
         return FriendMapper.toFriendRequestResponseDto(request);
     }
 
@@ -77,12 +81,14 @@ public class FriendshipService {
 
         request.setStatus(accept ? FriendRequestStatus.ACCEPTED : FriendRequestStatus.DECLINED);
         request.setRespondedAt(Instant.now());
+        friendRequestRepository.save(request);
 
         if (accept) {
             friendshipRepository.save(Friendship.builder()
                     .userA(request.getRequester())
                     .userB(request.getAddressee())
                     .build());
+            notificationEvents.friendRequestAccepted(request.getRequester(),request.getAddressee());
         }
     }
 

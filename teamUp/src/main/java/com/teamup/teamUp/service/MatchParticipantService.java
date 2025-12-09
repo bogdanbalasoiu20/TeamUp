@@ -1,5 +1,6 @@
 package com.teamup.teamUp.service;
 
+import com.teamup.teamUp.events.NotificationEvents;
 import com.teamup.teamUp.exceptions.BadRequestException;
 import com.teamup.teamUp.exceptions.ForbiddenException;
 import com.teamup.teamUp.exceptions.NotFoundException;
@@ -35,12 +36,14 @@ public class MatchParticipantService {
     private final MatchParticipantRepository matchParticipantRepository;
     private final MatchRepository matchRepository;
     private final UserRepository userRepository;
+    private final NotificationEvents notificationEvents;
 
     @Autowired
-    public MatchParticipantService(MatchParticipantRepository matchParticipantRepository,  MatchRepository matchRepository, UserRepository userRepository) {
+    public MatchParticipantService(MatchParticipantRepository matchParticipantRepository, MatchRepository matchRepository, UserRepository userRepository, NotificationEvents notificationEvents) {
         this.matchParticipantRepository = matchParticipantRepository;
         this.matchRepository = matchRepository;
         this.userRepository = userRepository;
+        this.notificationEvents = notificationEvents;
     }
 
     @Transactional
@@ -258,6 +261,7 @@ public class MatchParticipantService {
         }
 
         matchParticipantRepository.save(mp);
+        notificationEvents.matchInviteReceived(organizer,target,match);
 
         int approved = (int) matchParticipantRepository.countById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED);
         int cap = match.getMaxPlayers()==null ? Integer.MAX_VALUE : match.getMaxPlayers();
@@ -305,6 +309,7 @@ public class MatchParticipantService {
 
         mp.setStatus(MatchParticipantStatus.ACCEPTED);
         matchParticipantRepository.save(mp);
+        notificationEvents.matchInviteAccepted(user,match.getCreator(),match);
 
         int after = (int) (approvedNow + 1);
         int cap = match.getMaxPlayers()==null ? Integer.MAX_VALUE : match.getMaxPlayers();

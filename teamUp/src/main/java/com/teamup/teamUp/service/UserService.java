@@ -71,7 +71,7 @@ public class UserService {
     public void deleteProfile(String username){
         User user = findByUsername(username);
         user.setDeleted(true);
-        // ★ safe increment
+        // safe increment
         Integer tv = user.getTokenVersion();
         user.setTokenVersion(tv == null ? 1 : tv + 1);
 

@@ -6,6 +6,7 @@ import com.teamup.teamUp.exceptions.ForbiddenException;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.mapper.NotificationMapper;
 import com.teamup.teamUp.model.dto.notification.NotificationResponseDto;
+import com.teamup.teamUp.model.dto.notification.NotificationWebSocketDto;
 import com.teamup.teamUp.model.entity.Notification;
 import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.model.enums.NotificationType;
@@ -14,6 +15,7 @@ import com.teamup.teamUp.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -25,21 +27,24 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final ObjectMapper mapper;
     private final UserRepository userRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Autowired
-    public NotificationService(NotificationRepository notificationRepository, ObjectMapper mapper, UserRepository userRepository) {
+    public NotificationService(NotificationRepository notificationRepository, ObjectMapper mapper, UserRepository userRepository, SimpMessagingTemplate messagingTemplate) {
         this.notificationRepository = notificationRepository;
         this.mapper = mapper;
         this.userRepository = userRepository;
+        this.messagingTemplate = messagingTemplate;
     }
 
     public void send(User user, NotificationType type, String title, String body, Map<String,Object> payload) {
+
         String payloadJson = null;
 
-        if(payload !=null){
-            try{
+        if (payload != null) {
+            try {
                 payloadJson = mapper.writeValueAsString(payload);
-            }catch(JsonProcessingException e){
+            } catch (JsonProcessingException e) {
                 throw new ForbiddenException("Failed to serialize payload");
             }
         }
@@ -55,6 +60,17 @@ public class NotificationService {
                 .build();
 
         notificationRepository.save(notification);
+
+        //websocket
+        try {
+            messagingTemplate.convertAndSendToUser(
+                    user.getId().toString(),
+                    "/queue/notifications",
+                    NotificationWebSocketDto.from(notification)
+            );
+        } catch (Exception ignored) {
+            // user not connected -> ignore, notification still saved in DB
+        }
     }
 
     public Page<NotificationResponseDto> list(String username, Pageable pageable) {

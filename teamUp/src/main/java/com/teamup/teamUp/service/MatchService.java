@@ -1,5 +1,6 @@
 package com.teamup.teamUp.service;
 
+import com.teamup.teamUp.events.NotificationEvents;
 import com.teamup.teamUp.exceptions.BadRequestException;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.exceptions.ResourceConflictException;
@@ -40,14 +41,16 @@ public class MatchService {
     private final VenueRepository venueRepository;
     private final MatchMapper matchMapper;
     private final MatchParticipantRepository matchParticipantRepository;
+    private final NotificationEvents notificationEvents;
 
     @Autowired
-    public MatchService(MatchRepository matchRepository, UserRepository userRepository, VenueRepository venueRepository, MatchMapper matchMapper, MatchParticipantRepository matchParticipantRepository) {
+    public MatchService(MatchRepository matchRepository, UserRepository userRepository, VenueRepository venueRepository, MatchMapper matchMapper, MatchParticipantRepository matchParticipantRepository, NotificationEvents notificationEvents) {
         this.matchRepository = matchRepository;
         this.userRepository = userRepository;
         this.venueRepository = venueRepository;
         this.matchMapper = matchMapper;
         this.matchParticipantRepository = matchParticipantRepository;
+        this.notificationEvents = notificationEvents;
     }
 
     @Transactional(readOnly = true)
@@ -102,6 +105,7 @@ public class MatchService {
 
     @Transactional
     public Match update(UUID id, MatchUpdateRequestDto request){
+        boolean isUpdated = false;
         Match match = findById(id);
 
         if (request.version() != null && !Objects.equals(request.version(), match.getVersion())) {
@@ -116,10 +120,12 @@ public class MatchService {
             }
             Venue venue = venueRepository.findById(request.venueId()).orElseThrow(() -> new NotFoundException("Venue not found"));
             match.setVenue(venue);
+            isUpdated = true;
         }
 
         if (request.startsAt() != null && !Objects.equals(match.getStartsAt(), request.startsAt())) {
             match.setStartsAt(request.startsAt());
+            isUpdated = true;
         }
 
         if(request.durationMinutes()!=null && !Objects.equals(match.getDurationMinutes(), request.durationMinutes())){
@@ -127,6 +133,7 @@ public class MatchService {
                 throw new BadRequestException("duration minutes can't be negative");
             }
             match.setDurationMinutes(request.durationMinutes());
+            isUpdated = true;
         }
         if (request.maxPlayers() != null && !Objects.equals(match.getMaxPlayers(), request.maxPlayers())) {
             if (request.maxPlayers() <= 1) {
@@ -136,15 +143,19 @@ public class MatchService {
                 throw new BadRequestException("maxPlayers cannot be less than current participants (" + participantsNumber + ")");
             }
             match.setMaxPlayers(request.maxPlayers());
+            isUpdated = true;
         }
         if (request.title() != null && !Objects.equals(match.getTitle(), request.title())) {
             match.setTitle(request.title());
+            isUpdated = true;
         }
         if (request.notes() != null && !Objects.equals(match.getNotes(), request.notes())) {
             match.setNotes(request.notes());
+            isUpdated = true;
         }
         if (request.visibility() != null && !Objects.equals(match.getVisibility(), request.visibility())) {
             match.setVisibility(request.visibility());
+            isUpdated = true;
         }
         if (request.joinDeadline() != null) {
             Instant effectiveStarts = (request.startsAt() != null) ? request.startsAt() : match.getStartsAt();
@@ -152,9 +163,16 @@ public class MatchService {
                 throw new BadRequestException("Join deadline must be before start time");
             }
             match.setJoinDeadline(request.joinDeadline());
+            isUpdated = true;
         }
         if (request.totalPrice() != null && !Objects.equals(match.getTotalPrice(), request.totalPrice())) {
             match.setTotalPrice(request.totalPrice());
+            isUpdated = true;
+        }
+
+        if(isUpdated){
+            List<MatchParticipant> participants = matchParticipantRepository.findAllById_MatchIdAndStatus(id,MatchParticipantStatus.ACCEPTED);
+            notificationEvents.matchUpdated(match,participants);
         }
 
         return matchRepository.save(match);
