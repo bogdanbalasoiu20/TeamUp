@@ -3,6 +3,7 @@ package com.teamup.teamUp.controller;
 import com.teamup.teamUp.model.dto.friend.FriendRequestActionDto;
 import com.teamup.teamUp.model.dto.friend.FriendRequestCreateDto;
 import com.teamup.teamUp.model.dto.friend.FriendRequestResponseDto;
+import com.teamup.teamUp.model.dto.friend.UserSearchResponseDto;
 import com.teamup.teamUp.service.FriendshipService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,4 +51,16 @@ public class FriendRequestController {
         friendshipService.respondToRequest(id, auth.getName(), action.accept());
         return ResponseEntity.ok(new ResponseApi<>(action.accept() ? "Friend request accepted" : "Friend request declined", null, true));
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<ResponseApi<Page<UserSearchResponseDto>>> search(
+            @RequestParam String query,
+            Authentication auth,
+            @PageableDefault(size = 20) Pageable pageable) {
+
+        var page = friendshipService.searchUsers(auth.getName(), query, pageable);
+        return ResponseEntity.ok(new ResponseApi<>("Users fetched", page, true));
+    }
+
+
 }

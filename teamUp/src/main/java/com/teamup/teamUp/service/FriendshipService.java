@@ -7,6 +7,7 @@ import com.teamup.teamUp.mapper.FriendMapper;
 import com.teamup.teamUp.model.dto.friend.FriendRequestCreateDto;
 import com.teamup.teamUp.model.dto.friend.FriendRequestResponseDto;
 import com.teamup.teamUp.model.dto.friend.FriendshipResponseDto;
+import com.teamup.teamUp.model.dto.friend.UserSearchResponseDto;
 import com.teamup.teamUp.model.entity.FriendRequest;
 import com.teamup.teamUp.model.entity.Friendship;
 import com.teamup.teamUp.model.entity.User;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -139,5 +141,47 @@ public class FriendshipService {
         if (deleted == 0)
             throw new NotFoundException("Friendship not found");
     }
+
+    @Transactional(readOnly = true)
+    public Page<UserSearchResponseDto> searchUsers(String requesterUsername, String query, Pageable pageable) {
+
+        User requester = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(requesterUsername)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        Page<User> users = userRepository.searchUsers(query, pageable);
+
+        List<UserSearchResponseDto> results = users.stream()
+                .filter(u -> !u.getId().equals(requester.getId()))
+                .map(user -> {
+
+                    boolean isFriend = friendshipRepository.existsByUserAIdAndUserBId(requester.getId(), user.getId()) ||
+                                    friendshipRepository.existsByUserAIdAndUserBId(user.getId(), requester.getId());
+
+                    Optional<FriendRequest> between = friendRequestRepository.findBetweenUsers(requester.getId(), user.getId());
+
+                    boolean pendingSent = between.filter(fr -> fr.getRequester().getId().equals(requester.getId())
+                                            && fr.getStatus() == FriendRequestStatus.PENDING)
+                                            .isPresent();
+
+                    boolean pendingReceived = between.filter(fr -> fr.getAddressee().getId().equals(requester.getId())
+                                            && fr.getStatus() == FriendRequestStatus.PENDING)
+                                            .isPresent();
+
+                    return new UserSearchResponseDto(
+                            user.getId(),
+                            user.getUsername(),
+                            user.getPhotoUrl(),
+                            isFriend,
+                            pendingSent,
+                            pendingReceived
+                    );
+                })
+                .toList();
+
+        return new PageImpl<>(results, pageable, users.getTotalElements());
+
+    }
+
+
 
 }
