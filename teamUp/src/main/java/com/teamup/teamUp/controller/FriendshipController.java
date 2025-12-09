@@ -32,4 +32,12 @@ public class FriendshipController {
         friendshipService.removeFriend(auth.getName(), friendId);
         return ResponseEntity.ok(new ResponseApi<>("Friend removed successfully", null, true));
     }
+
+    @GetMapping("/relation/{targetUsername}")
+    public ResponseEntity<ResponseApi<?>> relation(Authentication auth, @PathVariable String targetUsername) {
+
+        var dto = friendshipService.getRelationStatus(auth.getName(), targetUsername);
+        return ResponseEntity.ok(new ResponseApi<>("relation status", dto, true));
+    }
+
 }

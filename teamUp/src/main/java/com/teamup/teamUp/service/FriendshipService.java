@@ -4,10 +4,7 @@ import com.teamup.teamUp.events.NotificationEvents;
 import com.teamup.teamUp.exceptions.BadRequestException;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.mapper.FriendMapper;
-import com.teamup.teamUp.model.dto.friend.FriendRequestCreateDto;
-import com.teamup.teamUp.model.dto.friend.FriendRequestResponseDto;
-import com.teamup.teamUp.model.dto.friend.FriendshipResponseDto;
-import com.teamup.teamUp.model.dto.friend.UserSearchResponseDto;
+import com.teamup.teamUp.model.dto.friend.*;
 import com.teamup.teamUp.model.entity.FriendRequest;
 import com.teamup.teamUp.model.entity.Friendship;
 import com.teamup.teamUp.model.entity.User;
@@ -181,6 +178,31 @@ public class FriendshipService {
         return new PageImpl<>(results, pageable, users.getTotalElements());
 
     }
+
+
+    @Transactional(readOnly = true)
+    public RelationStatusDto getRelationStatus(String requesterUsername, String targetUsername) {
+        User requester = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(requesterUsername)
+                .orElseThrow(() -> new NotFoundException("Requester not found"));
+
+        User target = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(targetUsername)
+                .orElseThrow(() -> new NotFoundException("Target user not found"));
+
+        boolean isFriend = friendshipRepository.existsByUserAIdAndUserBId(requester.getId(), target.getId()) ||
+                        friendshipRepository.existsByUserAIdAndUserBId(target.getId(), requester.getId());
+
+        Optional<FriendRequest> between =
+                friendRequestRepository.findBetweenUsers(requester.getId(), target.getId());
+
+        boolean pendingSent = between.filter(fr -> fr.getRequester().getId().equals(requester.getId()) &&
+                        fr.getStatus() == FriendRequestStatus.PENDING).isPresent();
+
+        boolean pendingReceived = between.filter(fr -> fr.getAddressee().getId().equals(requester.getId()) &&
+                        fr.getStatus() == FriendRequestStatus.PENDING).isPresent();
+
+        return new RelationStatusDto(isFriend, pendingSent, pendingReceived);
+    }
+
 
 
 
