@@ -24,20 +24,14 @@ public class NotificationWebSocketDto {
     private Map<String,Object> payload;
 
     public static NotificationWebSocketDto from(Notification n) {
-        Map<String,Object> payloadMap = null;
-        try {
-            if (n.getPayload() != null) {
-                payloadMap = new ObjectMapper().readValue(n.getPayload(), HashMap.class);
-            }
-        } catch (Exception ignored) {}
-
         return new NotificationWebSocketDto(
                 n.getId(),
                 n.getType(),
                 n.getTitle(),
                 n.getBody(),
                 n.getCreatedAt(),
-                payloadMap
+                n.getPayload()
         );
     }
 }
+
