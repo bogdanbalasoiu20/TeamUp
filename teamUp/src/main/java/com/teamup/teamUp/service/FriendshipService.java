@@ -203,7 +203,4 @@ public class FriendshipService {
         return new RelationStatusDto(isFriend, pendingSent, pendingReceived);
     }
 
-
-
-
 }

@@ -39,39 +39,27 @@ public class NotificationService {
 
     public void send(User user, NotificationType type, String title, String body, Map<String,Object> payload) {
 
-        String payloadJson = null;
-
-        if (payload != null) {
-            try {
-                payloadJson = mapper.writeValueAsString(payload);
-            } catch (JsonProcessingException e) {
-                throw new ForbiddenException("Failed to serialize payload");
-            }
-        }
-
         var notification = Notification.builder()
                 .user(user)
                 .type(type)
                 .title(title)
                 .body(body)
-                .payload(payloadJson)
+                .payload(payload)
                 .isSeen(false)
                 .createdAt(Instant.now())
                 .build();
 
         notificationRepository.save(notification);
 
-        //websocket
         try {
             messagingTemplate.convertAndSendToUser(
                     user.getId().toString(),
                     "/queue/notifications",
                     NotificationWebSocketDto.from(notification)
             );
-        } catch (Exception ignored) {
-            // user not connected -> ignore, notification still saved in DB
-        }
+        } catch (Exception ignored) {}
     }
+
 
     public Page<NotificationResponseDto> list(String username, Pageable pageable) {
         User user = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(username).orElseThrow(()->new NotFoundException("User not found"));

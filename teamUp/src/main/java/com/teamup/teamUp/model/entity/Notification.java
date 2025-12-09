@@ -8,6 +8,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -39,7 +40,8 @@ public class Notification {
     private String body;
 
     @Column(columnDefinition = "jsonb")
-    private String payload;
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Map<String, Object> payload;
 
     @Column(name = "is_seen",nullable = false)
     @Builder.Default
