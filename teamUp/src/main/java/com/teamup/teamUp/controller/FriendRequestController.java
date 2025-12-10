@@ -48,7 +48,7 @@ public class FriendRequestController {
                 "Outgoing friend requests fetched successfully", page, true));
     }
 
-    @PatchMapping(value = "/{id}/respond", consumes = MediaType.APPLICATION_JSON_VALUE
+    @PostMapping(value = "/{id}/respond", consumes = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<ResponseApi<Void>> respond(@PathVariable UUID id, @RequestBody FriendRequestActionDto action, Authentication auth) {
         if (action == null || action.getAccept() == null)
