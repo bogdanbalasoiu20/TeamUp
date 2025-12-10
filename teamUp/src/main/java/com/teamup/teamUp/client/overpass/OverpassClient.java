@@ -72,7 +72,7 @@ public class OverpassClient {
         }
     }
 
-    // ---- DTO-uri răspuns Overpass
+    // ---- DTO-uri raspuns Overpass
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class OverpassResponse { public List<Element> elements; }
 

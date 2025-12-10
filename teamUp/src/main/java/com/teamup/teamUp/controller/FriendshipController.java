@@ -20,7 +20,7 @@ public class FriendshipController {
     private final FriendshipService friendshipService;
 
     @GetMapping
-    public ResponseEntity<ResponseApi<Page<FriendshipResponseDto>>> getFriends(Authentication auth, @PageableDefault(size = 10, sort = "since") Pageable pageable) {
+    public ResponseEntity<ResponseApi<Page<FriendshipResponseDto>>> getFriends(Authentication auth, @PageableDefault(size = 10, sort = "createdAt") Pageable pageable) {
 
         var result = friendshipService.listFriends(auth.getName(), pageable);
         return ResponseEntity.ok(new ResponseApi<>("Friends fetched successfully", result, true));
