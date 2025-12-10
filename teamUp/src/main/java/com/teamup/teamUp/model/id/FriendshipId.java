@@ -15,9 +15,10 @@ import java.util.UUID;
 @Builder
 @EqualsAndHashCode
 public class FriendshipId implements Serializable {
-    @Column(name = "user_a",nullable = false, insertable = false, updatable = false, columnDefinition = "uuid")
+    @Column(name = "user_a", nullable = false)
     private UUID userA;
 
-    @Column(name = "user_b", nullable = false,  insertable = false, updatable = false, columnDefinition = "uuid")
+    @Column(name = "user_b", nullable = false)
     private UUID userB;
+
 }

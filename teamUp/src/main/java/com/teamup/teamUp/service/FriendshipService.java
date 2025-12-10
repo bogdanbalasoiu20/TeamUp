@@ -84,11 +84,13 @@ public class FriendshipService {
         friendRequestRepository.save(request);
 
         if (accept) {
-            friendshipRepository.save(
-                    Friendship.builder()
-                            .userA(request.getRequester())
-                            .userB(request.getAddressee())
-                            .build()
+            User requester = userRepository.getReferenceById(request.getRequester().getId());
+            User addressee = userRepository.getReferenceById(request.getAddressee().getId());
+
+            friendshipRepository.save(Friendship.builder()
+                    .userA(requester)
+                    .userB(addressee)
+                    .build()
             );
 
             notificationEvents.friendRequestAccepted(request.getRequester(), request.getAddressee());
