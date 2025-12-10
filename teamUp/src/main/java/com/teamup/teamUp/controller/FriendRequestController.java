@@ -1,5 +1,6 @@
 package com.teamup.teamUp.controller;
 
+import com.teamup.teamUp.exceptions.BadRequestException;
 import com.teamup.teamUp.model.dto.friend.FriendRequestActionDto;
 import com.teamup.teamUp.model.dto.friend.FriendRequestCreateDto;
 import com.teamup.teamUp.model.dto.friend.FriendRequestResponseDto;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -46,11 +48,16 @@ public class FriendRequestController {
                 "Outgoing friend requests fetched successfully", page, true));
     }
 
-    @PatchMapping("/{id}/respond")
-    public ResponseEntity<ResponseApi<Void>> respond(@PathVariable UUID id, @Valid @RequestBody FriendRequestActionDto action, Authentication auth) {
+    @PatchMapping(value = "/{id}/respond", consumes = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<ResponseApi<Void>> respond(@PathVariable UUID id, @RequestBody FriendRequestActionDto action, Authentication auth) {
+        if (action == null || action.accept() == null)
+            throw new BadRequestException("Missing accept field");
+
         friendshipService.respondToRequest(id, auth.getName(), action.accept());
-        return ResponseEntity.ok(new ResponseApi<>(action.accept() ? "Friend request accepted" : "Friend request declined", null, true));
+        return ResponseEntity.ok(new ResponseApi<>("OK", null, true));
     }
+
 
     @GetMapping("/search")
     public ResponseEntity<ResponseApi<Page<UserSearchResponseDto>>> search(
