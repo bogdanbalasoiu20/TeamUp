@@ -9,6 +9,7 @@ import com.teamup.teamUp.model.entity.FriendRequest;
 import com.teamup.teamUp.model.entity.Friendship;
 import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.model.enums.FriendRequestStatus;
+import com.teamup.teamUp.model.id.FriendshipId;
 import com.teamup.teamUp.repository.FriendRequestRepository;
 import com.teamup.teamUp.repository.FriendshipRepository;
 import com.teamup.teamUp.repository.UserRepository;
@@ -83,13 +84,17 @@ public class FriendshipService {
         friendRequestRepository.save(request);
 
         if (accept) {
-            friendshipRepository.save(Friendship.builder()
-                    .userA(request.getRequester())
-                    .userB(request.getAddressee())
-                    .build());
-            notificationEvents.friendRequestAccepted(request.getRequester(),request.getAddressee());
+            friendshipRepository.save(
+                    Friendship.builder()
+                            .userA(request.getRequester())
+                            .userB(request.getAddressee())
+                            .build()
+            );
+
+            notificationEvents.friendRequestAccepted(request.getRequester(), request.getAddressee());
         }
     }
+
 
     @Transactional(readOnly = true)
     public Page<FriendshipResponseDto> listFriends(String username, Pageable pageable) {

@@ -36,24 +36,23 @@ public class Friendship {
     private Instant createdAt;
 
     @PrePersist
-    @PreUpdate
-    private void normalizeAndValidate() {
-        if (userA == null || userB == null) {
+    private void onCreate() {
+
+        if (userA == null || userB == null)
             throw new IllegalArgumentException("Both users must be provided");
-        }
-        if (userA.getId().equals(userB.getId())) {
-            throw new IllegalArgumentException("A user cannot befriend themselves");
-        }
+
         if (userA.getId().compareTo(userB.getId()) > 0) {
             User tmp = userA;
             userA = userB;
             userB = tmp;
         }
-        if (id == null || !id.getUserA().equals(userA.getId()) || !id.getUserB().equals(userB.getId())) {
-            id = FriendshipId.builder()
-                    .userA(userA.getId())
-                    .userB(userB.getId())
-                    .build();
+
+        if (id == null) {
+            id = new FriendshipId(
+                    userA.getId(),
+                    userB.getId()
+            );
         }
     }
 }
+
