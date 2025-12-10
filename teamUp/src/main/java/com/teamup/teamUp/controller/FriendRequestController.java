@@ -51,10 +51,10 @@ public class FriendRequestController {
     @PatchMapping(value = "/{id}/respond", consumes = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<ResponseApi<Void>> respond(@PathVariable UUID id, @RequestBody FriendRequestActionDto action, Authentication auth) {
-        if (action == null || action.accept() == null)
+        if (action == null || action.getAccept() == null)
             throw new BadRequestException("Missing accept field");
 
-        friendshipService.respondToRequest(id, auth.getName(), action.accept());
+        friendshipService.respondToRequest(id, auth.getName(), action.getAccept());
         return ResponseEntity.ok(new ResponseApi<>("OK", null, true));
     }
 
