@@ -48,14 +48,9 @@ public class Friendship {
         if (userA.getId().equals(userB.getId()))
             throw new IllegalArgumentException("A user cannot befriend themselves");
 
-        if (userA.getId().compareTo(userB.getId()) > 0) {
-            User tmp = userA;
-            userA = userB;
-            userB = tmp;
-        }
-
         this.id = new FriendshipId(userA.getId(), userB.getId());
     }
+
 }
 
 
