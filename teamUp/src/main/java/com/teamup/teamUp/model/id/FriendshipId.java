@@ -9,16 +9,10 @@ import java.util.UUID;
 
 
 @Embeddable
-@Getter
-@Setter
+@Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
-@Builder
-@EqualsAndHashCode
 public class FriendshipId implements Serializable {
-    @Column(name = "user_a", nullable = false)
     private UUID userA;
-
-    @Column(name = "user_b", nullable = false)
     private UUID userB;
-
 }
+
