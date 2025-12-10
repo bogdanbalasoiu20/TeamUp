@@ -10,7 +10,6 @@ import java.time.Instant;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(exclude = {"userA","userB"})
 @Entity
@@ -35,7 +34,6 @@ public class Friendship {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    @Builder
     public Friendship(User userA, User userB) {
         this.userA = userA;
         this.userB = userB;
@@ -59,4 +57,5 @@ public class Friendship {
         this.id = new FriendshipId(userA.getId(), userB.getId());
     }
 }
+
 
