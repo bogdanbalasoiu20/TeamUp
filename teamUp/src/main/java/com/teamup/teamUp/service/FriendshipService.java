@@ -89,6 +89,8 @@ public class FriendshipService {
 
             Friendship friendship = new Friendship(requester, addressee);
             friendshipRepository.save(friendship);
+
+            notificationEvents.friendRequestAccepted(requester,addressee);
         }
 
     }
@@ -141,6 +143,9 @@ public class FriendshipService {
         int deleted = friendshipRepository.deleteByUserIds(userId, friendId);
         if (deleted == 0)
             throw new NotFoundException("Friendship not found");
+
+        friendRequestRepository.cancelAllBetween(userId, friendId);
+
     }
 
     @Transactional(readOnly = true)
@@ -195,8 +200,7 @@ public class FriendshipService {
         boolean isFriend = friendshipRepository.existsByUserAIdAndUserBId(requester.getId(), target.getId()) ||
                         friendshipRepository.existsByUserAIdAndUserBId(target.getId(), requester.getId());
 
-        Optional<FriendRequest> between =
-                friendRequestRepository.findBetweenUsers(requester.getId(), target.getId());
+        Optional<FriendRequest> between = friendRequestRepository.findPendingBetweenUsers(requester.getId(), target.getId());
 
         boolean pendingSent = between.filter(fr -> fr.getRequester().getId().equals(requester.getId()) &&
                         fr.getStatus() == FriendRequestStatus.PENDING).isPresent();
