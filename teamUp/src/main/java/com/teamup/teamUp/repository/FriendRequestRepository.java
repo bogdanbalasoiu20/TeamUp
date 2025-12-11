@@ -27,24 +27,25 @@ public interface FriendRequestRepository extends JpaRepository<FriendRequest, UU
     Optional<FriendRequest> findBetweenUsers(UUID user1, UUID user2);
 
     @Query("""
-    SELECT fr FROM FriendRequest fr
-    WHERE (
-         (fr.requester.id = :a AND fr.addressee.id = :b)
-      OR (fr.requester.id = :b AND fr.addressee.id = :a)
-    )
-    AND fr.status = 'PENDING'
+SELECT fr FROM FriendRequest fr
+WHERE (
+        (fr.requester.id = :a AND fr.addressee.id = :b)
+     OR (fr.requester.id = :b AND fr.addressee.id = :a)
+      )
+  AND fr.status = 'PENDING'
 """)
     Optional<FriendRequest> findPendingBetweenUsers(UUID a, UUID b);
 
 
+
     @Modifying
     @Query("""
-    UPDATE FriendRequest fr
-    SET fr.status = 'CANCELED'
-    WHERE (fr.requester.id = :a AND fr.addressee.id = :b)
-       OR (fr.requester.id = :b AND fr.addressee.id = :a)
+DELETE FROM FriendRequest fr
+WHERE (fr.requester.id = :a AND fr.addressee.id = :b)
+   OR (fr.requester.id = :b AND fr.addressee.id = :a)
 """)
-    void cancelAllBetween(UUID a, UUID b);
+    void deleteAllBetween(UUID a, UUID b);
+
 
 
 }

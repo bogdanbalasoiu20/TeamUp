@@ -19,7 +19,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query("""
     select u from User u
-    where lower(u.username) like lower(concat('%', :query, '%'))
+    where u.deleted = false
+    and lower(u.username) like lower(concat('%', :query, '%'))
 """)
     Page<User> searchUsers(@Param("query") String query, Pageable pageable);
 

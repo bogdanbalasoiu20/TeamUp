@@ -144,9 +144,9 @@ public class FriendshipService {
         if (deleted == 0)
             throw new NotFoundException("Friendship not found");
 
-        friendRequestRepository.cancelAllBetween(userId, friendId);
-
+        friendRequestRepository.deleteAllBetween(userId, friendId);
     }
+
 
     @Transactional(readOnly = true)
     public Page<UserSearchResponseDto> searchUsers(String requesterUsername, String query, Pageable pageable) {
@@ -191,6 +191,7 @@ public class FriendshipService {
 
     @Transactional(readOnly = true)
     public RelationStatusDto getRelationStatus(String requesterUsername, String targetUsername) {
+
         User requester = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(requesterUsername)
                 .orElseThrow(() -> new NotFoundException("Requester not found"));
 
@@ -200,15 +201,16 @@ public class FriendshipService {
         boolean isFriend = friendshipRepository.existsByUserAIdAndUserBId(requester.getId(), target.getId()) ||
                         friendshipRepository.existsByUserAIdAndUserBId(target.getId(), requester.getId());
 
-        Optional<FriendRequest> between = friendRequestRepository.findPendingBetweenUsers(requester.getId(), target.getId());
+        Optional<FriendRequest> frOpt = friendRequestRepository.findPendingBetweenUsers(requester.getId(), target.getId());
 
-        boolean pendingSent = between.filter(fr -> fr.getRequester().getId().equals(requester.getId()) &&
-                        fr.getStatus() == FriendRequestStatus.PENDING).isPresent();
+        boolean pendingSent = frOpt.map(fr -> fr.getRequester().getId().equals(requester.getId())).orElse(false);
 
-        boolean pendingReceived = between.filter(fr -> fr.getAddressee().getId().equals(requester.getId()) &&
-                        fr.getStatus() == FriendRequestStatus.PENDING).isPresent();
+        boolean pendingReceived = frOpt.map(fr -> fr.getAddressee().getId().equals(requester.getId())).orElse(false);
 
-        return new RelationStatusDto(isFriend, pendingSent, pendingReceived);
+        UUID requestId = frOpt.map(FriendRequest::getId).orElse(null);
+
+        return new RelationStatusDto(isFriend, pendingSent, pendingReceived, requestId);
     }
+
 
 }
