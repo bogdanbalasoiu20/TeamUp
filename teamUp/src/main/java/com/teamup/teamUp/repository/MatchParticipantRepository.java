@@ -9,9 +9,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public interface MatchParticipantRepository extends JpaRepository<MatchParticipant, MatchParticipantId> {
@@ -56,5 +58,16 @@ public interface MatchParticipantRepository extends JpaRepository<MatchParticipa
     List<MatchParticipant> findAllById_MatchId(UUID matchId);
 
     List<MatchParticipant> findAllById_MatchIdAndStatus(UUID matchId, MatchParticipantStatus status);
+
+    @Query("""
+    select mp.user.id
+    from MatchParticipant mp
+    where mp.match.id = :matchId
+      and mp.status = :status
+""")
+    Set<UUID> findUserIdsByMatchAndStatus(
+            @Param("matchId") UUID matchId,
+            @Param("status") MatchParticipantStatus status
+    );
 
 }

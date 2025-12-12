@@ -4,17 +4,16 @@ import com.teamup.teamUp.events.NotificationEvents;
 import com.teamup.teamUp.exceptions.BadRequestException;
 import com.teamup.teamUp.exceptions.ForbiddenException;
 import com.teamup.teamUp.exceptions.NotFoundException;
+import com.teamup.teamUp.exceptions.UnauthorizedException;
 import com.teamup.teamUp.mapper.MatchParticipantMapper;
-import com.teamup.teamUp.model.dto.matchParticipant.JoinRequestDto;
-import com.teamup.teamUp.model.dto.matchParticipant.JoinResponseDto;
-import com.teamup.teamUp.model.dto.matchParticipant.JoinWithStatusResponseDto;
-import com.teamup.teamUp.model.dto.matchParticipant.ParticipantDto;
+import com.teamup.teamUp.model.dto.matchParticipant.*;
 import com.teamup.teamUp.model.entity.Match;
 import com.teamup.teamUp.model.entity.MatchParticipant;
 import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.model.enums.MatchParticipantStatus;
 import com.teamup.teamUp.model.enums.MatchStatus;
 import com.teamup.teamUp.model.id.MatchParticipantId;
+import com.teamup.teamUp.repository.FriendshipRepository;
 import com.teamup.teamUp.repository.MatchParticipantRepository;
 import com.teamup.teamUp.repository.MatchRepository;
 import com.teamup.teamUp.repository.UserRepository;
@@ -29,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -37,13 +37,15 @@ public class MatchParticipantService {
     private final MatchRepository matchRepository;
     private final UserRepository userRepository;
     private final NotificationEvents notificationEvents;
+    private final FriendshipRepository friendshipRepository;
 
     @Autowired
-    public MatchParticipantService(MatchParticipantRepository matchParticipantRepository, MatchRepository matchRepository, UserRepository userRepository, NotificationEvents notificationEvents) {
+    public MatchParticipantService(MatchParticipantRepository matchParticipantRepository, MatchRepository matchRepository, UserRepository userRepository, NotificationEvents notificationEvents, FriendshipRepository friendshipRepository) {
         this.matchParticipantRepository = matchParticipantRepository;
         this.matchRepository = matchRepository;
         this.userRepository = userRepository;
         this.notificationEvents = notificationEvents;
+        this.friendshipRepository = friendshipRepository;
     }
 
     @Transactional
@@ -238,6 +240,11 @@ public class MatchParticipantService {
 
         User target = userRepository.findById(targetUserId).orElseThrow(() -> new NotFoundException("Target user not found"));
 
+        if (!friendshipRepository.existsByUserA_IdAndUserB_Id(organizer.getId(), target.getId()) && !friendshipRepository.existsByUserA_IdAndUserB_Id(target.getId(), organizer.getId())) {
+            throw new ForbiddenException("You can only invite friends");
+        }
+
+
         MatchParticipant mp = matchParticipantRepository.findById_MatchIdAndId_UserId(matchId,targetUserId).orElse(null);
 
         if(mp==null){
@@ -266,6 +273,34 @@ public class MatchParticipantService {
         int approved = (int) matchParticipantRepository.countById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED);
         int cap = match.getMaxPlayers()==null ? Integer.MAX_VALUE : match.getMaxPlayers();
         return MatchParticipantMapper.toDto(match.getId(),approved,cap);
+    }
+
+    public List<InvitableFriendDto> getInvitableFriends(UUID matchID, String organizerUsername, String search){
+        User organizer = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(organizerUsername).orElseThrow(() -> new NotFoundException("User not found"));
+
+        Match match = matchRepository.findByIdAndIsActiveTrue(matchID).orElseThrow(() -> new NotFoundException("Match not found"));
+
+        if(!match.getCreator().getId().equals(organizer.getId())) {
+            throw new ForbiddenException("Only the match creator can invite players");
+        }
+
+        //lista de prieteni
+        List<User> friends = friendshipRepository.searchAcceptedFriends(organizer.getId(),search);
+
+        //prietenii deja invitati
+        Set<UUID> invitedIds = matchParticipantRepository.findUserIdsByMatchAndStatus(matchID, MatchParticipantStatus.INVITED);
+
+        //prietenii care au acceptat invitatia
+        Set<UUID> acceptedIds = matchParticipantRepository.findUserIdsByMatchAndStatus(matchID, MatchParticipantStatus.ACCEPTED);
+
+        return friends.stream()
+                .filter(friend -> !acceptedIds.contains(friend.getId()))
+                .map(friend -> new InvitableFriendDto(
+                        friend.getId(),
+                        friend.getUsername(),
+                        invitedIds.contains(friend.getId())
+                ))
+                .toList();
     }
 
 

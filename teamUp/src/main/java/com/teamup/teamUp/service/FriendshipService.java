@@ -50,7 +50,7 @@ public class FriendshipService {
         if (requester.getId().equals(addressee.getId()))
             throw new BadRequestException("You cannot send a friend request to yourself");
 
-        if (friendshipRepository.existsByUserAIdAndUserBId(requester.getId(), addressee.getId()))
+        if (friendshipRepository.existsByUserA_IdAndUserB_Id(requester.getId(), addressee.getId()))
             throw new BadRequestException("You are already friends");
 
         boolean pendingExists = friendRequestRepository.findBetweenUsers(requester.getId(), addressee.getId())
@@ -160,8 +160,8 @@ public class FriendshipService {
                 .filter(u -> !u.getId().equals(requester.getId()))
                 .map(user -> {
 
-                    boolean isFriend = friendshipRepository.existsByUserAIdAndUserBId(requester.getId(), user.getId()) ||
-                                    friendshipRepository.existsByUserAIdAndUserBId(user.getId(), requester.getId());
+                    boolean isFriend = friendshipRepository.existsByUserA_IdAndUserB_Id(requester.getId(), user.getId()) ||
+                                    friendshipRepository.existsByUserA_IdAndUserB_Id(user.getId(), requester.getId());
 
                     Optional<FriendRequest> between = friendRequestRepository.findBetweenUsers(requester.getId(), user.getId());
 
@@ -198,8 +198,8 @@ public class FriendshipService {
         User target = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(targetUsername)
                 .orElseThrow(() -> new NotFoundException("Target user not found"));
 
-        boolean isFriend = friendshipRepository.existsByUserAIdAndUserBId(requester.getId(), target.getId()) ||
-                        friendshipRepository.existsByUserAIdAndUserBId(target.getId(), requester.getId());
+        boolean isFriend = friendshipRepository.existsByUserA_IdAndUserB_Id(requester.getId(), target.getId()) ||
+                        friendshipRepository.existsByUserA_IdAndUserB_Id(target.getId(), requester.getId());
 
         Optional<FriendRequest> frOpt = friendRequestRepository.findPendingBetweenUsers(requester.getId(), target.getId());
 

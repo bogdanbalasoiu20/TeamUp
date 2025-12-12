@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -67,6 +68,17 @@ public class MatchParticipantController {
             Authentication auth) {
         var resp = matchParticipantService.invite(matchId, userId, auth.getName());
         return ResponseEntity.ok(new ResponseApi<>("User invited", resp, true));
+    }
+
+
+    @GetMapping("/{matchId}/invitable-friends")
+    public ResponseEntity<ResponseApi<List<InvitableFriendDto>>> getInvitableFriends(
+            @PathVariable UUID matchId,
+            @RequestParam(required = false) String search,
+            Authentication auth
+    ){
+        var resp = matchParticipantService.getInvitableFriends(matchId,auth.getName(),search);
+        return ResponseEntity.ok(new ResponseApi<>("Invitable Friends", resp, true));
     }
 
     @PostMapping("/{matchId}/participants/accept")
