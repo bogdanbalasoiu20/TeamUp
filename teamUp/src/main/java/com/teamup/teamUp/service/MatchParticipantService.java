@@ -30,6 +30,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class MatchParticipantService {
@@ -104,6 +105,11 @@ public class MatchParticipantService {
                 .build();
 
         matchParticipantRepository.save(mp);
+        if (status == MatchParticipantStatus.REQUESTED) {
+            notificationEvents.joinRequestReceived(user, match.getCreator(), match);
+        } else if (status == MatchParticipantStatus.WAITLIST) {
+            notificationEvents.joinWaitlist(user, match);
+        }
 
         long totalParticipants = matchParticipantRepository.countById_MatchId(matchId);
 
@@ -129,6 +135,13 @@ public class MatchParticipantService {
         if(deleted==0){
             throw new NotFoundException("You are not a participant");
         }
+        List<User> remainingPlayers = matchParticipantRepository
+                .findAllById_MatchIdAndStatus(matchId, MatchParticipantStatus.ACCEPTED)
+                .stream()
+                .map(MatchParticipant::getUser)
+                .toList();
+
+        notificationEvents.matchLeft(user, remainingPlayers, match);
 
         long participants = matchParticipantRepository.countById_MatchId(matchId);
         return MatchParticipantMapper.toDto(matchId,(int)participants,match.getMaxPlayers() == null ? Integer.MAX_VALUE : match.getMaxPlayers());
@@ -146,7 +159,7 @@ public class MatchParticipantService {
             throw new ForbiddenException("Only the match creator can approve requests");
         }
 
-        // nu aproba dupa start/deadline
+        // nu aprob dupa start/deadline
         Instant now = Instant.now();
         if (match.getStartsAt()!=null && !now.isBefore(match.getStartsAt())) {
             throw new BadRequestException("The match has already started");
@@ -174,6 +187,8 @@ public class MatchParticipantService {
         // tranzitie de stare
         mp.setStatus(MatchParticipantStatus.ACCEPTED);
         matchParticipantRepository.save(mp);
+        User requester = mp.getUser();
+        notificationEvents.joinRequestAccepted(requester, approver, match);
 
         int after = (int) (approvedNow + 1);
         int cap = match.getMaxPlayers() == null ? Integer.MAX_VALUE : match.getMaxPlayers();
@@ -462,6 +477,7 @@ public class MatchParticipantService {
 
         participant.setStatus(MatchParticipantStatus.ACCEPTED);
         matchParticipantRepository.save(participant);
+        notificationEvents.promotedFromWaitlist(participant.getUser(),match);
 
         return new ParticipantDto(
                 participant.getUser().getId(),
@@ -495,6 +511,7 @@ public class MatchParticipantService {
 
         for (MatchParticipant mp : requestedUsers) {
             mp.setStatus(MatchParticipantStatus.WAITLIST);
+            notificationEvents.moveToWaitlist(mp.getUser(), match);
         }
 
         matchParticipantRepository.saveAll(requestedUsers);

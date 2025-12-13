@@ -86,4 +86,70 @@ public class NotificationEvents {
                 Map.of("matchId", match.getId())
         );
     }
+
+    public void joinRequestReceived(User requester, User matchCreator, Match match) {
+        notificationService.send(
+                matchCreator,
+                NotificationType.JOIN_REQUEST_RECEIVED,
+                "Join Request",
+                requester.getUsername() + " wants to join your match",
+                Map.of("matchId", match.getId(), "userId", requester.getId()
+                )
+        );
+    }
+
+    public void joinRequestAccepted(User requester, User accepter, Match match) {
+        notificationService.send(
+                requester,
+                NotificationType.JOIN_REQUEST_ACCEPTED,
+                "Join Request Accepted",
+                accepter.getUsername() + " accepted your join request",
+                Map.of("matchId", match.getId(), "userId", accepter.getId()
+                )
+        );
+    }
+
+    public void joinWaitlist(User user, Match match) {
+        notificationService.send(
+                user,
+                NotificationType.JOIN_WAITLIST,
+                "Waitlist",
+                "You have been placed on the waitlist for this match",
+                Map.of("matchId", match.getId())
+        );
+    }
+
+
+    public void promotedFromWaitlist(User user, Match match) {
+        notificationService.send(
+                user,
+                NotificationType.PROMOTED_FROM_WAITLIST,
+                "Spot Available",
+                "You have been promoted from the waitlist",
+                Map.of("matchId", match.getId())
+        );
+    }
+
+    public void moveToWaitlist(User user, Match match) {
+        notificationService.send(
+                user,
+                NotificationType.MOVED_TO_WAITLIST,
+                "Moved to waitlist",
+                "The match is currently full. You have been moved to the waitlist.",
+                Map.of("matchId", match.getId())
+        );
+    }
+
+    public void matchLeft(User leaver, List<User> receivers, Match match) {
+        for (User receiver : receivers) {
+            notificationService.send(
+                    receiver,
+                    NotificationType.MATCH_LEFT,
+                    "Player Left Match",
+                    leaver.getUsername() + " left the match",
+                    Map.of("matchId", match.getId(), "userId", leaver.getId()
+                    )
+            );
+        }
+    }
 }

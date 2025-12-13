@@ -185,6 +185,7 @@ public class MatchService {
         if(Boolean.TRUE.equals(match.getIsActive())){
             match.setIsActive(false);
             match.setStatus(MatchStatus.CANCELED);
+            matchRepository.save(match);
         }
     }
 
