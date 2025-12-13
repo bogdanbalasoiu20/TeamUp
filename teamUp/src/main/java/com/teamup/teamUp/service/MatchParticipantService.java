@@ -108,7 +108,7 @@ public class MatchParticipantService {
         if (status == MatchParticipantStatus.REQUESTED) {
             notificationEvents.joinRequestReceived(user, match.getCreator(), match);
         } else if (status == MatchParticipantStatus.WAITLIST) {
-            notificationEvents.joinWaitlist(user, match);
+            notificationEvents.joinWaitlist(match.getCreator(),user, match);
         }
 
         long totalParticipants = matchParticipantRepository.countById_MatchId(matchId);

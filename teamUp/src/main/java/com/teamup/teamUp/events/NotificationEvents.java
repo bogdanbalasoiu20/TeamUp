@@ -109,12 +109,12 @@ public class NotificationEvents {
         );
     }
 
-    public void joinWaitlist(User user, Match match) {
+    public void joinWaitlist(User matchCreator, User user, Match match) {
         notificationService.send(
-                user,
+                matchCreator,
                 NotificationType.JOIN_WAITLIST,
                 "Waitlist",
-                "You have been placed on the waitlist for this match",
+                user.getUsername()+ "has joined the waitlist",
                 Map.of("matchId", match.getId())
         );
     }
