@@ -114,7 +114,7 @@ public class NotificationEvents {
                 matchCreator,
                 NotificationType.JOIN_WAITLIST,
                 "Waitlist",
-                user.getUsername()+ "has joined the waitlist",
+                user.getUsername()+ " has joined the waitlist",
                 Map.of("matchId", match.getId())
         );
     }

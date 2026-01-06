@@ -19,6 +19,8 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+
+//folosit pentru statistici
 public class UserStatsView {
 
     @Id

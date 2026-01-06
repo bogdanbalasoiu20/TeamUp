@@ -2,6 +2,8 @@ package com.teamup.teamUp.model.entity;
 
 import com.teamup.teamUp.model.id.PlayerRatingId;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -16,6 +18,8 @@ import java.time.Instant;
 @Builder
 @ToString(exclude ={"match", "raterUser", "ratedUser"})
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+
+//evaluarea primita de jucatorul X de la jucatorul Y in meciul Z
 public class PlayerRating {
     @EmbeddedId
     @EqualsAndHashCode.Include
@@ -36,23 +40,54 @@ public class PlayerRating {
     @JoinColumn(name = "rated_user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_pr_rated"))
     private User ratedUser;
 
-    @Column(nullable = false)
-    private short pace;
+    @Min(0)
+    @Max(99)
+    private Short pace;
 
-    @Column(nullable = false)
-    private short shooting;
+    @Min(0)
+    @Max(99)
+    private Short shooting;
 
-    @Column(nullable = false)
-    private short passing;
+    @Min(0)
+    @Max(99)
+    private Short passing;
 
-    @Column(nullable = false)
-    private short defending;
+    @Min(0)
+    @Max(99)
+    private Short defending;
 
-    @Column(nullable = false)
-    private short dribbling;
+    @Min(0)
+    @Max(99)
+    private Short dribbling;
 
-    @Column(nullable = false)
-    private short physical;
+    @Min(0)
+    @Max(99)
+    private Short physical;
+
+    @Min(0)
+    @Max(99)
+    private Short gkDiving;
+
+    @Min(0)
+    @Max(99)
+    private Short gkHandling;
+
+    @Min(0)
+    @Max(99)
+    private Short gkKicking;
+
+    @Min(0)
+    @Max(99)
+    private Short gkReflexes;
+
+    @Min(0)
+    @Max(99)
+    private Short gkSpeed;
+
+    @Min(0)
+    @Max(99)
+    private Short gkPositioning;
+
 
     @Column(length = 500)
     private String comment;
