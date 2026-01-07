@@ -90,6 +90,14 @@ public class Match {
     @Column(name = "version", nullable = false)
     private Long version;
 
+    @Column(name = "rating_opened_at")
+    private Instant ratingOpenedAt;
+
+    @Builder.Default
+    private Boolean ratingsFinalized = false;
+
+
+
     @PrePersist
     @PreUpdate
     private void validate(){

@@ -1,5 +1,6 @@
 package com.teamup.teamUp.service;
 
+import com.teamup.teamUp.exceptions.BadRequestException;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.model.dto.rating.PlayerRatingDto;
 import com.teamup.teamUp.model.entity.Match;
@@ -8,13 +9,18 @@ import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.model.enums.Position;
 import com.teamup.teamUp.model.id.PlayerRatingId;
 import com.teamup.teamUp.repository.MatchParticipantRepository;
+import com.teamup.teamUp.repository.MatchRepository;
 import com.teamup.teamUp.repository.PlayerRatingRepository;
 import com.teamup.teamUp.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+
+import static java.time.temporal.ChronoUnit.HOURS;
+
 
 @Service
 @Transactional
@@ -23,11 +29,13 @@ public class PlayerRatingService {
     private final UserRepository userRepository;
     private final PlayerRatingRepository playerRatingRepository;
     private final MatchParticipantRepository matchParticipantRepository;
+    private final MatchRepository matchRepository;
 
-    public PlayerRatingService(UserRepository userRepository, PlayerRatingRepository playerRatingRepository, MatchParticipantRepository matchParticipantRepository) {
+    public PlayerRatingService(UserRepository userRepository, PlayerRatingRepository playerRatingRepository, MatchParticipantRepository matchParticipantRepository, MatchRepository matchRepository) {
         this.userRepository = userRepository;
         this.playerRatingRepository = playerRatingRepository;
         this.matchParticipantRepository = matchParticipantRepository;
+        this.matchRepository = matchRepository;
     }
 
 
@@ -37,9 +45,16 @@ public class PlayerRatingService {
         User rater = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(raterUsername)
                 .orElseThrow(() -> new NotFoundException("Rater user not found"));
 
+        Match match = matchRepository.findById(matchId).orElseThrow(() -> new NotFoundException("Match not found"));
+
         if (!matchParticipantRepository.existsById_MatchIdAndId_UserId(matchId, rater.getId())) {
             throw new IllegalStateException("You are not part of this match");
         }
+
+        if (Instant.now().isAfter(match.getRatingOpenedAt().plus(24, HOURS))) {
+            throw new BadRequestException("Rating period has ended");
+        }
+
 
         for (PlayerRatingDto dto : ratings) {
             User rated = userRepository.findById(dto.ratedUserId())

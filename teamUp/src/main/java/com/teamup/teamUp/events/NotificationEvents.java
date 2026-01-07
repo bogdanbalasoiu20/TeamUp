@@ -152,4 +152,17 @@ public class NotificationEvents {
             );
         }
     }
+
+    public void matchFinished(Match match, List<MatchParticipant> participants) {
+        participants.forEach(mp -> {
+            notificationService.send(
+                    mp.getUser(),
+                    NotificationType.MATCH_RATING,
+                    "Rate your teammates",
+                    "Your match has ended. Rate your teammates now!",
+                    Map.of("matchId", match.getId().toString())
+            );
+        });
+    }
+
 }

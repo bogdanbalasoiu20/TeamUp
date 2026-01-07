@@ -211,4 +211,35 @@ public class MatchService {
         );
     }
 
+
+    @Transactional
+    public void finishMatch(UUID matchId, String authUsername) {
+
+        Match match = findById(matchId);
+
+        User user = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(authUsername)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        if (!match.getCreator().getId().equals(user.getId())) {
+            throw new BadRequestException("You are not allowed to finish this match");
+        }
+
+        if (match.getStatus() == MatchStatus.DONE) {
+            throw new BadRequestException("Match already finished");
+        }
+
+        match.setStatus(MatchStatus.DONE);
+        match.setRatingOpenedAt(Instant.now());
+        match.setRatingsFinalized(false);
+        matchRepository.save(match);
+
+        List<MatchParticipant> participants =
+                matchParticipantRepository.findAllById_MatchIdAndStatus(
+                        matchId,
+                        MatchParticipantStatus.ACCEPTED
+                );
+
+        notificationEvents.matchFinished(match, participants);
+    }
+
 }

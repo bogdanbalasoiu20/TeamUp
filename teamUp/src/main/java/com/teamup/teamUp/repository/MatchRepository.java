@@ -82,4 +82,13 @@ order by m.startsAt asc
             Pageable pageable
     );
 
+
+    @Query("""
+        select m from Match m
+        where m.status = 'DONE'
+          and m.ratingsFinalized = false
+          and m.ratingOpenedAt <= :deadline
+    """)
+    List<Match> findMatchesToFinalize(@Param("deadline") Instant deadline);
+
 }

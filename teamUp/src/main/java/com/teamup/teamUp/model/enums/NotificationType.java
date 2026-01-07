@@ -17,5 +17,7 @@ public enum NotificationType {
     PROMOTED_FROM_WAITLIST,
     MOVED_TO_WAITLIST,
 
-    MATCH_LEFT
+    MATCH_LEFT,
+
+    MATCH_RATING
 }

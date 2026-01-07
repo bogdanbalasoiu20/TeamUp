@@ -6,6 +6,7 @@ import com.teamup.teamUp.model.dto.match.MatchMapPinDto;
 import com.teamup.teamUp.model.dto.match.MatchResponseDto;
 import com.teamup.teamUp.model.dto.match.MatchUpdateRequestDto;
 import com.teamup.teamUp.model.entity.Match;
+import com.teamup.teamUp.service.MatchRatingService;
 import com.teamup.teamUp.service.MatchService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -31,11 +32,13 @@ import java.util.UUID;
 public class MatchController {
     private final MatchService matchService;
     private final MatchMapper matchMapper;
+    private final MatchRatingService matchRatingService;
 
     @Autowired
-    public MatchController(MatchService matchService, MatchMapper matchMapper) {
+    public MatchController(MatchService matchService, MatchMapper matchMapper, MatchRatingService matchRatingService) {
         this.matchService = matchService;
         this.matchMapper = matchMapper;
+        this.matchRatingService = matchRatingService;
     }
 
     @GetMapping("/{id}")
@@ -95,5 +98,22 @@ public class MatchController {
         var page = matchService.findAll(pageable);
         return ResponseEntity.ok(new ResponseApi<>("Matches found", page, true));
     }
+
+    @PostMapping("/{matchId}/finish")
+    public ResponseEntity<ResponseApi<Void>> finishMatch(@PathVariable UUID matchId, Authentication auth
+    ) {
+        matchService.finishMatch(matchId, auth.getName());
+        return ResponseEntity.ok(
+                new ResponseApi<>("Match finished successfully", null, true)
+        );
+    }
+
+    @PostMapping("/{matchId}/finalize-ratings")
+    public ResponseEntity<ResponseApi<Void>> finalizeRatings(@PathVariable UUID matchId, Authentication auth) {
+        matchRatingService.finalizeRatings(matchId, auth.getName());
+        return ResponseEntity.ok(new ResponseApi<>("Ratings finalized successfully", null, true));
+    }
+
+
 
 }

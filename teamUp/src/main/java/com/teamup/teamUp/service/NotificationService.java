@@ -1,6 +1,5 @@
 package com.teamup.teamUp.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.teamup.teamUp.exceptions.ForbiddenException;
 import com.teamup.teamUp.exceptions.NotFoundException;
@@ -25,14 +24,12 @@ import java.util.UUID;
 @Service
 public class NotificationService {
     private final NotificationRepository notificationRepository;
-    private final ObjectMapper mapper;
     private final UserRepository userRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
     @Autowired
-    public NotificationService(NotificationRepository notificationRepository, ObjectMapper mapper, UserRepository userRepository, SimpMessagingTemplate messagingTemplate) {
+    public NotificationService(NotificationRepository notificationRepository, UserRepository userRepository, SimpMessagingTemplate messagingTemplate) {
         this.notificationRepository = notificationRepository;
-        this.mapper = mapper;
         this.userRepository = userRepository;
         this.messagingTemplate = messagingTemplate;
     }
