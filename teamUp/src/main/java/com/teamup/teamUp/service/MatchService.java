@@ -5,10 +5,7 @@ import com.teamup.teamUp.exceptions.BadRequestException;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.exceptions.ResourceConflictException;
 import com.teamup.teamUp.mapper.MatchMapper;
-import com.teamup.teamUp.model.dto.match.MatchCreateRequestDto;
-import com.teamup.teamUp.model.dto.match.MatchMapPinDto;
-import com.teamup.teamUp.model.dto.match.MatchResponseDto;
-import com.teamup.teamUp.model.dto.match.MatchUpdateRequestDto;
+import com.teamup.teamUp.model.dto.match.*;
 import com.teamup.teamUp.model.entity.Match;
 import com.teamup.teamUp.model.entity.MatchParticipant;
 import com.teamup.teamUp.model.entity.User;
@@ -245,11 +242,16 @@ public class MatchService {
     }
 
 
-    public MatchResponseDto getOldestFinishPendingMatch(String username) {
-        User user = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(username).orElseThrow(() -> new NotFoundException("User not found"));
+    @Transactional(readOnly = true)
+    public FinishPendingMatchDto getOldestFinishPendingMatch(String username) {
+
+        User user = userRepository
+                .findByUsernameIgnoreCaseAndDeletedFalse(username)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
         Instant now = Instant.now();
 
-        Optional<Match> match =  matchRepository
+        return matchRepository
                 .findAllByCreatorAndStatusNotOrderByStartsAtAsc(user, MatchStatus.DONE)
                 .stream()
                 .filter(m ->
@@ -257,13 +259,15 @@ public class MatchService {
                                 m.getStartsAt().plus(m.getDurationMinutes(), ChronoUnit.MINUTES)
                         )
                 )
-                .findFirst();
-
-
-        return match.map(matchMapper::toDto).orElse(null);
-
-
+                .findFirst()
+                .map(m -> new FinishPendingMatchDto(
+                        m.getId(),
+                        m.getStartsAt(),
+                        m.getDurationMinutes()
+                ))
+                .orElse(null);
     }
+
 
 
 }

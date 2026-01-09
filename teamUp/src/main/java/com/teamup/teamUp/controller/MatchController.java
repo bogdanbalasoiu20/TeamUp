@@ -1,10 +1,7 @@
 package com.teamup.teamUp.controller;
 
 import com.teamup.teamUp.mapper.MatchMapper;
-import com.teamup.teamUp.model.dto.match.MatchCreateRequestDto;
-import com.teamup.teamUp.model.dto.match.MatchMapPinDto;
-import com.teamup.teamUp.model.dto.match.MatchResponseDto;
-import com.teamup.teamUp.model.dto.match.MatchUpdateRequestDto;
+import com.teamup.teamUp.model.dto.match.*;
 import com.teamup.teamUp.model.entity.Match;
 import com.teamup.teamUp.service.MatchRatingService;
 import com.teamup.teamUp.service.MatchService;
@@ -114,11 +111,9 @@ public class MatchController {
 
 
     @GetMapping("/finish-pending/oldest")
-    public ResponseEntity<ResponseApi<MatchResponseDto>> getFinishPendingMatch(Authentication auth) {
+    public ResponseEntity<ResponseApi<FinishPendingMatchDto>> getFinishPendingMatch(Authentication auth) {
         return ResponseEntity.ok(new ResponseApi<>("Finish pending match fetched", matchService.getOldestFinishPendingMatch(auth.getName()), true));
     }
-
-
 
 
 }
