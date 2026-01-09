@@ -30,8 +30,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -241,5 +243,27 @@ public class MatchService {
 
         notificationEvents.matchFinished(match, participants);
     }
+
+
+    public MatchResponseDto getOldestFinishPendingMatch(String username) {
+        User user = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(username).orElseThrow(() -> new NotFoundException("User not found"));
+        Instant now = Instant.now();
+
+        Optional<Match> match =  matchRepository
+                .findAllByCreatorAndStatusNotOrderByStartsAtAsc(user, MatchStatus.DONE)
+                .stream()
+                .filter(m ->
+                        now.isAfter(
+                                m.getStartsAt().plus(m.getDurationMinutes(), ChronoUnit.MINUTES)
+                        )
+                )
+                .findFirst();
+
+
+        return match.map(matchMapper::toDto).orElse(null);
+
+
+    }
+
 
 }

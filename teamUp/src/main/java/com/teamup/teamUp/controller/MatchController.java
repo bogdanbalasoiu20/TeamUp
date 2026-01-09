@@ -113,5 +113,12 @@ public class MatchController {
     }
 
 
+    @GetMapping("/finish-pending/oldest")
+    public ResponseEntity<ResponseApi<MatchResponseDto>> getFinishPendingMatch(Authentication auth) {
+        return ResponseEntity.ok(new ResponseApi<>("Finish pending match fetched", matchService.getOldestFinishPendingMatch(auth.getName()), true));
+    }
+
+
+
 
 }
