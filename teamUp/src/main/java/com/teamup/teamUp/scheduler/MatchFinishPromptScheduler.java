@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -19,7 +20,7 @@ public class MatchFinishPromptScheduler {
     private final MatchRepository matchRepository;
     private final NotificationEvents notificationEvents;
 
-    @Scheduled(fixedDelay = 60 * 1000) // la 10 minute
+    @Scheduled(fixedDelay = 60 * 1000) // la 1 minut
     @Transactional
     public void notifyCreatorsToFinishMatch() {
 
@@ -30,12 +31,14 @@ public class MatchFinishPromptScheduler {
 
         for (Match match : matches) {
 
-            if (match.getEndsAt() != null && now.isAfter(match.getEndsAt())) {
+            Instant matchEnd = match.getStartsAt()
+                    .plus(match.getDurationMinutes(), ChronoUnit.MINUTES);
 
+            if (now.isAfter(matchEnd)) {
                 notificationEvents.matchFinishConfirmationNeeded(match);
-
                 match.setFinishPromptSent(true);
             }
+
         }
     }
 }
