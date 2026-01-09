@@ -103,9 +103,7 @@ public class MatchController {
     public ResponseEntity<ResponseApi<Void>> finishMatch(@PathVariable UUID matchId, Authentication auth
     ) {
         matchService.finishMatch(matchId, auth.getName());
-        return ResponseEntity.ok(
-                new ResponseApi<>("Match finished successfully", null, true)
-        );
+        return ResponseEntity.ok(new ResponseApi<>("Match finished successfully", null, true));
     }
 
     @PostMapping("/{matchId}/finalize-ratings")

@@ -1,4 +1,4 @@
-package com.teamup.teamUp.config;
+package com.teamup.teamUp.scheduler;
 
 import com.teamup.teamUp.model.entity.Match;
 import com.teamup.teamUp.repository.MatchRepository;

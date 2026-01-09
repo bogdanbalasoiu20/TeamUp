@@ -19,5 +19,7 @@ public enum NotificationType {
 
     MATCH_LEFT,
 
-    MATCH_RATING
+    MATCH_RATING,
+
+    MATCH_FINISH_CONFIRMATION
 }

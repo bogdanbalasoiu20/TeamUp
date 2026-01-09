@@ -165,4 +165,15 @@ public class NotificationEvents {
         });
     }
 
+    public void matchFinishConfirmationNeeded(Match match) {
+        notificationService.send(
+                match.getCreator(),
+                NotificationType.MATCH_FINISH_CONFIRMATION,
+                "Did your match end?",
+                "Please confirm if your match has ended so players can rate each other.",
+                Map.of("matchId", match.getId())
+        );
+    }
+
+
 }

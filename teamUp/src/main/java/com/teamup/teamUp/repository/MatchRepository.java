@@ -2,6 +2,7 @@ package com.teamup.teamUp.repository;
 
 import com.teamup.teamUp.model.dto.match.MatchMapPinDto;
 import com.teamup.teamUp.model.entity.Match;
+import com.teamup.teamUp.model.enums.MatchStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -90,5 +91,8 @@ order by m.startsAt asc
           and m.ratingOpenedAt <= :deadline
     """)
     List<Match> findMatchesToFinalize(@Param("deadline") Instant deadline);
+
+    List<Match> findAllByStatusNotAndFinishPromptSentFalse(MatchStatus status);
+
 
 }

@@ -96,6 +96,11 @@ public class Match {
     @Builder.Default
     private Boolean ratingsFinalized = false;
 
+    @Column(name = "finish_prompt_sent", nullable = false)
+    @Builder.Default
+    private Boolean finishPromptSent = false;
+
+
 
 
     @PrePersist
