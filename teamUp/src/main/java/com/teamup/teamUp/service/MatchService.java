@@ -13,11 +13,9 @@ import com.teamup.teamUp.model.entity.Venue;
 import com.teamup.teamUp.model.enums.MatchParticipantStatus;
 import com.teamup.teamUp.model.enums.MatchStatus;
 import com.teamup.teamUp.model.enums.MatchVisibility;
+import com.teamup.teamUp.model.enums.NotificationType;
 import com.teamup.teamUp.model.id.MatchParticipantId;
-import com.teamup.teamUp.repository.MatchParticipantRepository;
-import com.teamup.teamUp.repository.MatchRepository;
-import com.teamup.teamUp.repository.UserRepository;
-import com.teamup.teamUp.repository.VenueRepository;
+import com.teamup.teamUp.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -41,15 +39,17 @@ public class MatchService {
     private final MatchMapper matchMapper;
     private final MatchParticipantRepository matchParticipantRepository;
     private final NotificationEvents notificationEvents;
+    private final NotificationRepository notificationRepository;
 
     @Autowired
-    public MatchService(MatchRepository matchRepository, UserRepository userRepository, VenueRepository venueRepository, MatchMapper matchMapper, MatchParticipantRepository matchParticipantRepository, NotificationEvents notificationEvents) {
+    public MatchService(MatchRepository matchRepository, UserRepository userRepository, VenueRepository venueRepository, MatchMapper matchMapper, MatchParticipantRepository matchParticipantRepository, NotificationEvents notificationEvents, NotificationRepository notificationRepository) {
         this.matchRepository = matchRepository;
         this.userRepository = userRepository;
         this.venueRepository = venueRepository;
         this.matchMapper = matchMapper;
         this.matchParticipantRepository = matchParticipantRepository;
         this.notificationEvents = notificationEvents;
+        this.notificationRepository = notificationRepository;
     }
 
     @Transactional(readOnly = true)
@@ -231,6 +231,12 @@ public class MatchService {
         match.setRatingOpenedAt(Instant.now());
         match.setRatingsFinalized(false);
         matchRepository.save(match);
+
+        notificationRepository.markFinishMatchNotificationSeen(
+                NotificationType.MATCH_FINISH_CONFIRMATION.name(),
+                matchId.toString()
+        );
+
 
         List<MatchParticipant> participants =
                 matchParticipantRepository.findAllById_MatchIdAndStatus(
