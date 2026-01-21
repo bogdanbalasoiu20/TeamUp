@@ -24,7 +24,7 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
         update notifications
         set is_seen = true,
             seen_at = now()
-        where type = :type
+        where type = CAST(:type AS notification_type)
           and payload ->> 'matchId' = :matchId
     """,
             nativeQuery = true
