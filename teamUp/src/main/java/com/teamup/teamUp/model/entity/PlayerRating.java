@@ -26,6 +26,7 @@ public class PlayerRating {
     private PlayerRatingId id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @MapsId("matchId")
     @JoinColumn(name = "match_id", nullable = false, foreignKey = @ForeignKey(name = "fk_pr_match"))
     private Match match;
 
