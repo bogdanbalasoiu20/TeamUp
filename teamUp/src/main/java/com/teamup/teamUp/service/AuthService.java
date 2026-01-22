@@ -6,8 +6,10 @@ import com.teamup.teamUp.model.dto.auth.AuthResponseDto;
 import com.teamup.teamUp.model.dto.auth.LoginRequestDto;
 import com.teamup.teamUp.model.dto.auth.RegisterRequestDto;
 import com.teamup.teamUp.model.dto.user.*;
+import com.teamup.teamUp.model.entity.PlayerCardStats;
 import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.model.enums.UserRole;
+import com.teamup.teamUp.repository.PlayerCardStatsRepository;
 import com.teamup.teamUp.repository.UserRepository;
 import com.teamup.teamUp.security.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.HashMap;
 
 @Service
@@ -22,12 +25,15 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final PlayerCardStatsRepository playerCardStatsRepository;
+
 
     @Autowired
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService,  PlayerCardStatsRepository playerCardStatsRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.playerCardStatsRepository = playerCardStatsRepository;
     }
 
     public AuthResponseDto login(LoginRequestDto request){
@@ -79,6 +85,28 @@ public class AuthService {
                 .build();
 
         var saved = userRepository.saveAndFlush(user);
+
+        PlayerCardStats initialCard = PlayerCardStats.builder()
+                .userId(saved.getId())
+                .pace(50.0)
+                .shooting(50.0)
+                .passing(50.0)
+                .defending(50.0)
+                .dribbling(50.0)
+                .physical(50.0)
+                .gkDiving(50.0)
+                .gkHandling(50.0)
+                .gkKicking(50.0)
+                .gkReflexes(50.0)
+                .gkSpeed(50.0)
+                .gkPositioning(50.0)
+                .overallRating(50.0)
+                .lastUpdated(Instant.now())
+                .build();
+
+        playerCardStatsRepository.save(initialCard);
+
+
         var userSaved = userRepository.findById(saved.getId())
                 .orElseThrow(() -> new IllegalStateException("User just saved not found"));
 

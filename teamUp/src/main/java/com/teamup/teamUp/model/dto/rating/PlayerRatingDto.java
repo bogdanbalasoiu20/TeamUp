@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Min;
 
 import java.util.UUID;
 
+//folosit cand un user evalueaza alt user
 public record PlayerRatingDto(
         UUID ratedUserId,
 

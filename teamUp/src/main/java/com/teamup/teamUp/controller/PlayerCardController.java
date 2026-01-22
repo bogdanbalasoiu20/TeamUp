@@ -1,5 +1,6 @@
 package com.teamup.teamUp.controller;
 
+import com.teamup.teamUp.model.dto.card.PlayerCardDto;
 import com.teamup.teamUp.model.entity.PlayerCardStats;
 import com.teamup.teamUp.model.entity.PlayerCardStatsHistory;
 import com.teamup.teamUp.service.PlayerCardQueryService;
@@ -21,9 +22,8 @@ public class PlayerCardController {
 
     //cardul live al userului
     @GetMapping("/{userId}/card")
-    public ResponseEntity<ResponseApi<PlayerCardStats>> getPlayerCard(@PathVariable UUID userId) {
-        var card = playerCardQueryService.getLiveCard(userId);
-        return ResponseEntity.ok(new ResponseApi<>("Player card fetched successfully", card, true));
+    public ResponseEntity<ResponseApi<PlayerCardDto>> getPlayerCard(@PathVariable UUID userId) {
+        return ResponseEntity.ok(new ResponseApi<>("Player card fetched successfully", playerCardQueryService.getLiveCard(userId), true));
     }
 
     //istoricul cardului unui user(pt grafice)
