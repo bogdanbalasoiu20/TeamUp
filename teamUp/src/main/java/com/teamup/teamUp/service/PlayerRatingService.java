@@ -92,7 +92,6 @@ public class PlayerRatingService {
                     .gkReflexes(dto.gkReflexes())
                     .gkSpeed(dto.gkSpeed())
                     .gkPositioning(dto.gkPositioning())
-                    .comment(dto.comment())
                     .build();
 
             playerRatingRepository.save(rating);

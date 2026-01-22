@@ -87,10 +87,6 @@ public class PlayerRating {
     @Max(99)
     private Short gkPositioning;
 
-
-    @Column(length = 500)
-    private String comment;
-
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

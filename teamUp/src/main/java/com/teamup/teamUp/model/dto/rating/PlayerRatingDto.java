@@ -43,8 +43,7 @@ public record PlayerRatingDto(
         Short gkSpeed,
 
         @Min(0) @Max(99)
-        Short gkPositioning,
+        Short gkPositioning
 
-        String comment
 ) {
 }
