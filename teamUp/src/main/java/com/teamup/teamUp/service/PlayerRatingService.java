@@ -77,7 +77,6 @@ public class PlayerRatingService {
 
             PlayerRating rating = PlayerRating.builder()
                     .id(new PlayerRatingId(matchId, rater.getId(), rated.getId()))
-                    .match(Match.builder().id(matchId).build())
                     .raterUser(rater)
                     .ratedUser(rated)
                     .pace(dto.pace())
