@@ -188,32 +188,26 @@ public class RatingUpdateService {
 
 
     private PlayerCardStats createInitialCard(UUID userId, User user) {
-        boolean isGk = user.getPosition() == Position.GOALKEEPER;
 
-        PlayerCardStats card = PlayerCardStats.builder()
+        return PlayerCardStats.builder()
                 .userId(userId)
-                .lastUpdated(Instant.now())
+                .pace(68.0)
+                .shooting(68.0)
+                .passing(68.0)
+                .defending(68.0)
+                .dribbling(68.0)
+                .physical(68.0)
+                .gkDiving(68.0)
+                .gkHandling(68.0)
+                .gkKicking(68.0)
+                .gkReflexes(68.0)
+                .gkSpeed(68.0)
+                .gkPositioning(68.0)
                 .overallRating(68.0)
+                .lastUpdated(Instant.now())
                 .build();
-
-        if (isGk) {
-            card.setGkDiving(68.0);
-            card.setGkHandling(68.0);
-            card.setGkKicking(68.0);
-            card.setGkReflexes(68.0);
-            card.setGkSpeed(68.0);
-            card.setGkPositioning(68.0);
-        } else {
-            card.setPace(68.0);
-            card.setShooting(68.0);
-            card.setPassing(68.0);
-            card.setDefending(68.0);
-            card.setDribbling(68.0);
-            card.setPhysical(68.0);
-        }
-
-        return card;
     }
+
 
     private Double getStat(PlayerCardStats card, String stat) {
         return switch (stat) {
