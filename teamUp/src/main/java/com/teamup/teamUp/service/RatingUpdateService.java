@@ -20,10 +20,55 @@ import java.util.stream.Collectors;
 @Transactional
 public class RatingUpdateService {
 
-    private static final double ALPHA = 0.25;
+    private static final double BASE_ALPHA = 0.15;
+    private static final int EXPERIENCE_MATCHES_CAP = 10;
     private static final double MAX_DELTA = 2.0;
     private static final double MIN_RATING = 68.0;
     private static final double MAX_RATING = 99.0;
+
+    private static final Map<Position, Map<String, Double>> POSITION_WEIGHTS = Map.of(
+
+            // Ponderi atacant
+            Position.FORWARD, Map.of(
+                    "shooting", 0.30,
+                    "dribbling", 0.20,
+                    "pace", 0.20,
+                    "passing", 0.15,
+                    "physical", 0.10,
+                    "defending", 0.05
+            ),
+
+            // Ponderi mijlocas
+            Position.MIDFIELDER, Map.of(
+                    "passing", 0.30,
+                    "dribbling", 0.20,
+                    "defending", 0.20,
+                    "pace", 0.15,
+                    "physical", 0.10,
+                    "shooting", 0.05
+            ),
+
+            // Ponderi fundas
+            Position.DEFENDER, Map.of(
+                    "defending", 0.35,
+                    "physical", 0.25,
+                    "pace", 0.15,
+                    "passing", 0.15,
+                    "dribbling", 0.05,
+                    "shooting", 0.05
+            ),
+
+            // Ponderi portar
+            Position.GOALKEEPER, Map.of(
+                    "gkReflexes", 0.30,
+                    "gkPositioning", 0.20,
+                    "gkHandling", 0.20,
+                    "gkDiving", 0.15,
+                    "gkKicking", 0.10,
+                    "gkSpeed", 0.05
+            )
+    );
+
 
 
     private final PlayerRatingRepository ratingRepo;
@@ -40,8 +85,7 @@ public class RatingUpdateService {
 
     public void updateAfterMatch(UUID matchId) {
         // Grupez toate ratingurile pe jucator evaluat
-        Map<UUID, List<PlayerRating>> ratingsByUser =
-                ratingRepo.findByIdMatchId(matchId).stream()
+        Map<UUID, List<PlayerRating>> ratingsByUser = ratingRepo.findByIdMatchId(matchId).stream()
                         .collect(Collectors.groupingBy(r -> r.getRatedUser().getId()));
 
 
@@ -52,15 +96,22 @@ public class RatingUpdateService {
 
             List<PlayerRating> ratings = ratingsByUser.get(userId);
 
+            if (ratings == null || ratings.isEmpty()) {
+                continue;
+            }
+
             //Media pe meci
             Map<String, Double> matchAvg = calculateMatchAverages(user, ratings);
 
             // Card curent (sau default)
-            PlayerCardStats card = cardRepo.findById(userId)
-                    .orElseGet(() -> createInitialCard(userId, user));
+            PlayerCardStats card = cardRepo.findById(userId).orElseGet(() -> createInitialCard(userId, user));
+
+            int numVotes = ratings.size();
+            int matchesPlayed = (int) historyRepo.countByUserId(userId);
+            double alpha = computeAlpha(numVotes, matchesPlayed);
 
             // EMA + clamp
-            applyEma(card, matchAvg);
+            applyEma(card, matchAvg, alpha, user.getPosition());
 
             card.setLastUpdated(Instant.now());
             cardRepo.save(card);
@@ -92,15 +143,15 @@ public class RatingUpdateService {
         return avg;
     }
 
-    private void applyEma(PlayerCardStats card, Map<String, Double> avg) {
+    private void applyEma(PlayerCardStats card, Map<String, Double> avg, double alpha,Position position) {
         avg.forEach((stat, matchValue) -> {
             Double oldValue = getStat(card, stat);
-            double ema = ALPHA * matchValue + (1 - ALPHA) * oldValue;
+            double ema = alpha * matchValue + (1 - alpha) * oldValue;
             double clamped = clamp(ema, oldValue);
             setStat(card, stat, clamped);
         });
 
-        card.setOverallRating(calculateOverall(card));
+        card.setOverallRating(calculateOverall(card, position));
     }
 
     private double clamp(double newValue, double oldValue) {
@@ -201,35 +252,41 @@ public class RatingUpdateService {
     }
 
 
-    private double calculateOverall(PlayerCardStats card) {
-        if (card.getGkDiving() != null) {
-            return average(
-                    card.getGkDiving(),
-                    card.getGkHandling(),
-                    card.getGkKicking(),
-                    card.getGkReflexes(),
-                    card.getGkSpeed(),
-                    card.getGkPositioning()
-            );
+    private double calculateOverall(PlayerCardStats card, Position position) {
+
+        Map<String, Double> weights = POSITION_WEIGHTS.get(position);
+
+        if (weights == null) {
+            throw new IllegalStateException("No weights defined for position: " + position);
         }
 
-        return average(
-                card.getPace(),
-                card.getShooting(),
-                card.getPassing(),
-                card.getDefending(),
-                card.getDribbling(),
-                card.getPhysical()
-        );
+        double weightedSum = 0.0;
+        double totalWeight = 0.0;
+
+        for (Map.Entry<String, Double> entry : weights.entrySet()) {
+            String stat = entry.getKey();
+            double weight = entry.getValue();
+
+            Double statValue = getStat(card, stat);
+            if (statValue == null) continue;
+
+            weightedSum += statValue * weight;
+            totalWeight += weight;
+        }
+
+        return totalWeight > 0 ? weightedSum / totalWeight : MIN_RATING;
     }
 
-    private double average(Double... values) {
-        return Arrays.stream(values)
-                .filter(Objects::nonNull)
-                .mapToDouble(Double::doubleValue)
-                .average()
-                .orElse(68.0);
+
+
+    private double computeAlpha(int numVotes, int matchesPlayed) {
+
+        double voteFactor = Math.min(1.0, Math.log(numVotes + 1) / Math.log(6));
+        double experienceFactor = Math.min(1.0, matchesPlayed / (double) EXPERIENCE_MATCHES_CAP);
+        double alpha = BASE_ALPHA + 0.15 * voteFactor + 0.20 * (1 - experienceFactor);
+        return Math.min(0.5, Math.max(0.1, alpha));
     }
+
 
 }
 

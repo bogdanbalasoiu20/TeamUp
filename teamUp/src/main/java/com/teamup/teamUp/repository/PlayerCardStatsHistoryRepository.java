@@ -8,4 +8,7 @@ import java.util.UUID;
 
 public interface PlayerCardStatsHistoryRepository extends JpaRepository<PlayerCardStatsHistory, UUID> {
     List<PlayerCardStatsHistory> findByUserIdOrderByRecordedAtAsc(UUID userId);
+
+    long countByUserId(UUID userId);
+
 }
