@@ -14,7 +14,7 @@ import java.util.List;
 @Service
 public class RatingFinalizationScheduler {
 
-    private static final Duration RATING_WINDOW = Duration.ofHours(24);
+    private static final Duration RATING_WINDOW = Duration.ofMinutes(3); //de test, inainte erau 24 de ore
 
     private final MatchRepository matchRepository;
     private final RatingUpdateService ratingUpdateService;
@@ -27,7 +27,7 @@ public class RatingFinalizationScheduler {
         this.ratingUpdateService = ratingUpdateService;
     }
 
-    @Scheduled(fixedDelay = 5 * 60 * 1000)
+    @Scheduled(fixedDelay = 30 * 1000)
     @Transactional
     public void finalizeExpiredRatings() {
 
