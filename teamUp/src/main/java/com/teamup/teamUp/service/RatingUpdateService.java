@@ -121,30 +121,47 @@ public class RatingUpdateService {
         }
     }
 
+    private double averageNonNull(
+            List<PlayerRating> ratings,
+            java.util.function.Function<PlayerRating, Short> extractor
+    ) {
+        return ratings.stream()
+                .map(extractor)
+                .filter(Objects::nonNull)
+                .mapToInt(Short::intValue)
+                .average()
+                .orElse(Double.NaN);
+    }
+
+
     private Map<String, Double> calculateMatchAverages(User user, List<PlayerRating> ratings) {
         Map<String, Double> avg = new HashMap<>();
 
         if (user.getPosition() == Position.GOALKEEPER) {
-            avg.put("gkDiving", ratings.stream().mapToInt(r -> r.getGkDiving()).average().orElse(0));
-            avg.put("gkHandling", ratings.stream().mapToInt(r -> r.getGkHandling()).average().orElse(0));
-            avg.put("gkKicking", ratings.stream().mapToInt(r -> r.getGkKicking()).average().orElse(0));
-            avg.put("gkReflexes", ratings.stream().mapToInt(r -> r.getGkReflexes()).average().orElse(0));
-            avg.put("gkSpeed", ratings.stream().mapToInt(r -> r.getGkSpeed()).average().orElse(0));
-            avg.put("gkPositioning", ratings.stream().mapToInt(r -> r.getGkPositioning()).average().orElse(0));
+            avg.put("gkDiving",      averageNonNull(ratings, PlayerRating::getGkDiving));
+            avg.put("gkHandling",    averageNonNull(ratings, PlayerRating::getGkHandling));
+            avg.put("gkKicking",     averageNonNull(ratings, PlayerRating::getGkKicking));
+            avg.put("gkReflexes",    averageNonNull(ratings, PlayerRating::getGkReflexes));
+            avg.put("gkSpeed",       averageNonNull(ratings, PlayerRating::getGkSpeed));
+            avg.put("gkPositioning", averageNonNull(ratings, PlayerRating::getGkPositioning));
         } else {
-            avg.put("pace", ratings.stream().mapToInt(r -> r.getPace()).average().orElse(0));
-            avg.put("shooting", ratings.stream().mapToInt(r -> r.getShooting()).average().orElse(0));
-            avg.put("passing", ratings.stream().mapToInt(r -> r.getPassing()).average().orElse(0));
-            avg.put("defending", ratings.stream().mapToInt(r -> r.getDefending()).average().orElse(0));
-            avg.put("dribbling", ratings.stream().mapToInt(r -> r.getDribbling()).average().orElse(0));
-            avg.put("physical", ratings.stream().mapToInt(r -> r.getPhysical()).average().orElse(0));
+            avg.put("pace",       averageNonNull(ratings, PlayerRating::getPace));
+            avg.put("shooting",   averageNonNull(ratings, PlayerRating::getShooting));
+            avg.put("passing",    averageNonNull(ratings, PlayerRating::getPassing));
+            avg.put("defending",  averageNonNull(ratings, PlayerRating::getDefending));
+            avg.put("dribbling",  averageNonNull(ratings, PlayerRating::getDribbling));
+            avg.put("physical",   averageNonNull(ratings, PlayerRating::getPhysical));
         }
 
         return avg;
     }
 
-    private void applyEma(PlayerCardStats card, Map<String, Double> avg, double alpha,Position position) {
+
+    private void applyEma(PlayerCardStats card, Map<String, Double> avg, double alpha, Position position) {
         avg.forEach((stat, matchValue) -> {
+            if (Double.isNaN(matchValue)) {
+                return;
+            }
             Double oldValue = getStat(card, stat);
             double ema = alpha * matchValue + (1 - alpha) * oldValue;
             double clamped = clamp(ema, oldValue);
@@ -153,6 +170,7 @@ public class RatingUpdateService {
 
         card.setOverallRating(calculateOverall(card, position));
     }
+
 
     private double clamp(double newValue, double oldValue) {
         double deltaClamped = Math.max(
