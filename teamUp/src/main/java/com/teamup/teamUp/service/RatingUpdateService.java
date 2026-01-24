@@ -312,8 +312,6 @@ public class RatingUpdateService {
         card.setLastUpdated(Instant.now());
 
         cardRepo.save(card);
-
-        historyRepo.save(snapshot(card, null));
     }
 
 
