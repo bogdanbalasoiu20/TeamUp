@@ -1,6 +1,7 @@
 package com.teamup.teamUp.controller;
 
 import com.teamup.teamUp.model.dto.card.PlayerCardDto;
+import com.teamup.teamUp.model.dto.card.PlayerCardHistoryPointDto;
 import com.teamup.teamUp.model.entity.PlayerCardStats;
 import com.teamup.teamUp.model.entity.PlayerCardStatsHistory;
 import com.teamup.teamUp.service.PlayerCardQueryService;
@@ -28,8 +29,8 @@ public class PlayerCardController {
 
     //istoricul cardului unui user(pt grafice)
     @GetMapping("/{userId}/card/history")
-    public ResponseEntity<ResponseApi<List<PlayerCardStatsHistory>>> getPlayerCardHistory(@PathVariable UUID userId) {
-        var history = playerCardQueryService.getCardHistory(userId);
-        return ResponseEntity.ok(new ResponseApi<>("Player card history fetched successfully", history, true));
+    public ResponseEntity<ResponseApi<List<PlayerCardHistoryPointDto>>> getPlayerCardHistory(@PathVariable UUID userId) {
+        return ResponseEntity.ok(new ResponseApi<>("Player card history fetched successfully", playerCardQueryService.getCardHistory(userId), true));
     }
+
 }

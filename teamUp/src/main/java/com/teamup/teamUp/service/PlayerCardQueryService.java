@@ -1,8 +1,10 @@
 package com.teamup.teamUp.service;
 
 import com.teamup.teamUp.exceptions.NotFoundException;
+import com.teamup.teamUp.mapper.PlayerCardHistoryMapper;
 import com.teamup.teamUp.mapper.PlayerCardMapper;
 import com.teamup.teamUp.model.dto.card.PlayerCardDto;
+import com.teamup.teamUp.model.dto.card.PlayerCardHistoryPointDto;
 import com.teamup.teamUp.model.entity.PlayerCardStats;
 import com.teamup.teamUp.model.entity.PlayerCardStatsHistory;
 import com.teamup.teamUp.model.entity.User;
@@ -46,7 +48,11 @@ public class PlayerCardQueryService {
 
 
     //istoric card pt grafice
-    public List<PlayerCardStatsHistory> getCardHistory(UUID userId) {
-        return historyRepository.findByUserIdOrderByRecordedAtAsc(userId);
+    public List<PlayerCardHistoryPointDto> getCardHistory(UUID userId) {
+        return historyRepository.findByUserIdOrderByRecordedAtAsc(userId)
+                .stream()
+                .map(PlayerCardHistoryMapper::toDto)
+                .toList();
     }
+
 }
