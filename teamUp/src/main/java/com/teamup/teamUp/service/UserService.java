@@ -20,11 +20,13 @@ import java.util.Locale;
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RatingUpdateService ratingUpdateService;
 
     @Autowired
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder){
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, RatingUpdateService ratingUpdateService){
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.ratingUpdateService = ratingUpdateService;
     }
 
     @Transactional(readOnly = true)
@@ -40,7 +42,14 @@ public class UserService {
 
         if (request.birthday() != null) me.setBirthday(request.birthday());
         if (request.phoneNumber() != null) me.setPhoneNumber(request.phoneNumber().trim());
-        if (request.position() != null) me.setPosition(request.position());
+        if (request.position() != null && request.position() != me.getPosition()) {
+            me.setPosition(request.position());
+
+            ratingUpdateService.recalculateOverallForUser(
+                    me.getId(),
+                    request.position()
+            );
+        }
         if (request.city() != null) me.setCity(request.city().trim());
         if (request.description() != null) me.setDescription(request.description().trim());
 

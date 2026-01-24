@@ -300,6 +300,24 @@ public class RatingUpdateService {
     }
 
 
+
+    @Transactional
+    public void recalculateOverallForUser(UUID userId, Position newPosition) {
+
+        PlayerCardStats card = cardRepo.findById(userId).orElseThrow(() -> new IllegalStateException("Player card not found"));
+
+        double newOverall = calculateOverall(card, newPosition);
+
+        card.setOverallRating(newOverall);
+        card.setLastUpdated(Instant.now());
+
+        cardRepo.save(card);
+
+        historyRepo.save(snapshot(card, null));
+    }
+
+
+
 }
 
 
