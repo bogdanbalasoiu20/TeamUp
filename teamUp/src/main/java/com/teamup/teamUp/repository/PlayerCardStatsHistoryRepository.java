@@ -11,4 +11,6 @@ public interface PlayerCardStatsHistoryRepository extends JpaRepository<PlayerCa
 
     long countByUserId(UUID userId);
 
+    List<PlayerCardStatsHistory>findTop3ByUserIdOrderByRecordedAtDesc(UUID userId);
+
 }
