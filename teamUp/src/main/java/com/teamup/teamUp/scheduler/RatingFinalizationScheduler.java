@@ -2,6 +2,7 @@ package com.teamup.teamUp.scheduler;
 
 import com.teamup.teamUp.model.entity.Match;
 import com.teamup.teamUp.repository.MatchRepository;
+import com.teamup.teamUp.service.BehaviorUpdateService;
 import com.teamup.teamUp.service.RatingUpdateService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -18,13 +19,12 @@ public class RatingFinalizationScheduler {
 
     private final MatchRepository matchRepository;
     private final RatingUpdateService ratingUpdateService;
+    private final BehaviorUpdateService behaviorUpdateService;
 
-    public RatingFinalizationScheduler(
-            MatchRepository matchRepository,
-            RatingUpdateService ratingUpdateService
-    ) {
+    public RatingFinalizationScheduler(MatchRepository matchRepository, RatingUpdateService ratingUpdateService, BehaviorUpdateService behaviorUpdateService) {
         this.matchRepository = matchRepository;
         this.ratingUpdateService = ratingUpdateService;
+        this.behaviorUpdateService = behaviorUpdateService;
     }
 
     @Scheduled(fixedDelay = 30 * 1000)
@@ -38,6 +38,7 @@ public class RatingFinalizationScheduler {
         for (Match match : matches) {
 
             ratingUpdateService.updateAfterMatch(match.getId());
+            behaviorUpdateService.updateAfterMatch(match.getId());
 
             match.setRatingsFinalized(true);
             matchRepository.save(match);

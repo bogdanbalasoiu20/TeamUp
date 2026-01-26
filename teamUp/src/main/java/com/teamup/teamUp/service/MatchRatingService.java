@@ -16,13 +16,15 @@ public class MatchRatingService {
 
     private final MatchRepository matchRepository;
     private final RatingUpdateService ratingUpdateService;
+    private final BehaviorUpdateService behaviorUpdateService;
 
     public MatchRatingService(
             MatchRepository matchRepository,
-            RatingUpdateService ratingUpdateService
-    ) {
+            RatingUpdateService ratingUpdateService,
+            BehaviorUpdateService behaviorUpdateService) {
         this.matchRepository = matchRepository;
         this.ratingUpdateService = ratingUpdateService;
+        this.behaviorUpdateService = behaviorUpdateService;
     }
 
     public void finalizeRatings(UUID matchId, String authUsername) {
@@ -39,6 +41,7 @@ public class MatchRatingService {
         }
 
         ratingUpdateService.updateAfterMatch(matchId);
+        behaviorUpdateService.updateAfterMatch(matchId);
 
         match.setRatingsFinalized(true);
         matchRepository.save(match);

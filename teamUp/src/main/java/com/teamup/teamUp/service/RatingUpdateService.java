@@ -173,10 +173,7 @@ public class RatingUpdateService {
 
 
     private double clamp(double newValue, double oldValue) {
-        double deltaClamped = Math.max(
-                oldValue - MAX_DELTA,
-                Math.min(oldValue + MAX_DELTA, newValue)
-        );
+        double deltaClamped = Math.max(oldValue - MAX_DELTA, Math.min(oldValue + MAX_DELTA, newValue));
 
         return Math.max(MIN_RATING, Math.min(MAX_RATING, deltaClamped));
     }

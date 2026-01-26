@@ -112,12 +112,12 @@ public class AuthService {
 
         PlayerBehaviorStats stats = PlayerBehaviorStats.builder()
                 .user(saved)
-                .fairPlay(68.0)
-                .competitiveness(68.0)
-                .communication(68.0)
-                .fun(68.0)
-                .adaptability(68.0)
-                .reliability(68.0)
+                .fairPlay(70.0)
+                .competitiveness(70.0)
+                .communication(70.0)
+                .fun(70.0)
+                .adaptability(70.0)
+                .reliability(70.0)
                 .feedbackCount(0)
                 .build();
 
