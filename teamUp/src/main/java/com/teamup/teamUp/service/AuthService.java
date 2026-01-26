@@ -6,9 +6,11 @@ import com.teamup.teamUp.model.dto.auth.AuthResponseDto;
 import com.teamup.teamUp.model.dto.auth.LoginRequestDto;
 import com.teamup.teamUp.model.dto.auth.RegisterRequestDto;
 import com.teamup.teamUp.model.dto.user.*;
+import com.teamup.teamUp.model.entity.PlayerBehaviorStats;
 import com.teamup.teamUp.model.entity.PlayerCardStats;
 import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.model.enums.UserRole;
+import com.teamup.teamUp.repository.PlayerBehaviorStatsRepository;
 import com.teamup.teamUp.repository.PlayerCardStatsRepository;
 import com.teamup.teamUp.repository.UserRepository;
 import com.teamup.teamUp.security.JwtService;
@@ -26,14 +28,16 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final PlayerCardStatsRepository playerCardStatsRepository;
+    private final PlayerBehaviorStatsRepository playerBehaviorStatsRepository;
 
 
     @Autowired
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService,  PlayerCardStatsRepository playerCardStatsRepository) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, PlayerCardStatsRepository playerCardStatsRepository, PlayerBehaviorStatsRepository playerBehaviorStatsRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.playerCardStatsRepository = playerCardStatsRepository;
+        this.playerBehaviorStatsRepository = playerBehaviorStatsRepository;
     }
 
     public AuthResponseDto login(LoginRequestDto request){
@@ -105,6 +109,20 @@ public class AuthService {
                 .build();
 
         playerCardStatsRepository.save(initialCard);
+
+        PlayerBehaviorStats stats = PlayerBehaviorStats.builder()
+                .user(saved)
+                .fairPlay(68.0)
+                .competitiveness(68.0)
+                .communication(68.0)
+                .fun(68.0)
+                .adaptability(68.0)
+                .reliability(68.0)
+                .feedbackCount(0)
+                .build();
+
+        playerBehaviorStatsRepository.save(stats);
+
 
 
         var userSaved = userRepository.findById(saved.getId())

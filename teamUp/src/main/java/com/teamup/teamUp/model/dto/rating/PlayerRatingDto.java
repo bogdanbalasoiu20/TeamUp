@@ -43,7 +43,25 @@ public record PlayerRatingDto(
         Short gkSpeed,
 
         @Min(0) @Max(99)
-        Short gkPositioning
+        Short gkPositioning,
+
+        @Min(0) @Max(99)
+        Short fairPlay,
+
+        @Min(0) @Max(99)
+        Short communication,
+
+        @Min(0) @Max(99)
+        Short fun,
+
+        @Min(0) @Max(99)
+        Short competitiveness,
+
+        @Min(0) @Max(99)
+        Short adaptability,
+
+        @Min(0) @Max(99)
+        Short reliability
 
 ) {
 }
