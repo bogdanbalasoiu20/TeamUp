@@ -1,0 +1,13 @@
+package com.teamup.teamUp.model.dto.rating;
+
+
+public record PlayerBehaviorStatsDto(
+        int fairPlay,
+        int communication,
+        int fun,
+        int competitiveness,
+        int adaptability,
+        int reliability,
+        int feedbackCount
+) {}
+
