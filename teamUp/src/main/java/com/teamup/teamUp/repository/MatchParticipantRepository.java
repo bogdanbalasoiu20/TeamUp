@@ -70,4 +70,7 @@ public interface MatchParticipantRepository extends JpaRepository<MatchParticipa
             @Param("status") MatchParticipantStatus status
     );
 
+
+    int countByUser_Id(UUID userId);
+
 }

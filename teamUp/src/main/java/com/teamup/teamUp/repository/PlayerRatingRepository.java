@@ -9,6 +9,10 @@ import java.util.UUID;
 
 public interface PlayerRatingRepository extends JpaRepository<PlayerRating, PlayerRatingId> {
     List<PlayerRating> findByIdMatchId(UUID matchId);
-    List<PlayerRating> findAllByRatedUserId(UUID userId);
+
     boolean existsByIdMatchIdAndIdRaterUserIdAndIdRatedUserId(UUID matchId,UUID raterUserId,UUID ratedUserId);
+
+    int countByRaterUser_Id(UUID userId);
+
+    int countByRatedUser_Id(UUID userId);
 }

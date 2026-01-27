@@ -97,6 +97,8 @@ order by m.startsAt asc
 
     List<Match> findAllByCreatorAndStatusNotOrderByStartsAtAsc(User creator, MatchStatus status);
 
+    int countByCreator_Id(UUID userId);
+
 
 
 }
