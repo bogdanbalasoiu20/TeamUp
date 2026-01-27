@@ -91,8 +91,7 @@ public class RatingUpdateService {
 
         for (UUID userId : ratingsByUser.keySet()) {
 
-            User user = userRepo.findById(userId)
-                    .orElseThrow(() -> new IllegalStateException("User not found"));
+            User user = userRepo.findById(userId).orElseThrow(() -> new IllegalStateException("User not found"));
 
             List<PlayerRating> ratings = ratingsByUser.get(userId);
 

@@ -1,9 +1,12 @@
 package com.teamup.teamUp.service;
 
+import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.model.entity.PlayerBehaviorRating;
 import com.teamup.teamUp.model.entity.PlayerBehaviorStats;
+import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.repository.PlayerBehaviorRatingRepository;
 import com.teamup.teamUp.repository.PlayerBehaviorStatsRepository;
+import com.teamup.teamUp.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,10 +27,12 @@ public class BehaviorUpdateService {
 
     private final PlayerBehaviorRatingRepository ratingRepo;
     private final PlayerBehaviorStatsRepository statsRepo;
+    private final UserRepository userRepository;
 
-    public  BehaviorUpdateService(PlayerBehaviorRatingRepository ratingRepo,  PlayerBehaviorStatsRepository statsRepo) {
+    public  BehaviorUpdateService(PlayerBehaviorRatingRepository ratingRepo, PlayerBehaviorStatsRepository statsRepo, UserRepository userRepository) {
         this.ratingRepo = ratingRepo;
         this.statsRepo = statsRepo;
+        this.userRepository = userRepository;
     }
 
     public void updateAfterMatch(UUID matchId) {
@@ -36,10 +41,16 @@ public class BehaviorUpdateService {
                         .collect(Collectors.groupingBy(r -> r.getRatedUser().getId()));
 
         for (UUID userId : ratingsByUser.keySet()) {
+            User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+
             List<PlayerBehaviorRating> ratings = ratingsByUser.get(userId);
+
             if (ratings == null || ratings.isEmpty()) continue;
 
-            PlayerBehaviorStats stats = statsRepo.findByUser_Id(userId).orElseThrow(() -> new IllegalStateException("Behavior stats not found"));
+            PlayerBehaviorStats stats = statsRepo.findByUser_Id(userId).orElseGet(() -> {
+                        PlayerBehaviorStats s = createInitialBehaviorStats(user);
+                        return statsRepo.save(s);});
+
 
             Map<String, Double> matchAvg = calculateMatchAverages(ratings);
 
@@ -146,6 +157,21 @@ public class BehaviorUpdateService {
 
         return Math.max(MIN, Math.min(MAX, deltaClamped));
     }
+
+
+    private PlayerBehaviorStats createInitialBehaviorStats(User user) {
+        return PlayerBehaviorStats.builder()
+                .user(user)
+                .fairPlay(70.0)
+                .communication(70.0)
+                .fun(70.0)
+                .competitiveness(70.0)
+                .adaptability(70.0)
+                .reliability(70.0)
+                .feedbackCount(0)
+                .build();
+    }
+
 
 
 
