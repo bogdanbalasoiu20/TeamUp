@@ -19,9 +19,9 @@ import java.util.stream.Collectors;
 @Transactional
 public class BehaviorUpdateService {
 
-    private static final double BASE_ALPHA = 0.10;
+    private static final double BASE_ALPHA = 0.30;
     private static final int EXPERIENCE_FEEDBACK_CAP = 10;
-    private static final double MAX_DELTA = 1.0;
+    private static final double MAX_DELTA = 3.0;
     private static final double MIN = 0.0;
     private static final double MAX = 99.0;
 
