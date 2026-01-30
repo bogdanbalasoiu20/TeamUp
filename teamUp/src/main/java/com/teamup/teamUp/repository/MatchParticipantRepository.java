@@ -73,4 +73,17 @@ public interface MatchParticipantRepository extends JpaRepository<MatchParticipa
 
     int countByUser_Id(UUID userId);
 
+
+    @Query("""
+        SELECT COUNT(DISTINCT mp1.match.id)
+        FROM MatchParticipant mp1
+        JOIN MatchParticipant mp2
+          ON mp1.match.id = mp2.match.id
+        WHERE mp1.user.id = :userA
+          AND mp2.user.id = :userB
+          AND mp1.status = 'ACCEPTED'
+          AND mp2.status = 'ACCEPTED'
+    """)
+    int countMatchesTogether(@Param("userA") UUID userA, @Param("userB") UUID userB);
+
 }
