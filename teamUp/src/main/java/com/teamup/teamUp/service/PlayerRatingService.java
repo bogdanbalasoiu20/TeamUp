@@ -69,8 +69,8 @@ public class PlayerRatingService {
                             dto.communication() != null ||
                             dto.fun() != null ||
                             dto.competitiveness() != null ||
-                            dto.adaptability() != null ||
-                            dto.reliability() != null;
+                            dto.selfishness() != null ||
+                            dto.aggressiveness() != null;
 
             if (playerRatingRepository.existsByIdMatchIdAndIdRaterUserIdAndIdRatedUserId(matchId, rater.getId(), rated.getId())) {
                 throw new IllegalStateException("You already rated this player for this match");
@@ -121,8 +121,8 @@ public class PlayerRatingService {
                         .communication(dto.communication())
                         .fun(dto.fun())
                         .competitiveness(dto.competitiveness())
-                        .adaptability(dto.adaptability())
-                        .reliability(dto.reliability())
+                        .selfishness(dto.selfishness())
+                        .aggressiveness(dto.aggressiveness())
                         .build();
 
                 playerBehaviorRatingRepository.save(behaviorRating);
@@ -179,8 +179,8 @@ public class PlayerRatingService {
                     dto.communication() == null &&
                     dto.fun() == null &&
                     dto.competitiveness() == null &&
-                    dto.adaptability() == null &&
-                    dto.reliability() == null) {
+                    dto.selfishness() == null &&
+                    dto.aggressiveness() == null) {
                 return;
             }
 
@@ -188,8 +188,8 @@ public class PlayerRatingService {
                     dto.communication() == null ||
                     dto.fun() == null ||
                     dto.competitiveness() == null ||
-                    dto.adaptability() == null ||
-                    dto.reliability() == null) {
+                    dto.selfishness() == null ||
+                    dto.aggressiveness() == null) {
                 throw new IllegalArgumentException("All behavior stats must be provided");
             }
         }

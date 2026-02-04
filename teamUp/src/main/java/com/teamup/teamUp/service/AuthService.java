@@ -116,8 +116,8 @@ public class AuthService {
                 .competitiveness(70.0)
                 .communication(70.0)
                 .fun(70.0)
-                .adaptability(70.0)
-                .reliability(70.0)
+                .selfishness(70.0)
+                .aggressiveness(70.0)
                 .feedbackCount(0)
                 .build();
 
