@@ -2,12 +2,18 @@ package com.teamup.teamUp.chemistry.service;
 
 
 import com.teamup.teamUp.chemistry.dto.AdjustmentResult;
-import com.teamup.teamUp.model.entity.MatchParticipant;
+import com.teamup.teamUp.exceptions.NotFoundException;
+import com.teamup.teamUp.model.entity.PlayerBehaviorStats;
 import com.teamup.teamUp.model.entity.PlayerCardStats;
+import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.repository.MatchParticipantRepository;
-import com.teamup.teamUp.repository.MatchRepository;
+import com.teamup.teamUp.repository.PlayerBehaviorStatsRepository;
 import com.teamup.teamUp.repository.PlayerCardStatsRepository;
+import com.teamup.teamUp.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import com.teamup.teamUp.chemistry.PositionSynergy;
+import com.teamup.teamUp.model.enums.Position;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,10 +26,14 @@ public class ChemistryAdjustmentServiceImpl implements ChemistryAdjustmentServic
 
     private final PlayerCardStatsRepository cardStatsRepository;
     private final MatchParticipantRepository matchParticipantRepository;
+    private final UserRepository userRepository;
+    private final PlayerBehaviorStatsRepository playerBehaviorStatsRepository;
 
-    public ChemistryAdjustmentServiceImpl(PlayerCardStatsRepository cardStatsRepository, MatchParticipantRepository matchParticipantRepository) {
+    public ChemistryAdjustmentServiceImpl(PlayerCardStatsRepository cardStatsRepository, MatchParticipantRepository matchParticipantRepository, UserRepository userRepository, PlayerBehaviorStatsRepository playerBehaviorStatsRepository) {
         this.cardStatsRepository = cardStatsRepository;
         this.matchParticipantRepository = matchParticipantRepository;
+        this.userRepository = userRepository;
+        this.playerBehaviorStatsRepository = playerBehaviorStatsRepository;
     }
 
     @Override
@@ -60,6 +70,35 @@ public class ChemistryAdjustmentServiceImpl implements ChemistryAdjustmentServic
             adjusted += bonus;
             reasons.add("Played together before");
         }
+
+        Position posA = userRepository.findById(userA).orElseThrow(()->new NotFoundException("User not found")).getPosition();
+        Position posB = userRepository.findById(userB).orElseThrow(()->new NotFoundException("User not found")).getPosition();
+
+        if (posA != null && posB != null) {
+            double positionFactor = PositionSynergy.get(posA, posB);
+            adjusted *= positionFactor;
+
+            if (positionFactor <= 0.8) {
+                reasons.add("Low positional compatibility");
+            } else if (positionFactor < 1.0) {
+                reasons.add("Moderate positional compatibility");
+            }
+        }
+
+        PlayerBehaviorStats behaviorA = playerBehaviorStatsRepository.findByUser_Id(userA).orElseThrow(()->new NotFoundException("User behavior not found"));
+        PlayerBehaviorStats behaviorB = playerBehaviorStatsRepository.findByUser_Id(userB).orElseThrow(()->new NotFoundException("User behavior not found"));
+
+        //penalizari pentru behavior slab pe pozitii unde conteaza
+        if (posA == Position.MIDFIELDER && behaviorA.getCommunication() < 40) {
+            adjusted -= 0.05;
+            reasons.add("Low communication for midfielder role");
+        }
+
+        if (posA == Position.GOALKEEPER && behaviorA.getReliability() < 50) {
+            adjusted -= 0.08;
+            reasons.add("Low reliability for goalkeeper");
+        }
+
 
         //clamp final pentru siguranta
         adjusted = Math.max(0.0, Math.min(1.0, adjusted));
