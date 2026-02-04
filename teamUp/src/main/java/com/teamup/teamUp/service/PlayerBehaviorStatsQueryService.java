@@ -25,8 +25,8 @@ public class PlayerBehaviorStatsQueryService {
                 (int) Math.round(stats.getCommunication()),
                 (int) Math.round(stats.getFun()),
                 (int) Math.round(stats.getCompetitiveness()),
-                (int) Math.round(stats.getAdaptability()),
-                (int) Math.round(stats.getReliability()),
+                (int) Math.round(stats.getSelfishness()),
+                (int) Math.round(stats.getAggressiveness()),
                 stats.getFeedbackCount()
         );
     }

@@ -28,8 +28,8 @@ public class PlayerVectorBuilder {
                 normBehavior(behavior.getCompetitiveness()),
                 normBehavior(behavior.getCommunication()),
                 normBehavior(behavior.getFun()),
-                normBehavior(behavior.getAdaptability()), //de modificat mai tarziu in cod din adaptability in selfishness
-                normBehavior(behavior.getReliability()) //si aici din reliability in aggressivness
+                normBehavior(behavior.getSelfishness()),
+                normBehavior(behavior.getAggressiveness())
         };
     }
 

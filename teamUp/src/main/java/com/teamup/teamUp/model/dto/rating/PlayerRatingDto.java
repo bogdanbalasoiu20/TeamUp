@@ -58,10 +58,10 @@ public record PlayerRatingDto(
         Short competitiveness,
 
         @Min(0) @Max(99)
-        Short adaptability,
+        Short selfishness,
 
         @Min(0) @Max(99)
-        Short reliability
+        Short aggressiveness
 
 ) {
 }

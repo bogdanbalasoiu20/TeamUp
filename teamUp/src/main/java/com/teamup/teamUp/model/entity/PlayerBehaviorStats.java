@@ -57,12 +57,12 @@ public class PlayerBehaviorStats {
     @Column (nullable = false)
     @Min(0)
     @Max(99)
-    private double adaptability;
+    private double selfishness;
 
     @Column (nullable = false)
     @Min(0)
     @Max(99)
-    private double reliability;
+    private double aggressiveness;
 
     @Column (nullable = false)
     private int feedbackCount;

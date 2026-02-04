@@ -53,10 +53,10 @@ public class PlayerBehaviorRating {
     private Short fun;
 
     @Min(0) @Max(99)
-    private Short adaptability;
+    private Short selfishness;
 
     @Min(0) @Max(99)
-    private Short reliability;
+    private Short aggressiveness;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

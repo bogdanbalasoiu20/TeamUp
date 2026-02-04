@@ -99,14 +99,14 @@ public class BehaviorUpdateService {
                 .mapToInt(Short::intValue)
                 .average().orElse(Double.NaN));
 
-        avg.put("adaptability", ratings.stream()
-                .map(PlayerBehaviorRating::getAdaptability)
+        avg.put("selfishness", ratings.stream()
+                .map(PlayerBehaviorRating::getSelfishness)
                 .filter(v -> v != null)
                 .mapToInt(Short::intValue)
                 .average().orElse(Double.NaN));
 
-        avg.put("reliability", ratings.stream()
-                .map(PlayerBehaviorRating::getReliability)
+        avg.put("aggressiveness", ratings.stream()
+                .map(PlayerBehaviorRating::getAggressiveness)
                 .filter(v -> v != null)
                 .mapToInt(Short::intValue)
                 .average().orElse(Double.NaN));
@@ -134,8 +134,8 @@ public class BehaviorUpdateService {
             case "communication" -> stats.getCommunication();
             case "fun" -> stats.getFun();
             case "competitiveness" -> stats.getCompetitiveness();
-            case "adaptability" -> stats.getAdaptability();
-            case "reliability" -> stats.getReliability();
+            case "selfishness" -> stats.getSelfishness();
+            case "aggressiveness" -> stats.getAggressiveness();
             default -> throw new IllegalArgumentException("Unknown stat: " + stat);
         };
     }
@@ -146,8 +146,8 @@ public class BehaviorUpdateService {
             case "communication" -> stats.setCommunication(value);
             case "fun" -> stats.setFun(value);
             case "competitiveness" -> stats.setCompetitiveness(value);
-            case "adaptability" -> stats.setAdaptability(value);
-            case "reliability" -> stats.setReliability(value);
+            case "selfishness" -> stats.setSelfishness(value);
+            case "aggressiveness" -> stats.setAggressiveness(value);
             default -> throw new IllegalArgumentException("Unknown stat: " + stat);
         }
     }
@@ -166,8 +166,8 @@ public class BehaviorUpdateService {
                 .communication(70.0)
                 .fun(70.0)
                 .competitiveness(70.0)
-                .adaptability(70.0)
-                .reliability(70.0)
+                .selfishness(70.0)
+                .aggressiveness(70.0)
                 .feedbackCount(0)
                 .build();
     }

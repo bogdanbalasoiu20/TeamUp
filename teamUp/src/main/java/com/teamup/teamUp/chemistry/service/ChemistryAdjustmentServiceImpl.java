@@ -94,9 +94,9 @@ public class ChemistryAdjustmentServiceImpl implements ChemistryAdjustmentServic
             reasons.add("Low communication for midfielder role");
         }
 
-        if (posA == Position.GOALKEEPER && behaviorA.getReliability() < 50) {
+        if (posA == Position.FORWARD && behaviorA.getSelfishness() > 75) {
             adjusted -= 0.08;
-            reasons.add("Low reliability for goalkeeper");
+            reasons.add("High selfishness for goalkeeper");
         }
 
 

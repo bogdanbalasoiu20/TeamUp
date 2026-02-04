@@ -6,8 +6,8 @@ public record PlayerBehaviorStatsDto(
         int communication,
         int fun,
         int competitiveness,
-        int adaptability,
-        int reliability,
+        int selfishness,
+        int aggressiveness,
         int feedbackCount
 ) {}
 
