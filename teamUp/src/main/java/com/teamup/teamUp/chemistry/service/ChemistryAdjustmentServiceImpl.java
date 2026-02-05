@@ -76,7 +76,7 @@ public class ChemistryAdjustmentServiceImpl implements ChemistryAdjustmentServic
 
         if (posA != null && posB != null) {
             double positionFactor = PositionSynergy.get(posA, posB);
-            adjusted *= positionFactor;
+            adjusted += (positionFactor - 1.0) * 0.2;
 
             if (positionFactor <= 0.8) {
                 reasons.add("Low positional compatibility");
@@ -89,14 +89,84 @@ public class ChemistryAdjustmentServiceImpl implements ChemistryAdjustmentServic
         PlayerBehaviorStats behaviorB = playerBehaviorStatsRepository.findByUser_Id(userB).orElseThrow(()->new NotFoundException("User behavior not found"));
 
         //penalizari pentru behavior slab pe pozitii unde conteaza
-        if (posA == Position.MIDFIELDER && behaviorA.getCommunication() < 40) {
+
+        //reguli pentru portar
+        if (posA == Position.GOALKEEPER && behaviorA.getAggressiveness() > 70) {
+            adjusted -= 0.06;
+            reasons.add("High aggressiveness for goalkeeper");
+        }
+
+        if (posA == Position.GOALKEEPER && behaviorA.getCommunication() < 40) {
             adjusted -= 0.05;
+            reasons.add("Low communication for goalkeeper");
+        }
+
+        if (posA == Position.GOALKEEPER && behaviorA.getFairPlay() < 40) {
+            adjusted -= 0.04;
+            reasons.add("Low fair play for goalkeeper");
+        }
+
+        //reguli pentru fundas
+        if (posA == Position.DEFENDER && behaviorA.getAggressiveness() > 80) {
+            adjusted -= 0.07;
+            reasons.add("Too aggressive for defender role");
+        }
+
+        if (posA == Position.DEFENDER && behaviorA.getCommunication() < 45) {
+            adjusted -= 0.04;
+            reasons.add("Low communication for defender role");
+        }
+
+        if (posA == Position.DEFENDER && behaviorA.getCompetitiveness() < 40) {
+            adjusted -= 0.03;
+            reasons.add("Low competitiveness for defender role");
+        }
+
+
+        //reguli pentru mijlocas
+        if (posA == Position.MIDFIELDER && behaviorA.getCommunication() < 45) {
+            adjusted -= 0.06;
             reasons.add("Low communication for midfielder role");
         }
 
+        if (posA == Position.MIDFIELDER && behaviorA.getSelfishness() > 65) {
+            adjusted -= 0.05;
+            reasons.add("High selfishness for midfielder role");
+        }
+
+        if (posA == Position.MIDFIELDER && behaviorA.getFun() < 40) {
+            adjusted -= 0.03;
+            reasons.add("Low team spirit for midfielder role");
+        }
+
+
+        //reguli pentru atacant
         if (posA == Position.FORWARD && behaviorA.getSelfishness() > 75) {
+            adjusted -= 0.07;
+            reasons.add("High selfishness for forward role");
+        }
+
+        if (posA == Position.FORWARD && behaviorA.getCommunication() < 35) {
+            adjusted -= 0.04;
+            reasons.add("Low communication for forward role");
+        }
+
+        if (posA == Position.FORWARD && behaviorA.getCompetitiveness() < 40) {
+            adjusted -= 0.03;
+            reasons.add("Low competitiveness for forward role");
+        }
+
+        //reguli pentru interactiune
+        if (posA == Position.MIDFIELDER && posB == Position.FORWARD &&
+                behaviorA.getCommunication() < 40 && behaviorB.getSelfishness() > 70) {
             adjusted -= 0.08;
-            reasons.add("High selfishness for goalkeeper");
+            reasons.add("Poor midfield-forward cooperation");
+        }
+
+        if (posA == Position.DEFENDER && posB == Position.GOALKEEPER &&
+                behaviorA.getCommunication() < 40) {
+            adjusted -= 0.05;
+            reasons.add("Weak defender-goalkeeper coordination");
         }
 
 
