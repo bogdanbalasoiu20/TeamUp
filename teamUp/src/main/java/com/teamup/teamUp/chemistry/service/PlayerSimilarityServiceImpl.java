@@ -34,8 +34,8 @@ public class PlayerSimilarityServiceImpl implements PlayerSimilarityService {
         PlayerCardStats statsB = cardStatsRepository.findById(userB).orElseThrow(() -> new NotFoundException("Card stats not found for user " + userB));
 
         //stats-urile de behavior
-        PlayerBehaviorStats behaviorA = behaviorStatsRepository.findById(userA).orElseThrow(() -> new NotFoundException("Behavior stats not found for user " + userA));
-        PlayerBehaviorStats behaviorB = behaviorStatsRepository.findById(userB).orElseThrow(() -> new NotFoundException("Behavior stats not found for user " + userB));
+        PlayerBehaviorStats behaviorA = behaviorStatsRepository.findByUser_Id(userA).orElseThrow(() -> new NotFoundException("Behavior stats not found for user " + userA));
+        PlayerBehaviorStats behaviorB = behaviorStatsRepository.findByUser_Id(userB).orElseThrow(() -> new NotFoundException("Behavior stats not found for user " + userB));
 
         //construiesc vectorii de skills
         double[] skillA = vectorBuilder.buildSkill(statsA);
