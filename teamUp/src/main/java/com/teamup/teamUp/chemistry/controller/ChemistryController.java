@@ -3,6 +3,12 @@ package com.teamup.teamUp.chemistry.controller;
 
 import com.teamup.teamUp.chemistry.dto.ChemistryResult;
 import com.teamup.teamUp.chemistry.service.ChemistryService;
+import com.teamup.teamUp.controller.ResponseApi;
+import com.teamup.teamUp.exceptions.NotFoundException;
+import com.teamup.teamUp.model.entity.User;
+import com.teamup.teamUp.repository.UserRepository;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,13 +21,20 @@ import java.util.UUID;
 public class ChemistryController {
 
     private final ChemistryService chemistryService;
+    private final UserRepository userRepository;
 
-    public ChemistryController(ChemistryService chemistryService) {
+    public ChemistryController(ChemistryService chemistryService, UserRepository userRepository) {
         this.chemistryService = chemistryService;
+        this.userRepository = userRepository;
     }
 
-    @GetMapping("/{userA}/{userB}")
-    public ChemistryResult getChemistry(@PathVariable UUID userA, @PathVariable UUID userB) {
-        return chemistryService.compute(userA,userB);
+    @GetMapping("/{otherUserId}")
+    public ResponseEntity<ResponseApi<ChemistryResult>> getChemistry(@PathVariable UUID otherUserId, Authentication auth) {
+        String username = auth.getName();
+        User me = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(username).orElseThrow(() -> new NotFoundException("User not found"));
+
+        return ResponseEntity.ok(new ResponseApi<>("Chemistry with this player calculated", chemistryService.compute(me.getId(), otherUserId), true));
     }
+
+
 }

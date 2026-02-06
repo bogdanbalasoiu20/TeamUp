@@ -88,7 +88,11 @@ public class ChemistryAdjustmentServiceImpl implements ChemistryAdjustmentServic
         PlayerBehaviorStats behaviorA = playerBehaviorStatsRepository.findByUser_Id(userA).orElseThrow(()->new NotFoundException("User behavior not found"));
         PlayerBehaviorStats behaviorB = playerBehaviorStatsRepository.findByUser_Id(userB).orElseThrow(()->new NotFoundException("User behavior not found"));
 
-        //penalizari pentru behavior slab pe pozitii unde conteaza
+        /**
+         * Computes chemistry from the perspective of userA.
+         * Used as a compatibility signal, not a global symmetric score.
+         */
+
 
         //reguli pentru portar
         if (posA == Position.GOALKEEPER && behaviorA.getAggressiveness() > 70) {
