@@ -6,6 +6,6 @@ import java.util.List;
 public record ChemistryResult(
         int score,  //scorul chemistry-ului (interval [0,99])
         double similarity, //scorul AI (interval [0,1])
-        List<String> reasons //explicatia umana a scorului
+        List<ChemistryReasons> reasons //explicatia umana a scorului
 ) {
 }

@@ -1,6 +1,8 @@
 package com.teamup.teamUp.chemistry.service;
 
+import com.teamup.teamUp.chemistry.ReasonType;
 import com.teamup.teamUp.chemistry.dto.AdjustmentResult;
+import com.teamup.teamUp.chemistry.dto.ChemistryReasons;
 import com.teamup.teamUp.chemistry.dto.ChemistryResult;
 import com.teamup.teamUp.chemistry.mapper.ChemistryScoreMapper;
 import org.springframework.stereotype.Service;
@@ -31,11 +33,12 @@ public class ChemistryServiceImpl implements ChemistryService {
 
         int score = scoreMapper.toScore(adjusted.adjustmentSimilarity()); //mapez scorul pentru user
 
-        List<String> reasons = new ArrayList<>(adjusted.reasons());  //lista de motive
+        List<ChemistryReasons> reasons = new ArrayList<>(adjusted.reasons());
 
-        if(similarity>0.75){
-            reasons.add("Similar play style and behavior");
+        if (similarity > 0.75) {
+            reasons.add(new ChemistryReasons("Similar play style and behavior", ReasonType.POSITIVE));
         }
+
 
         return new ChemistryResult(score, similarity, reasons);
     }

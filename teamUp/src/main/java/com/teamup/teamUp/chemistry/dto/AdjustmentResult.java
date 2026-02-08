@@ -4,6 +4,6 @@ import java.util.List;
 
 public record AdjustmentResult(
         double adjustmentSimilarity, //scorul de similaritate obtinut dupa ajustari
-        List<String> reasons  //explicatii pentru modificarea scorului
+        List<ChemistryReasons> reasons //explicatii pentru modificarea scorului
 ) {
 }

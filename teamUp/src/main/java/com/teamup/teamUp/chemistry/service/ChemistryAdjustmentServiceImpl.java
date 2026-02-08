@@ -1,11 +1,11 @@
 package com.teamup.teamUp.chemistry.service;
 
 
+import com.teamup.teamUp.chemistry.ReasonType;
 import com.teamup.teamUp.chemistry.dto.AdjustmentResult;
+import com.teamup.teamUp.chemistry.dto.ChemistryReasons;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.model.entity.PlayerBehaviorStats;
-import com.teamup.teamUp.model.entity.PlayerCardStats;
-import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.repository.MatchParticipantRepository;
 import com.teamup.teamUp.repository.PlayerBehaviorStatsRepository;
 import com.teamup.teamUp.repository.PlayerCardStatsRepository;
@@ -41,14 +41,14 @@ public class ChemistryAdjustmentServiceImpl implements ChemistryAdjustmentServic
 
         //pornesc de la rezultatul AI-ului
         double adjusted = similarity;
-        List<String> reasons = new ArrayList<>();
+        List<ChemistryReasons> reasons = new ArrayList<>();
 
         //iau ratingurile
         Double ratingA = cardStatsRepository.getOverall(userA);
         Double ratingB = cardStatsRepository.getOverall(userB);
 
         if (ratingA == null || ratingB == null) {
-            return new AdjustmentResult(similarity, List.of("Insufficient data"));
+            return new AdjustmentResult(similarity, List.of(new ChemistryReasons("Insufficient data", ReasonType.NEUTRAL)));
         }
 
         //penalizare pentru diferenta prea mare intre ratinguri
@@ -58,7 +58,8 @@ public class ChemistryAdjustmentServiceImpl implements ChemistryAdjustmentServic
         if (diff > 15) {
             double penalty = Math.min(0.15, (diff - 15) * 0.01);
             adjusted -= penalty;
-            reasons.add("Large level difference");
+            reasons.add(new ChemistryReasons("Large level difference", ReasonType.NEGATIVE));
+
         }
 
         //nr de meciuri jucate impreuna
@@ -68,7 +69,8 @@ public class ChemistryAdjustmentServiceImpl implements ChemistryAdjustmentServic
         if (matchesTogether > 0) {
             double bonus = Math.min(0.10, matchesTogether * 0.01);
             adjusted += bonus;
-            reasons.add("Played together before");
+            reasons.add(new ChemistryReasons("Played together before", ReasonType.POSITIVE));
+
         }
 
         Position posA = userRepository.findById(userA).orElseThrow(()->new NotFoundException("User not found")).getPosition();
@@ -79,9 +81,11 @@ public class ChemistryAdjustmentServiceImpl implements ChemistryAdjustmentServic
             adjusted += (positionFactor - 1.0) * 0.2;
 
             if (positionFactor <= 0.8) {
-                reasons.add("Low positional compatibility");
+                reasons.add(new ChemistryReasons("Low positional compatibility", ReasonType.NEGATIVE));
             } else if (positionFactor < 1.0) {
-                reasons.add("Moderate positional compatibility");
+                reasons.add(new ChemistryReasons("Moderate positional compatibility", ReasonType.NEUTRAL));
+            } else {
+                reasons.add(new ChemistryReasons("Excellent positional synergy", ReasonType.POSITIVE));
             }
         }
 
@@ -97,80 +101,76 @@ public class ChemistryAdjustmentServiceImpl implements ChemistryAdjustmentServic
         //reguli pentru portar
         if (posA == Position.GOALKEEPER && behaviorA.getAggressiveness() > 70) {
             adjusted -= 0.06;
-            reasons.add("High aggressiveness for goalkeeper");
+            reasons.add(new ChemistryReasons("High aggressiveness for goalkeeper", ReasonType.NEGATIVE));
         }
 
         if (posA == Position.GOALKEEPER && behaviorA.getCommunication() < 40) {
             adjusted -= 0.05;
-            reasons.add("Low communication for goalkeeper");
+            reasons.add(new ChemistryReasons("Low communication for goalkeeper", ReasonType.NEGATIVE));
         }
 
         if (posA == Position.GOALKEEPER && behaviorA.getFairPlay() < 40) {
             adjusted -= 0.04;
-            reasons.add("Low fair play for goalkeeper");
+            reasons.add(new ChemistryReasons("Low fair play for goalkeeper", ReasonType.NEGATIVE));
         }
 
-        //reguli pentru fundas
+        // fundas
         if (posA == Position.DEFENDER && behaviorA.getAggressiveness() > 80) {
             adjusted -= 0.07;
-            reasons.add("Too aggressive for defender role");
+            reasons.add(new ChemistryReasons("Too aggressive for defender role", ReasonType.NEGATIVE));
         }
 
         if (posA == Position.DEFENDER && behaviorA.getCommunication() < 45) {
             adjusted -= 0.04;
-            reasons.add("Low communication for defender role");
+            reasons.add(new ChemistryReasons("Low communication for defender role", ReasonType.NEGATIVE));
         }
 
         if (posA == Position.DEFENDER && behaviorA.getCompetitiveness() < 40) {
             adjusted -= 0.03;
-            reasons.add("Low competitiveness for defender role");
+            reasons.add(new ChemistryReasons("Low competitiveness for defender role", ReasonType.NEGATIVE));
         }
 
-
-        //reguli pentru mijlocas
+        // mijlocas
         if (posA == Position.MIDFIELDER && behaviorA.getCommunication() < 45) {
             adjusted -= 0.06;
-            reasons.add("Low communication for midfielder role");
+            reasons.add(new ChemistryReasons("Low communication for midfielder role", ReasonType.NEGATIVE));
         }
 
         if (posA == Position.MIDFIELDER && behaviorA.getSelfishness() > 65) {
             adjusted -= 0.05;
-            reasons.add("High selfishness for midfielder role");
+            reasons.add(new ChemistryReasons("High selfishness for midfielder role", ReasonType.NEGATIVE));
         }
 
         if (posA == Position.MIDFIELDER && behaviorA.getFun() < 40) {
             adjusted -= 0.03;
-            reasons.add("Low team spirit for midfielder role");
+            reasons.add(new ChemistryReasons("Low team spirit for midfielder role", ReasonType.NEGATIVE));
         }
 
-
-        //reguli pentru atacant
+        // atacant
         if (posA == Position.FORWARD && behaviorA.getSelfishness() > 75) {
             adjusted -= 0.07;
-            reasons.add("High selfishness for forward role");
+            reasons.add(new ChemistryReasons("High selfishness for forward role", ReasonType.NEGATIVE));
         }
 
         if (posA == Position.FORWARD && behaviorA.getCommunication() < 35) {
             adjusted -= 0.04;
-            reasons.add("Low communication for forward role");
+            reasons.add(new ChemistryReasons("Low communication for forward role", ReasonType.NEGATIVE));
         }
 
         if (posA == Position.FORWARD && behaviorA.getCompetitiveness() < 40) {
             adjusted -= 0.03;
-            reasons.add("Low competitiveness for forward role");
+            reasons.add(new ChemistryReasons("Low competitiveness for forward role", ReasonType.NEGATIVE));
         }
 
-        //reguli pentru interactiune
-        if (posA == Position.MIDFIELDER && posB == Position.FORWARD &&
-                behaviorA.getCommunication() < 40 && behaviorB.getSelfishness() > 70) {
+        // interactiuni
+        if (posA == Position.MIDFIELDER && posB == Position.FORWARD && behaviorA.getCommunication() < 40 && behaviorB.getSelfishness() > 70) {
             adjusted -= 0.08;
-            reasons.add("Poor midfield-forward cooperation");
+            reasons.add(new ChemistryReasons("Poor midfield-forward cooperation", ReasonType.NEGATIVE));
         }
 
-        if (posA == Position.DEFENDER && posB == Position.GOALKEEPER &&
-                behaviorA.getCommunication() < 40) {
+        if (posA == Position.DEFENDER && posB == Position.GOALKEEPER && behaviorA.getCommunication() < 40) {
             adjusted -= 0.05;
-            reasons.add("Weak defender-goalkeeper coordination");
+            reasons.add(new ChemistryReasons("Weak defender-goalkeeper coordination", ReasonType.NEGATIVE));
         }
 
 
