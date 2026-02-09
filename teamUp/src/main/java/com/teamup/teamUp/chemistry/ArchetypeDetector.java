@@ -8,87 +8,159 @@ import org.springframework.stereotype.Component;
 @Component
 public class ArchetypeDetector {
 
-    public PlayerArchetype detect(PlayerCardStats stats, Position position) {
-        if (position == null || stats == null) {
+    public PlayerArchetype detect(PlayerCardStats s, Position position) {
+        if (s == null || position == null) {
             return PlayerArchetype.BALANCED;
         }
 
-        //Calculam atributele dominante (Top 2)
-        // Asta rezolva problema: functioneaza si pentru rating 70, si pentru 99.
-        return resolveArchetype(stats, position);
+        return switch (position) {
+            case FORWARD -> detectForward(s);
+            case MIDFIELDER -> detectMidfielder(s);
+            case DEFENDER -> detectDefender(s);
+            case GOALKEEPER -> detectGoalkeeper(s);
+            default -> PlayerArchetype.BALANCED;
+        };
     }
 
-    private PlayerArchetype resolveArchetype(PlayerCardStats stats, Position position) {
-        double pace = stats.getPace();
-        double shoot = stats.getShooting();
-        double pass = stats.getPassing();
-        double drib = stats.getDribbling();
-        double def = stats.getDefending();
-        double phys = stats.getPhysical();
+    //FORWARD
 
-        switch (position) {
-            case FORWARD:
-                // SPEEDSTER: Viteza este atributul dominant SAU (Viteza e mare si Driblingul e al doilea)
-                if (pace >= phys && pace >= shoot) {
-                    return PlayerArchetype.SPEEDSTER;
-                }
-                // TARGET MAN: Fizicul este dominant sau foarte apropiat de maxim, si Shooting bun
-                if (phys >= pace && phys >= pass) {
-                    return PlayerArchetype.TARGET_MAN;
-                }
-                // POACHER: Shooting este maximul absolut
-                if (shoot >= pace && shoot >= pass && shoot >= phys) {
-                    return PlayerArchetype.POACHER;
-                }
-                // Fallback pentru atacanti tehnici (ex: False 9)
-                if (pass >= phys && drib >= phys) {
-                    return PlayerArchetype.PLAYMAKER;
-                }
-                return PlayerArchetype.BALANCED;
+    private PlayerArchetype detectForward(PlayerCardStats s) {
+        double speedster =norm( 1.0 * s.getPace() +
+                        0.6 * s.getDribbling() +
+                        0.4 * s.getPassing() +
+                        0.3 * s.getShooting(),
+                        1.0+0.6+0.4+0.3);
 
-            case MIDFIELDER:
-                // DESTROYER: Defensiva si Fizicul domina net Pasele
-                if (def >= pass && phys >= drib) {
-                    return PlayerArchetype.DESTROYER;
-                }
-                // PLAYMAKER: Pasele si Driblingul domina Defensiva si Fizicul
-                if (pass >= def && drib >= phys) {
-                    return PlayerArchetype.PLAYMAKER;
-                }
-                // BOX TO BOX: Totul e echilibrat (diferenta mica intre cel mai bun si cel mai slab stat)
-                // Verificam daca stats-urile sunt "plate"
-                double maxStat = Math.max(pass, Math.max(def, phys));
-                double minStat = Math.min(pass, Math.min(def, phys));
-                if ((maxStat - minStat) < 15.0) {
-                    return PlayerArchetype.BOX_TO_BOX;
-                }
+        double poacher =norm(1.0 * s.getShooting() +
+                        0.6 * s.getDribbling() +
+                        0.5 * s.getPassing() +
+                        0.3 * s.getPace(),
+                1.0+0.6+0.5+0.3);
 
-                // Default logic daca iese un stat in evidenta
-                if (def > pass) return PlayerArchetype.DESTROYER;
-                return PlayerArchetype.PLAYMAKER;
+        double targetMan =norm (1.0 * s.getPhysical() +
+                        0.8 * s.getShooting() +
+                        0.3 * s.getDribbling() +
+                        0.2 * s.getPassing(),
+                        1.0+0.8+0.3+0.2);
 
-            case DEFENDER:
-                // WING BACK: Viteza e mai mare decat Defensiva (Fouls logic, dar corect pt rol)
-                if (pace > def) {
-                    return PlayerArchetype.WING_BACK;
-                }
-                // BALL PLAYING: Pase bune (relativ la nivelul lui de fundas)
-                // Adica pasele sunt comparabile cu defensiva
-                if (pass >= (def - 10.0)) {
-                    return PlayerArchetype.BALL_PLAYING_CB;
-                }
-                // STOPPER: Defensiva si Fizicul sunt regii
-                return PlayerArchetype.STOPPER;
+        double playmaker = norm(1.0 * s.getPassing() +
+                        0.7 * s.getDribbling() +
+                        0.4 * s.getPace() +
+                        0.5 * s.getShooting(),
+                1.0+0.7+0.4+0.5);
 
-            case GOALKEEPER:
-                // Aici e mai simplu: daca stie sa paseze (Pase > 70 sau Pase > Viteza * 2)
-                if (pass > 65.0 || pass > phys) {
-                    return PlayerArchetype.SWEEPER_KEEPER;
-                }
-                return PlayerArchetype.CLASSIC_GK;
+        return maxOf(
+                speedster, PlayerArchetype.SPEEDSTER,
+                poacher, PlayerArchetype.POACHER,
+                targetMan, PlayerArchetype.TARGET_MAN,
+                playmaker, PlayerArchetype.PLAYMAKER
+        );
+    }
 
-            default:
-                return PlayerArchetype.BALANCED;
+    //MIDFIELDER
+
+    private PlayerArchetype detectMidfielder(PlayerCardStats s) {
+
+        double playmaker = norm(0.3 * s.getPace() +
+                        1.0 * s.getPassing() +
+                        0.9 * s.getDribbling() +
+                        0.2 * s.getDefending() +
+                        0.2 * s.getPhysical() +
+                        0.7 * s.getShooting(),
+                        0.3+1.0 + 0.9 + 0.2 + 0.2 + 0.7);
+
+        double destroyer = norm(0.2 * s.getPace() +
+                        0.5 * s.getPassing() +
+                        0.2 * s.getDribbling() +
+                        1.0 * s.getDefending() +
+                        0.9 * s.getPhysical() +
+                        0.3 * s.getShooting(),
+                        0.2+0.5+0.2+1.0+0.9+0.3);
+
+        double boxToBox = norm(0.6 * s.getPace() +
+                        0.6 * s.getPassing() +
+                        0.5 * s.getDribbling() +
+                        0.7 * s.getDefending() +
+                        0.6 * s.getPhysical() +
+                        0.5 * s.getShooting(),
+                        0.6 + 0.6 +0.5+0.7+0.6+0.5);
+
+        return maxOf(
+                playmaker, PlayerArchetype.PLAYMAKER,
+                destroyer, PlayerArchetype.DESTROYER,
+                boxToBox, PlayerArchetype.BOX_TO_BOX
+        );
+    }
+
+
+    //DEFENDER
+
+    private PlayerArchetype detectDefender(PlayerCardStats s) {
+        double stopper =norm( 1.0 * s.getDefending() +
+                        0.8 * s.getPhysical() +
+                        0.2 * s.getPassing(),
+                        1.0+0.8+0.2);
+
+        double ballPlaying =norm( 0.9 * s.getDefending() +
+                        0.6 * s.getPassing() +
+                        0.5 *  s.getPhysical(),
+                        0.9+0.6+0.5);
+
+        double wingBack = norm(1.0 * s.getPace() +
+                        0.6 * s.getPassing() +
+                        0.5 * s.getDefending(),
+                        1.0+0.6+0.5);
+
+        return maxOf(
+                stopper, PlayerArchetype.STOPPER,
+                ballPlaying, PlayerArchetype.BALL_PLAYING_CB,
+                wingBack, PlayerArchetype.WING_BACK
+        );
+    }
+
+    //GOALKEEPER
+
+    private PlayerArchetype detectGoalkeeper(PlayerCardStats s) {
+        double classic =norm( 1.0 * s.getGkReflexes() +
+                        0.8 * s.getGkPositioning() +
+                        0.5 * s.getGkDiving(),
+                        1.0+0.8+0.5);
+
+        double sweeper =norm( 1.0 * s.getPassing() +
+                        0.6 * s.getGkSpeed() +
+                        0.3 * s.getGkPositioning(),
+                1.0+0.6+0.3);
+
+
+        return maxOf(
+                classic, PlayerArchetype.CLASSIC_GK,
+                sweeper, PlayerArchetype.SWEEPER_KEEPER
+        );
+    }
+
+    //UTILS
+
+    private PlayerArchetype maxOf(Object... values) {
+        double max = Double.NEGATIVE_INFINITY;
+        PlayerArchetype best = PlayerArchetype.BALANCED;
+
+        for (int i = 0; i < values.length; i += 2) {
+            double score = (double) values[i];
+            PlayerArchetype type = (PlayerArchetype) values[i + 1];
+
+            if (score > max) {
+                max = score;
+                best = type;
+            }
         }
+
+        return best;
     }
+
+
+    private double norm(double score, double totalWeight) {
+        return score / totalWeight;
+    }
+
+
 }
