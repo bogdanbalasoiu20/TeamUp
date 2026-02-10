@@ -59,7 +59,7 @@ public class ChemistryPairEvaluator {
             reasons.add(new ChemistryReasons("Strong link on the field", ReasonType.POSITIVE));
         }
 
-        return new PairResult(totalImpact, reasons);
+        return new PairResult(totalImpact, reasons, roleA, roleB);
     }
 
 
@@ -114,5 +114,5 @@ public class ChemistryPairEvaluator {
         ).contains(role);
     }
 
-    public record PairResult(double impactScore, List<ChemistryReasons> reasons) {}
+    public record PairResult(double impactScore, List<ChemistryReasons> reasons, PlayerArchetype roleA, PlayerArchetype roleB) {}
 }

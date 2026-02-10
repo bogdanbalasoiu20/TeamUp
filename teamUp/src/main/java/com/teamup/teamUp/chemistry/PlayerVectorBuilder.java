@@ -1,7 +1,6 @@
 package com.teamup.teamUp.chemistry;
 
 import com.teamup.teamUp.model.entity.PlayerBehaviorStats;
-import com.teamup.teamUp.model.entity.PlayerCardStats;
 import org.springframework.stereotype.Component;
 
 //transforma datele brute in limbajul AI(normalizeaza)

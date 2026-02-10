@@ -75,6 +75,6 @@ public class ChemistryServiceImpl implements ChemistryService {
             reasons.add(new ChemistryReasons("Similar play style and behavior", ReasonType.POSITIVE));
         }
 
-        return new ChemistryResult(score, similarity, reasons);
+        return new ChemistryResult(score, similarity, reasons, adjusted.roleA(), adjusted.roleB());
     }
 }

@@ -55,6 +55,6 @@ public class ChemistryAdjustmentServiceImpl implements ChemistryAdjustmentServic
 
         adjusted = Math.max(0.0, Math.min(1.0, adjusted));
 
-        return new AdjustmentResult(adjusted, reasons);
+        return new AdjustmentResult(adjusted, reasons, pairResult.roleA(), pairResult.roleB());
     }
 }
