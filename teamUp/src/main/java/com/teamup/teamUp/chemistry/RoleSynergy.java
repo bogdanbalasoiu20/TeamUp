@@ -6,17 +6,19 @@ import java.util.Map;
 
 import static com.teamup.teamUp.model.enums.PlayerArchetype.*;
 
+//clasa care defineste cum interactioneaza rolurile intre ele -> penalizari/bonusuri pentru scorul final de chemistry
+//matrice de sinergie tactica
 public final class RoleSynergy {
 
     // Folosim EnumMap pentru ca avem >10 intrari si e cel mai rapid
     private static final Map<PlayerArchetype, Map<PlayerArchetype, Double>> SYNERGY = new EnumMap<>(PlayerArchetype.class);
 
     static {
-        // ================= MIDFIELD =================
+        //mijlocas
         add(PLAYMAKER, DESTROYER,  +0.08);
         add(PLAYMAKER, BOX_TO_BOX, +0.05);
         add(PLAYMAKER, SPEEDSTER,  +0.04);
-        add(PLAYMAKER, POACHER,    +0.03); // Assist -> Gol
+        add(PLAYMAKER, POACHER,    +0.03);
         add(PLAYMAKER, PLAYMAKER,  -0.05);
         add(PLAYMAKER, TARGET_MAN, +0.03);
 
@@ -28,8 +30,8 @@ public final class RoleSynergy {
         add(BOX_TO_BOX, DESTROYER, +0.04);
         add(BOX_TO_BOX, BOX_TO_BOX,+0.02);
 
-        // ================= ATTACK =================
-        add(SPEEDSTER, TARGET_MAN, +0.07); // Big Man - Little Man combo
+        //atacant
+        add(SPEEDSTER, TARGET_MAN, +0.07);
         add(SPEEDSTER, POACHER,    +0.04);
         add(SPEEDSTER, PLAYMAKER,  +0.04);
         add(SPEEDSTER, SPEEDSTER,  -0.04);
@@ -40,26 +42,26 @@ public final class RoleSynergy {
 
         add(TARGET_MAN, SPEEDSTER, +0.07);
         add(TARGET_MAN, PLAYMAKER, +0.03);
-        add(TARGET_MAN, WING_BACK, +0.10); // <--- CRITIC: Asta lipsea! (Centrari)
+        add(TARGET_MAN, WING_BACK, +0.10);
         add(TARGET_MAN, TARGET_MAN,-0.05);
 
-        // ================= DEFENSE =================
-        add(STOPPER, BALL_PLAYING_CB, +0.06); // Cuplul ideal CB
+        //fundas
+        add(STOPPER, BALL_PLAYING_CB, +0.06);
         add(STOPPER, WING_BACK,       +0.03);
         add(STOPPER, STOPPER,         -0.05);
 
         add(BALL_PLAYING_CB, STOPPER,         +0.06);
         add(BALL_PLAYING_CB, WING_BACK,       +0.04);
-        add(BALL_PLAYING_CB, SWEEPER_KEEPER,  +0.05); // Constructie de jos
+        add(BALL_PLAYING_CB, SWEEPER_KEEPER,  +0.05);
         add(BALL_PLAYING_CB, BALL_PLAYING_CB, -0.04);
 
-        add(WING_BACK, SPEEDSTER,   +0.05); // Banda rapida
+        add(WING_BACK, SPEEDSTER,   +0.05);
         add(WING_BACK, BOX_TO_BOX,  +0.04);
-        add(WING_BACK, TARGET_MAN,  +0.10); // Centrari
+        add(WING_BACK, TARGET_MAN,  +0.10);
 
-        // ================= GOALKEEPER =================
+        //portar
         add(SWEEPER_KEEPER, BALL_PLAYING_CB, +0.05);
-        add(SWEEPER_KEEPER, WING_BACK,       +0.04); // Contratac rapid
+        add(SWEEPER_KEEPER, WING_BACK,       +0.04);
 
         add(CLASSIC_GK, STOPPER, +0.04);
     }

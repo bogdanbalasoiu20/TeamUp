@@ -4,6 +4,7 @@ import com.teamup.teamUp.model.enums.Position;
 
 import java.util.Map;
 
+//se defineste importanta interactiunii in teren intre pozitii, cat de des interactioneaza intre ele
 public class PositionSynergy {
 
     private static final Map<Position, Map<Position, Double>> SYNERGY = Map.of(

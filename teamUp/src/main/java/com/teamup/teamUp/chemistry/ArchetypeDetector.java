@@ -5,6 +5,7 @@ import com.teamup.teamUp.model.enums.PlayerArchetype;
 import com.teamup.teamUp.model.enums.Position;
 import org.springframework.stereotype.Component;
 
+//clasa care stabileste rolul unui jucator
 @Component
 public class ArchetypeDetector {
 
