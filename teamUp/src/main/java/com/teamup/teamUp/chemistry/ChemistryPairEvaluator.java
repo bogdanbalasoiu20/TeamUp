@@ -17,6 +17,8 @@ import java.util.Set;
 public class ChemistryPairEvaluator {
 
     private final ArchetypeDetector archetypeDetector;
+    private static final int MIN_MATCHES_FOR_ROLE = 5;
+
 
     public ChemistryPairEvaluator(ArchetypeDetector archetypeDetector) {
         this.archetypeDetector = archetypeDetector;
@@ -28,7 +30,8 @@ public class ChemistryPairEvaluator {
      */
     public PairResult evaluate(
             PlayerCardStats statsA, Position posA, PlayerBehaviorStats behaviorA,
-            PlayerCardStats statsB, Position posB, PlayerBehaviorStats behaviorB
+            PlayerCardStats statsB, Position posB, PlayerBehaviorStats behaviorB,
+            int matchesPlayedUserA, int matchesPlayedUserB
     ) {
         List<ChemistryReasons> reasons = new ArrayList<>();
 
@@ -36,8 +39,13 @@ public class ChemistryPairEvaluator {
         double proximityWeight = PositionSynergy.get(posA, posB);
 
         //stats-urile se transforma in roluri
-        PlayerArchetype roleA = archetypeDetector.detect(statsA, posA);
-        PlayerArchetype roleB = archetypeDetector.detect(statsB, posB);
+        PlayerArchetype roleA = matchesPlayedUserA >= MIN_MATCHES_FOR_ROLE
+                        ? archetypeDetector.detect(statsA, posA)
+                        : PlayerArchetype.ROOKIE;
+
+        PlayerArchetype roleB = matchesPlayedUserB >= MIN_MATCHES_FOR_ROLE
+                        ? archetypeDetector.detect(statsB, posB)
+                        : PlayerArchetype.ROOKIE;
 
         //verific matricea de sinergie
         double roleBonus = RoleSynergy.get(roleA, roleB);
@@ -55,7 +63,15 @@ public class ChemistryPairEvaluator {
         // calculul final
         double totalImpact = (roleBonus + interactionImpact) * proximityWeight;
 
-        if (proximityWeight > 0.9 && totalImpact > 0) {
+        boolean oneRookie = (roleA == PlayerArchetype.ROOKIE && roleB != PlayerArchetype.ROOKIE) ||
+                        (roleB == PlayerArchetype.ROOKIE && roleA != PlayerArchetype.ROOKIE);
+        if (oneRookie) {
+            totalImpact -= 0.03;
+            reasons.add(new ChemistryReasons("Player role still developing", ReasonType.NEUTRAL));
+        }
+        totalImpact = Math.max(-0.25, Math.min(0.25, totalImpact));
+
+        if (proximityWeight > 0.9 && totalImpact > 0.05) {
             reasons.add(new ChemistryReasons("Strong link on the field", ReasonType.POSITIVE));
         }
 

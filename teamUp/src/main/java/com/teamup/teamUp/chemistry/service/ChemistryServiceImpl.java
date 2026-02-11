@@ -62,11 +62,14 @@ public class ChemistryServiceImpl implements ChemistryService {
         // numaram meciurile celor 2 useri impreuna
         int matchesTogether = matchRepo.countMatchesTogether(userA, userB);
 
+        int matchesPlayedUserA = matchRepo.countByUser_Id(userA);
+        int matchesPlayedUserB = matchRepo.countByUser_Id(userB);
+
         //calculez similaritatea sociala dintre cei 2 useri
         double similarity = playerSimilarityService.calculate(behA, behB);
 
         //ajustez scorul de chemistry
-        AdjustmentResult adjusted = chemistryAdjustmentService.adjust(similarity, cardA, uA.getPosition(), behA, cardB, uB.getPosition(), behB, matchesTogether);
+        AdjustmentResult adjusted = chemistryAdjustmentService.adjust(similarity, cardA, uA.getPosition(), behA, cardB, uB.getPosition(), behB, matchesTogether, matchesPlayedUserA, matchesPlayedUserB);
 
         int score = scoreMapper.toScore(adjusted.adjustmentSimilarity());
         List<ChemistryReasons> reasons = new ArrayList<>(adjusted.reasons());

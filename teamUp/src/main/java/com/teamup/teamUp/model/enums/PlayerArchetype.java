@@ -21,5 +21,7 @@ public enum PlayerArchetype {
     CLASSIC_GK,       // Sta pe linie
 
     //default
-    BALANCED          // Cand stats-urile sunt echilibrate si nu iese nimic în evidenta
+    BALANCED,          // Cand stats-urile sunt echilibrate si nu iese nimic în evidenta
+
+    ROOKIE  //Nu are suficiente meciuri si nu i se poate stabili un rol
 }

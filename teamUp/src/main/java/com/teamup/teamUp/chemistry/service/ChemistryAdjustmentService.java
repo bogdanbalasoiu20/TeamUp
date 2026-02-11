@@ -10,6 +10,6 @@ public interface ChemistryAdjustmentService {
             double baseSimilarity,
             PlayerCardStats statsA, Position posA, PlayerBehaviorStats behA,
             PlayerCardStats statsB, Position posB, PlayerBehaviorStats behB,
-            int matchesTogether
+            int matchesTogether, int matchesPlayedUserA, int matchesPlayedUserB
     );
 }
