@@ -64,11 +64,14 @@ public class ChemistryAdjustmentServiceImpl implements ChemistryAdjustmentServic
         }
 
         int expDiff = Math.abs(matchesPlayedUserA - matchesPlayedUserB);
-        if(expDiff > 5) {
-            double  penalty = Math.min(0.12, (expDiff - 5) * 0.01);
+        int maxMatches = Math.max(matchesPlayedUserA, matchesPlayedUserB);
+        if (expDiff > 5 && maxMatches > 0) {
+            double ratio = (double) expDiff / maxMatches;
+            double penalty = Math.min(0.12, ratio * 0.12);
             adjusted -= penalty;
             reasons.add(new ChemistryReasons("Experience imbalance", ReasonType.NEGATIVE));
         }
+
 
 
         reasons.addAll(pairResult.reasons());
