@@ -32,16 +32,26 @@ public class ChemistryAdjustmentServiceImpl implements ChemistryAdjustmentServic
         double behaviorWeight = 0.4;
         double tacticalWeight = 0.4;
         double experienceWeight = 0.2;
+        List<ChemistryReasons> reasons = new ArrayList<>();
 
         var pairResult = pairEvaluator.evaluate(statsA, posA, behaviorA, statsB, posB, behaviorB, matchesPlayedUserA, matchesPlayedUserB);
 
         double tacticalScore = 0.5 + pairResult.impactScore();
         double experienceScore = Math.min(1.0, matchesTogether*0.1);
+
+        if (matchesTogether == 0) {
+            reasons.add(new ChemistryReasons("No shared match history yet", ReasonType.NEUTRAL));
+        }else if (matchesTogether == 1) {
+            reasons.add(new ChemistryReasons("1 match together", ReasonType.POSITIVE));
+        } else {
+            reasons.add(new ChemistryReasons(matchesTogether + " matches together", ReasonType.POSITIVE));
+        }
+
+
+
         double adjusted = behaviorWeight * similarity +
                         tacticalWeight * tacticalScore +
                         experienceWeight * experienceScore;
-
-        List<ChemistryReasons> reasons = new ArrayList<>();
 
         double ratingA = statsA.getOverallRating();
         double ratingB = statsB.getOverallRating();

@@ -51,9 +51,9 @@ public class ChemistryPairEvaluator {
         double roleBonus = RoleSynergy.get(roleA, roleB);
 
         //explic bonusul/penalizarea pentru combinatia de roluri
-        if (roleBonus > 0.03) {
+        if (roleBonus > 0) {
             reasons.add(new ChemistryReasons("Tactical fit: " + roleA + " & " + roleB, ReasonType.POSITIVE));
-        } else if (roleBonus < -0.02) {
+        } else if (roleBonus < 0) {
             reasons.add(new ChemistryReasons("Role clash: " + roleA + " & " + roleB, ReasonType.NEGATIVE));
         }
 

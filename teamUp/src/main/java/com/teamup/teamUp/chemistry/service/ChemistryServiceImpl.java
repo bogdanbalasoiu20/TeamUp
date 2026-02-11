@@ -75,7 +75,7 @@ public class ChemistryServiceImpl implements ChemistryService {
         List<ChemistryReasons> reasons = new ArrayList<>(adjusted.reasons());
 
         if (similarity > 0.75) {
-            reasons.add(new ChemistryReasons("Similar play style and behavior", ReasonType.POSITIVE));
+            reasons.add(new ChemistryReasons("Similar behavior", ReasonType.POSITIVE));
         }
 
         return new ChemistryResult(score, similarity, reasons, adjusted.roleA(), adjusted.roleB());
