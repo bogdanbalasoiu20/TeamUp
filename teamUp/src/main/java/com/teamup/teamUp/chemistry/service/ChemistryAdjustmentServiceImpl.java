@@ -57,15 +57,15 @@ public class ChemistryAdjustmentServiceImpl implements ChemistryAdjustmentServic
         double ratingB = statsB.getOverallRating();
 
         double diff = Math.abs(ratingA - ratingB);
-        if (diff > 2) {
-            double penalty = Math.min(0.30, (diff - 2) * 0.05);
+        if (diff > 4) {
+            double penalty = Math.min(0.30, (diff - 4) * 0.04);
             adjusted -= penalty;
             reasons.add(new ChemistryReasons("Large skill gap", ReasonType.NEGATIVE));
         }
 
         int expDiff = Math.abs(matchesPlayedUserA - matchesPlayedUserB);
         if(expDiff > 5) {
-            double  penalty = Math.min(0.20, (expDiff - 5) * 0.02);
+            double  penalty = Math.min(0.12, (expDiff - 5) * 0.01);
             adjusted -= penalty;
             reasons.add(new ChemistryReasons("Experience imbalance", ReasonType.NEGATIVE));
         }
