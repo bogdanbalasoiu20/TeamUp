@@ -29,9 +29,29 @@ public class ChemistryAdjustmentServiceImpl implements ChemistryAdjustmentServic
             int matchesTogether, int matchesPlayedUserA, int matchesPlayedUserB
     ) {
 
-        double behaviorWeight = 0.4;
+        //MATURITY FACTOR
+        double maturityA = Math.min(1.0, matchesPlayedUserA / 10.0);
+        double maturityB = Math.min(1.0, matchesPlayedUserB / 10.0);
+
+        // media maturitatii
+        double maturityFactor = (maturityA + maturityB) / 2.0;
+
+        // behavior porneste de la 0.15 și urca pana la 0.4
+        double behaviorWeight = 0.15 + (0.25 * maturityFactor);
+
+        // pastram tactica constanta
         double tacticalWeight = 0.4;
+
+        // experienta constanta
         double experienceWeight = 0.2;
+
+        // normalizare ca suma sa fie 1
+        double totalWeight = behaviorWeight + tacticalWeight + experienceWeight;
+
+        behaviorWeight /= totalWeight;
+        tacticalWeight /= totalWeight;
+        experienceWeight /= totalWeight;
+
         List<ChemistryReasons> reasons = new ArrayList<>();
 
         var pairResult = pairEvaluator.evaluate(statsA, posA, behaviorA, statsB, posB, behaviorB, matchesPlayedUserA, matchesPlayedUserB);
