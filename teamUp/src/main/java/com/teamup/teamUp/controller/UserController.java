@@ -1,11 +1,14 @@
 package com.teamup.teamUp.controller;
 
 
+import com.teamup.teamUp.chemistry.dto.UserRoleResponse;
+import com.teamup.teamUp.chemistry.service.UserRoleService;
 import com.teamup.teamUp.mapper.UserMapper;
 import com.teamup.teamUp.model.dto.user.ChangePasswordRequestDto;
 import com.teamup.teamUp.model.dto.user.UpdateProfileRequestDto;
 import com.teamup.teamUp.model.dto.user.UserProfileResponseDto;
 import com.teamup.teamUp.model.entity.User;
+import com.teamup.teamUp.model.enums.PlayerArchetype;
 import com.teamup.teamUp.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,16 +16,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
     private final UserService userService;
     private final UserMapper userMapper;
+    private final UserRoleService userRoleService;
 
     @Autowired
-    public UserController(UserService userService, UserMapper userMapper) {
+    public UserController(UserService userService, UserMapper userMapper, UserRoleService userRoleService) {
         this.userService = userService;
         this.userMapper = userMapper;
+        this.userRoleService = userRoleService;
     }
 
     @GetMapping("/{username}")
@@ -66,4 +73,11 @@ public class UserController {
         userService.logout(auth.getName());
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/{id}/role")
+    public ResponseEntity<ResponseApi<UserRoleResponse>> getUserRole(@PathVariable UUID id) {
+        PlayerArchetype role = userRoleService.getRole(id);
+        return ResponseEntity.ok(new ResponseApi<>("Player role retrieved successfully",new UserRoleResponse(role),true));
+    }
+
 }
