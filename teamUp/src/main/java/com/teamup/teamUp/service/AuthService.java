@@ -29,15 +29,17 @@ public class AuthService {
     private final JwtService jwtService;
     private final PlayerCardStatsRepository playerCardStatsRepository;
     private final PlayerBehaviorStatsRepository playerBehaviorStatsRepository;
+    private final RatingUpdateService ratingUpdateService;
 
 
     @Autowired
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, PlayerCardStatsRepository playerCardStatsRepository, PlayerBehaviorStatsRepository playerBehaviorStatsRepository) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, PlayerCardStatsRepository playerCardStatsRepository, PlayerBehaviorStatsRepository playerBehaviorStatsRepository, RatingUpdateService ratingUpdateService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.playerCardStatsRepository = playerCardStatsRepository;
         this.playerBehaviorStatsRepository = playerBehaviorStatsRepository;
+        this.ratingUpdateService = ratingUpdateService;
     }
 
     public AuthResponseDto login(LoginRequestDto request){
@@ -90,25 +92,10 @@ public class AuthService {
 
         var saved = userRepository.saveAndFlush(user);
 
-        PlayerCardStats initialCard = PlayerCardStats.builder()
-                .userId(saved.getId())
-                .pace(68.0)
-                .shooting(68.0)
-                .passing(68.0)
-                .defending(68.0)
-                .dribbling(68.0)
-                .physical(68.0)
-                .gkDiving(68.0)
-                .gkHandling(68.0)
-                .gkKicking(68.0)
-                .gkReflexes(68.0)
-                .gkSpeed(68.0)
-                .gkPositioning(68.0)
-                .overallRating(68.0)
-                .lastUpdated(Instant.now())
-                .build();
+        PlayerCardStats initialCard = ratingUpdateService.createInitialCard(saved.getId(), saved);
 
         playerCardStatsRepository.save(initialCard);
+
 
         PlayerBehaviorStats stats = PlayerBehaviorStats.builder()
                 .user(saved)

@@ -20,41 +20,41 @@ import java.util.stream.Collectors;
 @Transactional
 public class RatingUpdateService {
 
-    private static final double BASE_ALPHA = 0.15;
-    private static final int EXPERIENCE_MATCHES_CAP = 10;
-    private static final double MAX_DELTA = 2.0;
-    private static final double MIN_RATING = 68.0;
+    private static final double BASE_ALPHA = 0.12;
+    private static final int EXPERIENCE_MATCHES_CAP = 15;
+    private static final double MAX_DELTA = 3.0;
+    private static final double MIN_RATING = 55.0;
     private static final double MAX_RATING = 99.0;
 
     private static final Map<Position, Map<String, Double>> POSITION_WEIGHTS = Map.of(
 
             // Ponderi atacant
             Position.FORWARD, Map.of(
-                    "shooting", 0.30,
+                    "shooting", 0.35,
                     "dribbling", 0.20,
                     "pace", 0.20,
-                    "passing", 0.15,
-                    "physical", 0.10,
-                    "defending", 0.05
+                    "passing", 0.10,
+                    "physical", 0.15,
+                    "defending", 0.0
             ),
 
             // Ponderi mijlocas
             Position.MIDFIELDER, Map.of(
-                    "passing", 0.30,
-                    "dribbling", 0.20,
-                    "defending", 0.20,
-                    "pace", 0.15,
-                    "physical", 0.10,
-                    "shooting", 0.05
+                    "passing", 0.27,
+                    "dribbling", 0.19,
+                    "defending", 0.12,
+                    "pace", 0.14,
+                    "physical", 0.12,
+                    "shooting", 0.16
             ),
 
             // Ponderi fundas
             Position.DEFENDER, Map.of(
                     "defending", 0.35,
-                    "physical", 0.25,
-                    "pace", 0.15,
-                    "passing", 0.15,
-                    "dribbling", 0.05,
+                    "physical", 0.30,
+                    "pace", 0.10,
+                    "passing", 0.13,
+                    "dribbling", 0.08,
                     "shooting", 0.05
             ),
 
@@ -201,26 +201,56 @@ public class RatingUpdateService {
     }
 
 
-    private PlayerCardStats createInitialCard(UUID userId, User user) {
+    public PlayerCardStats createInitialCard(UUID userId, User user) {
 
-        return PlayerCardStats.builder()
+        Position position = user.getPosition();
+
+        PlayerCardStats.PlayerCardStatsBuilder builder = PlayerCardStats.builder()
                 .userId(userId)
-                .pace(68.0)
-                .shooting(68.0)
-                .passing(68.0)
-                .defending(68.0)
-                .dribbling(68.0)
-                .physical(68.0)
-                .gkDiving(68.0)
-                .gkHandling(68.0)
-                .gkKicking(68.0)
-                .gkReflexes(68.0)
-                .gkSpeed(68.0)
-                .gkPositioning(68.0)
-                .overallRating(68.0)
-                .lastUpdated(Instant.now())
-                .build();
+                .lastUpdated(Instant.now());
+
+        switch (position) {
+
+            case FORWARD -> builder
+                    .pace(70.0)
+                    .shooting(72.0)
+                    .passing(66.0)
+                    .defending(60.0)
+                    .dribbling(67.0)
+                    .physical(66.0);
+
+            case MIDFIELDER -> builder
+                    .pace(67.0)
+                    .shooting(66.0)
+                    .passing(70.0)
+                    .defending(64.0)
+                    .dribbling(70.0)
+                    .physical(62.0);
+
+            case DEFENDER -> builder
+                    .pace(65.0)
+                    .shooting(60.0)
+                    .passing(65.0)
+                    .defending(72.0)
+                    .dribbling(60.0)
+                    .physical(70.0);
+
+            case GOALKEEPER -> builder
+                    .gkDiving(65.0)
+                    .gkHandling(67.0)
+                    .gkKicking(68.0)
+                    .gkReflexes(70.0)
+                    .gkSpeed(60.0)
+                    .gkPositioning(65.0);
+        }
+
+        PlayerCardStats card = builder.build();
+
+        card.setOverallRating(calculateOverall(card, position));
+
+        return card;
     }
+
 
 
     private Double getStat(PlayerCardStats card, String stat) {
@@ -282,7 +312,9 @@ public class RatingUpdateService {
             totalWeight += weight;
         }
 
-        return totalWeight > 0 ? weightedSum / totalWeight : MIN_RATING;
+        double overall = weightedSum / totalWeight;
+        return Math.max(60.0, Math.min(MAX_RATING, overall));
+
     }
 
 
