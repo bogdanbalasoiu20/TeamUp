@@ -107,7 +107,7 @@ public class RatingUpdateService {
             PlayerCardStats card = cardRepo.findById(userId).orElseGet(() -> createInitialCard(userId, user));
 
             int numVotes = ratings.size();
-            int matchesPlayed = (int) historyRepo.countByUserId(userId);
+            int matchesPlayed = (int) historyRepo.countByUserIdAndMatchIdIsNotNull(userId);
             double alpha = computeAlpha(numVotes, matchesPlayed);
 
             // EMA + clamp

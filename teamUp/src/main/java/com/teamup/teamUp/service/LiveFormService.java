@@ -29,7 +29,7 @@ public class LiveFormService {
 
         PlayerCardStats card = cardRepo.findById(userId).orElseThrow(() -> new IllegalStateException("Player card not found"));
 
-        List<PlayerCardStatsHistory> lastMatches = historyRepo.findTop3ByUserIdOrderByRecordedAtDesc(userId);
+        List<PlayerCardStatsHistory> lastMatches = historyRepo.findTop3ByUserIdAndMatchIdIsNotNullOrderByRecordedAtDesc(userId);
 
         int matchesCount = lastMatches.size();
 

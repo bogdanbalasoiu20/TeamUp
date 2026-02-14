@@ -11,9 +11,9 @@ import java.util.UUID;
 public interface PlayerCardStatsHistoryRepository extends JpaRepository<PlayerCardStatsHistory, UUID> {
     List<PlayerCardStatsHistory> findByUserIdOrderByRecordedAtAsc(UUID userId);
 
-    long countByUserId(UUID userId);
+    long countByUserIdAndMatchIdIsNotNull(UUID userId);
 
-    List<PlayerCardStatsHistory>findTop3ByUserIdOrderByRecordedAtDesc(UUID userId);
+    List<PlayerCardStatsHistory> findTop3ByUserIdAndMatchIdIsNotNullOrderByRecordedAtDesc(UUID userId);
 
     @Query("""
         SELECT COALESCE(MAX(h.overallRating), 0)
