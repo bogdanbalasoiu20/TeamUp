@@ -249,6 +249,8 @@ public class RatingUpdateService {
 
         card.setOverallRating(calculateOverall(card, position));
 
+        historyRepo.save(snapshot(card, null));
+
         return card;
     }
 
