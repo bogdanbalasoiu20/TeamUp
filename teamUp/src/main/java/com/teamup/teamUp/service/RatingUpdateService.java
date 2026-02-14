@@ -22,9 +22,10 @@ public class RatingUpdateService {
 
     private static final double BASE_ALPHA = 0.12;
     private static final int EXPERIENCE_MATCHES_CAP = 15;
-    private static final double MAX_DELTA = 3.0;
+    private static final double MAX_DELTA = 3;
     private static final double MIN_RATING = 55.0;
     private static final double MAX_RATING = 99.0;
+    private static final double VISUAL_OVERALL_OFFSET = 2.5;
 
     private static final Map<Position, Map<String, Double>> POSITION_WEIGHTS = Map.of(
 
@@ -212,36 +213,36 @@ public class RatingUpdateService {
         switch (position) {
 
             case FORWARD -> builder
-                    .pace(70.0)
-                    .shooting(72.0)
-                    .passing(66.0)
-                    .defending(60.0)
-                    .dribbling(67.0)
-                    .physical(66.0);
+                    .pace(68.0)
+                    .shooting(70.0)
+                    .passing(64.0)
+                    .defending(58.0)
+                    .dribbling(65.0)
+                    .physical(64.0);
 
             case MIDFIELDER -> builder
-                    .pace(67.0)
-                    .shooting(66.0)
-                    .passing(70.0)
-                    .defending(64.0)
-                    .dribbling(70.0)
-                    .physical(62.0);
+                    .pace(65.0)
+                    .shooting(64.0)
+                    .passing(68.0)
+                    .defending(62.0)
+                    .dribbling(68.0)
+                    .physical(60.0);
 
             case DEFENDER -> builder
-                    .pace(65.0)
-                    .shooting(60.0)
-                    .passing(65.0)
-                    .defending(72.0)
-                    .dribbling(60.0)
-                    .physical(70.0);
+                    .pace(63.0)
+                    .shooting(58.0)
+                    .passing(63.0)
+                    .defending(70.0)
+                    .dribbling(58.0)
+                    .physical(68.0);
 
             case GOALKEEPER -> builder
-                    .gkDiving(65.0)
-                    .gkHandling(67.0)
-                    .gkKicking(68.0)
-                    .gkReflexes(70.0)
-                    .gkSpeed(60.0)
-                    .gkPositioning(65.0);
+                    .gkDiving(63.0)
+                    .gkHandling(65.0)
+                    .gkKicking(66.0)
+                    .gkReflexes(68.0)
+                    .gkSpeed(58.0)
+                    .gkPositioning(63.0);
         }
 
         PlayerCardStats card = builder.build();
@@ -313,7 +314,7 @@ public class RatingUpdateService {
         }
 
         double overall = weightedSum / totalWeight;
-        return Math.max(60.0, Math.min(MAX_RATING, overall));
+        return Math.max(60.0, Math.min(MAX_RATING, overall+VISUAL_OVERALL_OFFSET));
 
     }
 
