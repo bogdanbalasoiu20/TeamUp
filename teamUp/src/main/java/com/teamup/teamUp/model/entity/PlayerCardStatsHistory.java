@@ -43,7 +43,7 @@ public class PlayerCardStatsHistory {
     @Column(name = "recorded_at", nullable = false)
     private Instant recordedAt;
 
-    @Column(name = "match_id", nullable = false)
+    @Column(name = "match_id")
     private UUID matchId;
 }
 
