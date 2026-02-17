@@ -78,7 +78,7 @@ public class ChemistryAdjustmentServiceImpl implements ChemistryAdjustmentServic
 
         double diff = Math.abs(ratingA - ratingB);
         if (diff > 4) {
-            double penalty = Math.min(0.30, (diff - 4) * 0.04);
+            double penalty = Math.min(0.20, (diff - 4) * 0.02);
             adjusted -= penalty;
             reasons.add(new ChemistryReasons("Large skill gap", ReasonType.NEGATIVE));
         }
