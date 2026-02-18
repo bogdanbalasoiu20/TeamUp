@@ -34,7 +34,7 @@ public class TeamMember {
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    private TeamRole role;
+    private TeamRole role = TeamRole.PLAYER;
 
     private LocalDateTime joinedAt = LocalDateTime.now();
 
