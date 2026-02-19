@@ -11,6 +11,7 @@ import com.teamup.teamUp.repository.TeamMemberRepository;
 import com.teamup.teamUp.repository.TeamRepository;
 import com.teamup.teamUp.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,14 +26,14 @@ public class TeamService {
     private final PlayerCardStatsRepository playerCardStatsRepository;
 
     @Transactional
-    public Team createTeam(String name, UUID captainId) {
+    public Team createTeam(String name, String captainUsername) {
 
         if (teamRepository.existsByName(name)) {
-            throw new NotFoundException("Team name already exists");
+            throw new IllegalArgumentException("Team name already exists");
         }
 
-        User captain = userRepository.findById(captainId).orElseThrow(() -> new NotFoundException("User not found"));
-        Double captainRating = playerCardStatsRepository.getOverall(captainId);
+        User captain = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(captainUsername).orElseThrow(() -> new NotFoundException("User not found"));
+        Double captainRating = playerCardStatsRepository.getOverall(captain.getId());
 
         Team team = Team.builder()
                 .name(name)
@@ -55,7 +56,7 @@ public class TeamService {
     }
 
     @Transactional
-    public void addPlayer(UUID teamId, UUID userId) {
+    public void addPlayer(UUID teamId, UUID userId, String captainUsername) {
 
         if (teamMemberRepository.existsByTeamIdAndUserId(teamId, userId)) {
             throw new NotFoundException("User already in team");
@@ -64,6 +65,11 @@ public class TeamService {
         Team team = teamRepository.findById(teamId).orElseThrow(() -> new NotFoundException("Team not found"));
 
         User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+
+        if (!team.getCaptain().getUsername().equals(captainUsername)) {
+            throw new AccessDeniedException("Only captain can add players");
+        }
+
 
         TeamMember member = TeamMember.builder()
                 .team(team)

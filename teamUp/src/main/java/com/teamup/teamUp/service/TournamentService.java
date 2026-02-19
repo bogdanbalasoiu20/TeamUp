@@ -1,11 +1,13 @@
 package com.teamup.teamUp.service;
 
 import com.teamup.teamUp.exceptions.NotFoundException;
+import com.teamup.teamUp.model.dto.tournament.CreateTournamentRequestDto;
 import com.teamup.teamUp.model.entity.*;
 import com.teamup.teamUp.model.enums.MatchStatus;
 import com.teamup.teamUp.model.enums.TournamentStatus;
 import com.teamup.teamUp.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,11 +23,39 @@ public class TournamentService {
     private final TournamentStandingRepository standingRepository;
     private final TournamentMatchRepository matchRepository;
     private final TeamRepository teamRepository;
+    private final UserRepository userRepository;
 
     @Transactional
-    public Tournament createTournament(Tournament tournament) {
+    public Tournament createTournament(CreateTournamentRequestDto request, String organizerUsername) {
+
+        User organizer = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(organizerUsername).orElseThrow(() -> new NotFoundException("Organizer not found"));
+
+        if (request.getMaxTeams() == null || request.getMaxTeams() < 2) {
+            throw new IllegalArgumentException("Tournament must allow at least 2 teams");
+        }
+
+        if (request.getStartsAt() == null || request.getEndsAt() == null) {
+            throw new IllegalArgumentException("Tournament period must be defined");
+        }
+
+        if (!request.getEndsAt().isAfter(request.getStartsAt())) {
+            throw new IllegalArgumentException("End date must be after start date");
+        }
+
+        Tournament tournament = Tournament.builder()
+                .name(request.getName())
+                .latitude(request.getLatitude())
+                .longitude(request.getLongitude())
+                .maxTeams(request.getMaxTeams())
+                .startsAt(request.getStartsAt())
+                .endsAt(request.getEndsAt())
+                .organizer(organizer)
+                .status(TournamentStatus.OPEN)
+                .build();
+
         return tournamentRepository.save(tournament);
     }
+
 
     @Transactional
     public void joinTournament(UUID tournamentId, UUID teamId) {
@@ -57,9 +87,14 @@ public class TournamentService {
     }
 
     @Transactional
-    public void startTournament(UUID tournamentId) {
+    public void startTournament(UUID tournamentId, String authUsername) {
 
         Tournament tournament = tournamentRepository.findById(tournamentId).orElseThrow(() -> new NotFoundException("Tournament not found"));
+
+        if (!tournament.getOrganizer().getUsername().equals(authUsername)) {
+            throw new AccessDeniedException("Only organizer can start tournament");
+        }
+
 
         if (tournament.getStatus() != TournamentStatus.OPEN) {
             throw new RuntimeException("Tournament already started");

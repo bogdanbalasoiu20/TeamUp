@@ -30,12 +30,26 @@ public class TournamentMatchService {
             throw new RuntimeException("Match already finished");
         }
 
+        if (scoreHome < 0 || scoreAway < 0) {
+            throw new IllegalArgumentException("Score cannot be negative");
+        }
+
+
         match.setScoreHome(scoreHome);
         match.setScoreAway(scoreAway);
         match.setStatus(MatchStatus.DONE);
 
         Team home = match.getHomeTeam();
         Team away = match.getAwayTeam();
+
+        if (scoreHome > scoreAway) {
+            match.setWinner(home);
+        } else if (scoreAway > scoreHome) {
+            match.setWinner(away);
+        } else {
+            match.setWinner(null); // draw
+        }
+
 
         TournamentStanding homeStanding = standingRepository.findByTournamentIdAndTeamId(match.getTournament().getId(), home.getId()).orElseThrow();
 
