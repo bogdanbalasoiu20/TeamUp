@@ -2,7 +2,6 @@ package com.teamup.teamUp.controller;
 
 import com.teamup.teamUp.model.dto.team.CreateTeamRequestDto;
 import com.teamup.teamUp.model.dto.team.TeamResponseDto;
-import com.teamup.teamUp.model.entity.Team;
 import com.teamup.teamUp.service.TeamService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;

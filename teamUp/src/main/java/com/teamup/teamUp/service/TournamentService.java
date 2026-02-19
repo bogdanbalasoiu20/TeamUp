@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,11 +30,14 @@ public class TournamentService {
     private final TournamentMatchRepository matchRepository;
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
+    private final VenueRepository venueRepository;
 
     @Transactional
     public TournamentResponseDto createTournament(CreateTournamentRequestDto request, String organizerUsername) {
 
         User organizer = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(organizerUsername).orElseThrow(() -> new NotFoundException("Organizer not found"));
+        Venue venue = venueRepository.findById(request.getVenueId()).orElseThrow(() -> new NotFoundException("Venue not found"));
+
 
         if (request.getMaxTeams() == null || request.getMaxTeams() < 2) {
             throw new IllegalArgumentException("Tournament must allow at least 2 teams");
@@ -51,8 +53,7 @@ public class TournamentService {
 
         Tournament tournament = Tournament.builder()
                 .name(request.getName())
-                .latitude(request.getLatitude())
-                .longitude(request.getLongitude())
+                .venue(venue)
                 .maxTeams(request.getMaxTeams())
                 .startsAt(request.getStartsAt())
                 .endsAt(request.getEndsAt())

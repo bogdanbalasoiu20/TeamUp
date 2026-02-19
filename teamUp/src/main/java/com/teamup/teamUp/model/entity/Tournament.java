@@ -26,8 +26,9 @@ public class Tournament {
     @Column(nullable = false)
     private String name;
 
-    private Double latitude;
-    private Double longitude;
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "venue_id", nullable = false, foreignKey = @ForeignKey(name = "fk_tournament_venue"))
+    private Venue venue;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "organizer_id")

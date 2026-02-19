@@ -3,7 +3,6 @@ package com.teamup.teamUp.service;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.mapper.TeamMapper;
 import com.teamup.teamUp.model.dto.team.TeamResponseDto;
-import com.teamup.teamUp.model.entity.PlayerCardStats;
 import com.teamup.teamUp.model.entity.Team;
 import com.teamup.teamUp.model.entity.TeamMember;
 import com.teamup.teamUp.model.entity.User;
