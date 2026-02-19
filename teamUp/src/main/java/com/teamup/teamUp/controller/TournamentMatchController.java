@@ -18,19 +18,8 @@ public class TournamentMatchController {
     }
 
     @PostMapping("/{matchId}/finish")
-    public ResponseEntity<ResponseApi<Void>> finishMatch(
-            @PathVariable UUID matchId,
-            @RequestBody FinishMatchRequestDto request
-    ) {
-
-        matchService.finishMatch(
-                matchId,
-                request.getScoreHome(),
-                request.getScoreAway()
-        );
-
-        return ResponseEntity.ok(
-                new ResponseApi<>("Match finished successfully", null, true)
-        );
+    public ResponseEntity<ResponseApi<Void>> finishMatch(@PathVariable UUID matchId, @RequestBody FinishMatchRequestDto request) {
+        matchService.finishMatch(matchId, request.getScoreHome(), request.getScoreAway());
+        return ResponseEntity.ok(new ResponseApi<>("Match finished successfully", null, true));
     }
 }

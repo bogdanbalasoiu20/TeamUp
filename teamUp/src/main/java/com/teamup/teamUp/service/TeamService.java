@@ -1,6 +1,8 @@
 package com.teamup.teamUp.service;
 
 import com.teamup.teamUp.exceptions.NotFoundException;
+import com.teamup.teamUp.mapper.TeamMapper;
+import com.teamup.teamUp.model.dto.team.TeamResponseDto;
 import com.teamup.teamUp.model.entity.PlayerCardStats;
 import com.teamup.teamUp.model.entity.Team;
 import com.teamup.teamUp.model.entity.TeamMember;
@@ -26,7 +28,7 @@ public class TeamService {
     private final PlayerCardStatsRepository playerCardStatsRepository;
 
     @Transactional
-    public Team createTeam(String name, String captainUsername) {
+    public TeamResponseDto createTeam(String name, String captainUsername) {
 
         if (teamRepository.existsByName(name)) {
             throw new IllegalArgumentException("Team name already exists");
@@ -52,7 +54,7 @@ public class TeamService {
 
         teamMemberRepository.save(member);
 
-        return team;
+        return TeamMapper.toDto(team);
     }
 
     @Transactional

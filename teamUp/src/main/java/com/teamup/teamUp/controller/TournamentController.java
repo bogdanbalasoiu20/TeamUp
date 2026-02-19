@@ -1,12 +1,18 @@
 package com.teamup.teamUp.controller;
 
 import com.teamup.teamUp.model.dto.tournament.CreateTournamentRequestDto;
+import com.teamup.teamUp.model.dto.tournament.TournamentMatchResponseDto;
+import com.teamup.teamUp.model.dto.tournament.TournamentResponseDto;
+import com.teamup.teamUp.model.dto.tournament.TournamentStandingResponseDto;
 import com.teamup.teamUp.model.entity.Tournament;
+import com.teamup.teamUp.model.entity.TournamentMatch;
+import com.teamup.teamUp.model.entity.TournamentStanding;
 import com.teamup.teamUp.service.TournamentService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -20,8 +26,8 @@ public class TournamentController {
     }
 
     @PostMapping
-    public ResponseEntity<ResponseApi<Tournament>> createTournament(@RequestBody CreateTournamentRequestDto request, Authentication auth) {
-        Tournament tournament = tournamentService.createTournament(request, auth.getName());
+    public ResponseEntity<ResponseApi<TournamentResponseDto>> createTournament(@RequestBody CreateTournamentRequestDto request, Authentication auth) {
+        TournamentResponseDto tournament = tournamentService.createTournament(request, auth.getName());
         return ResponseEntity.ok(new ResponseApi<>("Tournament created successfully", tournament, true));
     }
 
@@ -37,5 +43,24 @@ public class TournamentController {
         tournamentService.startTournament(tournamentId,  auth.getName());
         return ResponseEntity.ok(new ResponseApi<>("Tournament started successfully", null, true));
     }
+
+    @GetMapping("/{tournamentId}")
+    public ResponseEntity<ResponseApi<TournamentResponseDto>> getTournament(@PathVariable UUID tournamentId) {
+        TournamentResponseDto tournament = tournamentService.getTournament(tournamentId);
+        return ResponseEntity.ok(new ResponseApi<>("Tournament retrieved successfully", tournament, true));
+    }
+
+    @GetMapping("/{tournamentId}/matches")
+    public ResponseEntity<ResponseApi<List<TournamentMatchResponseDto>>> getMatches(@PathVariable UUID tournamentId) {
+        List<TournamentMatchResponseDto> matches = tournamentService.getMatches(tournamentId);
+        return ResponseEntity.ok(new ResponseApi<>("Matches retrieved successfully", matches, true));
+    }
+
+    @GetMapping("/{tournamentId}/standings")
+    public ResponseEntity<ResponseApi<List<TournamentStandingResponseDto>>> getStandings(@PathVariable UUID tournamentId) {
+        List<TournamentStandingResponseDto> standings = tournamentService.getStandings(tournamentId);
+        return ResponseEntity.ok(new ResponseApi<>("Standings retrieved successfully", standings, true));
+    }
+
 }
 

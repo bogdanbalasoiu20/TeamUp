@@ -1,7 +1,13 @@
 package com.teamup.teamUp.service;
 
 import com.teamup.teamUp.exceptions.NotFoundException;
+import com.teamup.teamUp.mapper.StandingMapper;
+import com.teamup.teamUp.mapper.TournamentMapper;
+import com.teamup.teamUp.mapper.TournamentMatchMapper;
 import com.teamup.teamUp.model.dto.tournament.CreateTournamentRequestDto;
+import com.teamup.teamUp.model.dto.tournament.TournamentMatchResponseDto;
+import com.teamup.teamUp.model.dto.tournament.TournamentResponseDto;
+import com.teamup.teamUp.model.dto.tournament.TournamentStandingResponseDto;
 import com.teamup.teamUp.model.entity.*;
 import com.teamup.teamUp.model.enums.MatchStatus;
 import com.teamup.teamUp.model.enums.TournamentStatus;
@@ -13,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +33,7 @@ public class TournamentService {
     private final UserRepository userRepository;
 
     @Transactional
-    public Tournament createTournament(CreateTournamentRequestDto request, String organizerUsername) {
+    public TournamentResponseDto createTournament(CreateTournamentRequestDto request, String organizerUsername) {
 
         User organizer = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(organizerUsername).orElseThrow(() -> new NotFoundException("Organizer not found"));
 
@@ -53,7 +60,9 @@ public class TournamentService {
                 .status(TournamentStatus.OPEN)
                 .build();
 
-        return tournamentRepository.save(tournament);
+        tournamentRepository.save(tournament);
+
+        return TournamentMapper.toDto(tournament);
     }
 
 
@@ -149,5 +158,35 @@ public class TournamentService {
             tournament.setStatus(TournamentStatus.FINISHED);
         }
     }
+
+    @Transactional(readOnly = true)
+    public TournamentResponseDto getTournament(UUID tournamentId) {
+        Tournament tournament =  tournamentRepository.findById(tournamentId).orElseThrow(() -> new NotFoundException("Tournament not found"));
+        return TournamentMapper.toDto(tournament);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TournamentMatchResponseDto> getMatches(UUID tournamentId) {
+
+        Tournament tournament = tournamentRepository.findById(tournamentId).orElseThrow(() -> new NotFoundException("Tournament not found"));
+
+        List<TournamentMatch> matches = matchRepository.findByTournamentId(tournament.getId());
+
+        return matches.stream().map(TournamentMatchMapper::toDto).toList();
+    }
+
+
+    @Transactional(readOnly = true)
+    public List<TournamentStandingResponseDto> getStandings(UUID tournamentId) {
+
+        return standingRepository.findByTournamentIdOrderByPointsDescGoalsForDesc(tournamentId)
+                .stream()
+                .map(StandingMapper::toDto)
+                .toList();
+    }
+
+
+
+
 }
 
