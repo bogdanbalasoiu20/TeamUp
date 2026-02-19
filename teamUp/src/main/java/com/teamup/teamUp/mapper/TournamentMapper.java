@@ -9,8 +9,10 @@ public class TournamentMapper {
         return new TournamentResponseDto(
                 t.getId(),
                 t.getName(),
-                t.getLatitude(),
-                t.getLongitude(),
+                t.getVenue().getId(),
+                t.getVenue().getName(),
+                t.getVenue().getLatitude(),
+                t.getVenue().getLongitude(),
                 t.getMaxTeams(),
                 t.getStatus(),
                 t.getStartsAt(),

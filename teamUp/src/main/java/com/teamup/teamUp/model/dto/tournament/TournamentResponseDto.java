@@ -6,14 +6,16 @@ import com.teamup.teamUp.model.enums.TournamentStatus;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-public record TournamentResponseDto (
+public record TournamentResponseDto(
         UUID id,
         String name,
-        Double latitude,
-        Double longitude,
+        UUID venueId,
+        String venueName,
+        Double venueLatitude,
+        Double venueLongitude,
         Integer maxTeams,
         TournamentStatus status,
         LocalDateTime startsAt,
         LocalDateTime endsAt
-){}
+) {}
 
