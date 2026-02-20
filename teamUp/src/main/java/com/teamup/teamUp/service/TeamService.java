@@ -13,6 +13,10 @@ import com.teamup.teamUp.repository.TeamMemberRepository;
 import com.teamup.teamUp.repository.TeamRepository;
 import com.teamup.teamUp.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -118,6 +122,13 @@ public class TeamService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public Page<TeamResponseDto> exploreTeams(String username, int page, int size, String search) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Team> result = teamRepository.exploreTeams(username, search, pageable);
+        return result.map(TeamMapper::toDto);
+    }
+
 
     @Transactional
     public void removePlayer(UUID teamId, UUID userId, String captainUsername) {
@@ -139,5 +150,7 @@ public class TeamService {
 
         teamMemberRepository.delete(member);
     }
+
+
 }
 

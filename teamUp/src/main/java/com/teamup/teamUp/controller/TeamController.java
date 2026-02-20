@@ -5,6 +5,7 @@ import com.teamup.teamUp.model.dto.team.TeamMemberResponseDto;
 import com.teamup.teamUp.model.dto.team.TeamResponseDto;
 import com.teamup.teamUp.service.TeamService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -50,6 +51,12 @@ public class TeamController {
     @GetMapping("/my")
     public ResponseEntity<ResponseApi<List<TeamResponseDto>>> getMyTeams(Authentication auth) {
         return ResponseEntity.ok(new ResponseApi<>("My teams retrieved", teamService.getTeamsForUser(auth.getName()), true));
+    }
+
+    @GetMapping("/explore")
+    public ResponseEntity<ResponseApi<Page<TeamResponseDto>>> exploreTeams(Authentication auth, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size, @RequestParam(required = false) String search) {
+        Page<TeamResponseDto> teams = teamService.exploreTeams(auth.getName(), page, size, search);
+        return ResponseEntity.ok(new ResponseApi<>("Explore teams retrieved", teams, true));
     }
 
     @DeleteMapping("/{teamId}/members/{userId}")
