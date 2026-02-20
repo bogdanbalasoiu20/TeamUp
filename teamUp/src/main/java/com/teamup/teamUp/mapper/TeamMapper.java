@@ -13,7 +13,11 @@ public class TeamMapper {
                 team.getCaptain().getUsername(),
                 team.getTeamRating(),
                 team.getTeamChemistry(),
-                team.getMembers() != null ? team.getMembers().size() : 0
+                team.getWins(),
+                team.getDraws(),
+                team.getLosses(),
+                team.getMembers() != null ? team.getMembers().size() : 0,
+                team.getCreatedAt()
         );
     }
 }

@@ -1,5 +1,6 @@
 package com.teamup.teamUp.model.dto.team;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record TeamResponseDto(
@@ -9,7 +10,10 @@ public record TeamResponseDto(
         String captainUsername,
         Double teamRating,
         Double teamChemistry,
-        int membersCount
-) {
-}
+        int wins,
+        int draws,
+        int losses,
+        int membersCount,
+        LocalDateTime createdAt
+) {}
 
