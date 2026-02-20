@@ -5,6 +5,7 @@ import com.teamup.teamUp.model.dto.tournament.TournamentMatchResponseDto;
 import com.teamup.teamUp.model.dto.tournament.TournamentResponseDto;
 import com.teamup.teamUp.model.dto.tournament.TournamentStandingResponseDto;
 import com.teamup.teamUp.service.TournamentService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +24,7 @@ public class TournamentController {
     }
 
     @PostMapping
-    public ResponseEntity<ResponseApi<TournamentResponseDto>> createTournament(@RequestBody CreateTournamentRequestDto request, Authentication auth) {
+    public ResponseEntity<ResponseApi<TournamentResponseDto>> createTournament(@Valid @RequestBody CreateTournamentRequestDto request, Authentication auth) {
         TournamentResponseDto tournament = tournamentService.createTournament(request, auth.getName());
         return ResponseEntity.ok(new ResponseApi<>("Tournament created successfully", tournament, true));
     }
@@ -57,6 +58,12 @@ public class TournamentController {
     public ResponseEntity<ResponseApi<List<TournamentStandingResponseDto>>> getStandings(@PathVariable UUID tournamentId) {
         List<TournamentStandingResponseDto> standings = tournamentService.getStandings(tournamentId);
         return ResponseEntity.ok(new ResponseApi<>("Standings retrieved successfully", standings, true));
+    }
+
+    @GetMapping
+    public ResponseEntity<ResponseApi<List<TournamentResponseDto>>> getAllTournaments() {
+        List<TournamentResponseDto> tournaments = tournamentService.getAllTournaments();
+        return ResponseEntity.ok(new ResponseApi<>("Tournaments retrieved successfully", tournaments, true));
     }
 
 }

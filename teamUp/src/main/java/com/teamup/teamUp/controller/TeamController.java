@@ -3,6 +3,7 @@ package com.teamup.teamUp.controller;
 import com.teamup.teamUp.model.dto.team.CreateTeamRequestDto;
 import com.teamup.teamUp.model.dto.team.TeamResponseDto;
 import com.teamup.teamUp.service.TeamService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +20,7 @@ public class TeamController {
     }
 
     @PostMapping
-    public ResponseEntity<ResponseApi<TeamResponseDto>> createTeam(@RequestBody CreateTeamRequestDto request, Authentication auth) {
+    public ResponseEntity<ResponseApi<TeamResponseDto>> createTeam(@Valid @RequestBody CreateTeamRequestDto request, Authentication auth) {
         TeamResponseDto team = teamService.createTeam(request.getName(), auth.getName()); //capitanul este userul logat, cel care creaza echipa
 
         return ResponseEntity.ok(new ResponseApi<>("Team created successfully", team, true));

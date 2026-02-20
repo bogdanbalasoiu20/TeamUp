@@ -187,6 +187,15 @@ public class TournamentService {
     }
 
 
+    @Transactional(readOnly = true)
+    public List<TournamentResponseDto> getAllTournaments() {
+        return tournamentRepository.findAll()
+                .stream()
+                .map(TournamentMapper::toDto)
+                .toList();
+    }
+
+
 
 
 }

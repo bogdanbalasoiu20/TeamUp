@@ -2,6 +2,7 @@ package com.teamup.teamUp.controller;
 
 import com.teamup.teamUp.model.dto.tournament.FinishMatchRequestDto;
 import com.teamup.teamUp.service.TournamentMatchService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +19,7 @@ public class TournamentMatchController {
     }
 
     @PostMapping("/{matchId}/finish")
-    public ResponseEntity<ResponseApi<Void>> finishMatch(@PathVariable UUID matchId, @RequestBody FinishMatchRequestDto request) {
+    public ResponseEntity<ResponseApi<Void>> finishMatch(@PathVariable UUID matchId,@Valid @RequestBody FinishMatchRequestDto request) {
         matchService.finishMatch(matchId, request.getScoreHome(), request.getScoreAway());
         return ResponseEntity.ok(new ResponseApi<>("Match finished successfully", null, true));
     }
