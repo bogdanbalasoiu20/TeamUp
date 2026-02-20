@@ -38,7 +38,7 @@ public class Team {
     private int losses = 0;
 
     @Builder.Default
-    private Double teamRating = 99.0;
+    private Double teamRating = 0.0;
 
     @Builder.Default
     private Double teamChemistry = 0.0;

@@ -2,6 +2,7 @@ package com.teamup.teamUp.service;
 
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.mapper.TeamMapper;
+import com.teamup.teamUp.model.dto.team.TeamMemberResponseDto;
 import com.teamup.teamUp.model.dto.team.TeamResponseDto;
 import com.teamup.teamUp.model.entity.Team;
 import com.teamup.teamUp.model.entity.TeamMember;
@@ -16,6 +17,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -79,6 +81,63 @@ public class TeamService {
                 .build();
 
         teamMemberRepository.save(member);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TeamMemberResponseDto> getMembers(UUID teamId) {
+
+        if (!teamRepository.existsById(teamId)) {
+            throw new NotFoundException("Team not found");
+        }
+
+        return teamMemberRepository.findByTeamId(teamId)
+                .stream()
+                .map(member -> new TeamMemberResponseDto(
+                        member.getUser().getId(),
+                        member.getUser().getUsername(),
+                        member.getRole(),
+                        member.getJoinedAt()
+                ))
+                .toList();
+    }
+
+
+    @Transactional(readOnly = true)
+    public TeamResponseDto getTeam(UUID teamId) {
+        Team team = teamRepository.findById(teamId).orElseThrow(() -> new NotFoundException("Team not found"));
+        return TeamMapper.toDto(team);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TeamResponseDto> getTeamsForUser(String username) {
+        return teamMemberRepository.findByUserUsernameIgnoreCase(username)
+                .stream()
+                .map(TeamMember::getTeam)
+                .distinct()
+                .map(TeamMapper::toDto)
+                .toList();
+    }
+
+
+    @Transactional
+    public void removePlayer(UUID teamId, UUID userId, String captainUsername) {
+        Team team = teamRepository.findById(teamId).orElseThrow(() -> new NotFoundException("Team not found"));
+
+        if (!team.getCaptain().getUsername().equals(captainUsername)) {
+            throw new AccessDeniedException("Only captain can remove players");
+        }
+
+        TeamMember member = teamMemberRepository.findByTeamId(teamId)
+                .stream()
+                .filter(m -> m.getUser().getId().equals(userId))
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException("Player not in team"));
+
+        if (member.getRole() == TeamRole.CAPTAIN) {
+            throw new IllegalArgumentException("Cannot remove captain");
+        }
+
+        teamMemberRepository.delete(member);
     }
 }
 

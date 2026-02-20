@@ -45,6 +45,7 @@ public class Tournament {
     private LocalDateTime startsAt;
     private LocalDateTime endsAt;
 
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "tournament", cascade = CascadeType.ALL, orphanRemoval = true)
