@@ -120,7 +120,7 @@ public class TournamentService {
             throw new RuntimeException("Not enough teams");
         }
 
-        tournament.setStatus(TournamentStatus.STARTED);
+        tournament.setStatus(TournamentStatus.ONGOING);
 
         // create standings
         for (TournamentTeam tt : teams) {
