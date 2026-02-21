@@ -4,8 +4,10 @@ import com.teamup.teamUp.model.dto.tournament.CreateTournamentRequestDto;
 import com.teamup.teamUp.model.dto.tournament.TournamentMatchResponseDto;
 import com.teamup.teamUp.model.dto.tournament.TournamentResponseDto;
 import com.teamup.teamUp.model.dto.tournament.TournamentStandingResponseDto;
+import com.teamup.teamUp.model.enums.TournamentStatus;
 import com.teamup.teamUp.service.TournamentService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -61,8 +63,8 @@ public class TournamentController {
     }
 
     @GetMapping
-    public ResponseEntity<ResponseApi<List<TournamentResponseDto>>> getAllTournaments() {
-        List<TournamentResponseDto> tournaments = tournamentService.getAllTournaments();
+    public ResponseEntity<ResponseApi<Page<TournamentResponseDto>>> getTournaments(@RequestParam(required = false) TournamentStatus status, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+        Page<TournamentResponseDto> tournaments = tournamentService.getTournaments(status, page, size);
         return ResponseEntity.ok(new ResponseApi<>("Tournaments retrieved successfully", tournaments, true));
     }
 

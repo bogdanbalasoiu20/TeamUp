@@ -36,6 +36,7 @@ public class TeamMember {
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     private TeamRole role = TeamRole.PLAYER;
 
+    @Builder.Default
     private LocalDateTime joinedAt = LocalDateTime.now();
 
 }

@@ -13,6 +13,10 @@ import com.teamup.teamUp.model.enums.MatchStatus;
 import com.teamup.teamUp.model.enums.TournamentStatus;
 import com.teamup.teamUp.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -188,11 +192,17 @@ public class TournamentService {
 
 
     @Transactional(readOnly = true)
-    public List<TournamentResponseDto> getAllTournaments() {
-        return tournamentRepository.findAll()
-                .stream()
-                .map(TournamentMapper::toDto)
-                .toList();
+    public Page<TournamentResponseDto> getTournaments(TournamentStatus status, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("startsAt").descending());
+
+        Page<Tournament> result;
+        if (status == null) {
+            result = tournamentRepository.findAll(pageable);
+        } else {
+            result = tournamentRepository.findByStatus(status, pageable);
+        }
+
+        return result.map(TournamentMapper::toDto);
     }
 
 
