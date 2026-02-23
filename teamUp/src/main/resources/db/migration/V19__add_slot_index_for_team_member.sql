@@ -8,9 +8,15 @@ UPDATE team_members
 SET squad_type = 'BENCH'
 WHERE squad_type IS NULL;
 
-UPDATE team_members
-SET slot_index = 0
-WHERE slot_index IS NULL;
+WITH ranked AS (
+    SELECT id,
+           ROW_NUMBER() OVER (PARTITION BY team_id ORDER BY joined_at) - 1 AS rn
+    FROM team_members
+)
+UPDATE team_members tm
+SET slot_index = ranked.rn
+    FROM ranked
+WHERE tm.id = ranked.id;
 
 ALTER TABLE team_members
     ALTER COLUMN squad_type SET NOT NULL;
