@@ -179,6 +179,7 @@ public class TeamService {
 
     @Transactional
     public void updatePosition(UUID teamId, UUID userId, SquadType squadType, Integer slotIndex, String captainUsername){
+
         Team team = teamRepository.findById(teamId).orElseThrow(() -> new NotFoundException("Team not found"));
 
         if(!team.getCaptain().getUsername().equals(captainUsername)) {
@@ -189,31 +190,33 @@ public class TeamService {
             throw new IllegalArgumentException("Invalid slot index");
         }
 
-        if(squadType == SquadType.PITCH && slotIndex >= 11) {
-            throw new IllegalArgumentException("Pitch supports only 11 slots");
-        }
-
-        TeamMember moving = teamMemberRepository.findByTeamIdAndUserId(teamId,userId).orElseThrow(()->new NotFoundException("Player not in team"));
+        TeamMember moving = teamMemberRepository.findByTeamIdAndUserId(teamId,userId).orElseThrow(() -> new NotFoundException("Player not in team"));
 
         SquadType oldType = moving.getSquadType();
         Integer oldSlotIndex = moving.getSlotIndex();
 
         TeamMember occupant = teamMemberRepository.findByTeamIdAndSquadTypeAndSlotIndex(teamId, squadType, slotIndex).orElse(null);
 
-        if(occupant !=null && !occupant.getUser().getId().equals(userId)) {
+        if (occupant != null && !occupant.getUser().getId().equals(userId)) {
+            // mut temporar occupant intr-un slot safe
+            occupant.setSlotIndex(-1);
+            teamMemberRepository.save(occupant);
+
+            // mut moving în slot nou
+            moving.setSquadType(squadType);
+            moving.setSlotIndex(slotIndex);
+            teamMemberRepository.save(moving);
+
+            //mut occupant în pozitia veche
             occupant.setSquadType(oldType);
             occupant.setSlotIndex(oldSlotIndex);
-        }
-
-        moving.setSquadType(squadType);
-        moving.setSlotIndex(slotIndex);
-
-        teamMemberRepository.save(moving);
-
-        if(occupant != null) {
             teamMemberRepository.save(occupant);
-        }
 
+        } else {
+            moving.setSquadType(squadType);
+            moving.setSlotIndex(slotIndex);
+            teamMemberRepository.save(moving);
+        }
     }
 
 
