@@ -3,6 +3,7 @@ package com.teamup.teamUp.controller;
 import com.teamup.teamUp.model.dto.team.CreateTeamRequestDto;
 import com.teamup.teamUp.model.dto.team.TeamMemberResponseDto;
 import com.teamup.teamUp.model.dto.team.TeamResponseDto;
+import com.teamup.teamUp.model.dto.team.UpdateTeamMemberPositionRequestDto;
 import com.teamup.teamUp.service.TeamService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -63,6 +64,17 @@ public class TeamController {
     public ResponseEntity<ResponseApi<Void>> removePlayer(@PathVariable UUID teamId, @PathVariable UUID userId, Authentication auth) {
         teamService.removePlayer(teamId, userId, auth.getName());
         return ResponseEntity.ok(new ResponseApi<>("Player removed successfully", null, true));
+    }
+
+    @PutMapping("/{teamId}/members/{userId}/position")
+    public ResponseEntity<ResponseApi<Void>> updatePosition(
+            @PathVariable UUID teamId,
+            @PathVariable UUID userId,
+            @Valid @RequestBody UpdateTeamMemberPositionRequestDto request,
+            Authentication auth
+    ) {
+        teamService.updatePosition(teamId, userId, request.squadType(), request.slotIndex(), auth.getName());
+        return ResponseEntity.ok(new ResponseApi<>("Position updated successfully", null, true));
     }
 }
 
