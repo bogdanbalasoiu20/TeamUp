@@ -7,6 +7,7 @@ import com.teamup.teamUp.model.dto.team.TeamResponseDto;
 import com.teamup.teamUp.model.entity.Team;
 import com.teamup.teamUp.model.entity.TeamMember;
 import com.teamup.teamUp.model.entity.User;
+import com.teamup.teamUp.model.enums.SquadType;
 import com.teamup.teamUp.model.enums.TeamRole;
 import com.teamup.teamUp.repository.PlayerCardStatsRepository;
 import com.teamup.teamUp.repository.TeamMemberRepository;
@@ -21,8 +22,11 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -77,15 +81,29 @@ public class TeamService {
             throw new AccessDeniedException("Only captain can add players");
         }
 
+        List<TeamMember> benchMembers = teamMemberRepository.findByTeamIdAndSquadType(teamId, SquadType.BENCH);
+
+        Set<Integer> usedSlots = benchMembers.stream()
+                .map(TeamMember::getSlotIndex)
+                .collect(Collectors.toSet());
+
+        int nextSlot = 0;
+        while (usedSlots.contains(nextSlot)) {
+            nextSlot++;
+        }
+
 
         TeamMember member = TeamMember.builder()
                 .team(team)
                 .user(user)
                 .role(TeamRole.PLAYER)
+                .squadType(SquadType.BENCH)
+                .slotIndex(nextSlot)
                 .build();
 
         teamMemberRepository.save(member);
     }
+
 
     @Transactional(readOnly = true)
     public List<TeamMemberResponseDto> getMembers(UUID teamId) {
@@ -96,11 +114,16 @@ public class TeamService {
 
         return teamMemberRepository.findByTeamId(teamId)
                 .stream()
+                .sorted(Comparator
+                        .comparing(TeamMember::getSquadType)
+                        .thenComparing(TeamMember::getSlotIndex))
                 .map(member -> new TeamMemberResponseDto(
                         member.getUser().getId(),
                         member.getUser().getUsername(),
                         member.getRole(),
-                        member.getJoinedAt()
+                        member.getJoinedAt(),
+                        member.getSquadType(),
+                        member.getSlotIndex()
                 ))
                 .toList();
     }
@@ -112,6 +135,7 @@ public class TeamService {
         return TeamMapper.toDto(team);
     }
 
+
     @Transactional(readOnly = true)
     public List<TeamResponseDto> getTeamsForUser(String username) {
         return teamMemberRepository.findByUserUsernameIgnoreCase(username)
@@ -121,6 +145,7 @@ public class TeamService {
                 .map(TeamMapper::toDto)
                 .toList();
     }
+
 
     @Transactional(readOnly = true)
     public Page<TeamResponseDto> exploreTeams(String username, int page, int size, String search) {
@@ -149,6 +174,46 @@ public class TeamService {
         }
 
         teamMemberRepository.delete(member);
+    }
+
+
+    @Transactional
+    public void updatePosition(UUID teamId, UUID userId, SquadType squadType, Integer slotIndex, String captainUsername){
+        Team team = teamRepository.findById(teamId).orElseThrow(() -> new NotFoundException("Team not found"));
+
+        if(!team.getCaptain().getUsername().equals(captainUsername)) {
+            throw new AccessDeniedException("Only captain can update positions");
+        }
+
+        if (slotIndex == null || slotIndex < 0) {
+            throw new IllegalArgumentException("Invalid slot index");
+        }
+
+        if(squadType == SquadType.PITCH && slotIndex >= 11) {
+            throw new IllegalArgumentException("Pitch supports only 11 slots");
+        }
+
+        TeamMember moving = teamMemberRepository.findByTeamIdAndUserId(teamId,userId).orElseThrow(()->new NotFoundException("Player not in team"));
+
+        SquadType oldType = moving.getSquadType();
+        Integer oldSlotIndex = moving.getSlotIndex();
+
+        TeamMember occupant = teamMemberRepository.findByTeamIdAndSquadTypeAndSlotIndex(teamId, squadType, slotIndex).orElse(null);
+
+        if(occupant !=null && !occupant.getUser().getId().equals(userId)) {
+            occupant.setSquadType(oldType);
+            occupant.setSlotIndex(oldSlotIndex);
+        }
+
+        moving.setSquadType(squadType);
+        moving.setSlotIndex(slotIndex);
+
+        teamMemberRepository.save(moving);
+
+        if(occupant != null) {
+            teamMemberRepository.save(occupant);
+        }
+
     }
 
 
