@@ -198,24 +198,25 @@ public class TeamService {
         TeamMember occupant = teamMemberRepository.findByTeamIdAndSquadTypeAndSlotIndex(teamId, squadType, slotIndex).orElse(null);
 
         if (occupant != null && !occupant.getUser().getId().equals(userId)) {
-            // mut temporar occupant intr-un slot safe
-            occupant.setSlotIndex(-1);
-            teamMemberRepository.save(occupant);
 
-            // mut moving în slot nou
+            // mut occupant temporar
+            occupant.setSlotIndex(Integer.MIN_VALUE);
+            teamMemberRepository.saveAndFlush(occupant);
+
+            // mut moving în slotul nou
             moving.setSquadType(squadType);
             moving.setSlotIndex(slotIndex);
-            teamMemberRepository.save(moving);
+            teamMemberRepository.saveAndFlush(moving);
 
-            //mut occupant în pozitia veche
+            // mut occupant în pozitia veche
             occupant.setSquadType(oldType);
             occupant.setSlotIndex(oldSlotIndex);
-            teamMemberRepository.save(occupant);
+            teamMemberRepository.saveAndFlush(occupant);
 
         } else {
             moving.setSquadType(squadType);
             moving.setSlotIndex(slotIndex);
-            teamMemberRepository.save(moving);
+            teamMemberRepository.saveAndFlush(moving);
         }
     }
 
