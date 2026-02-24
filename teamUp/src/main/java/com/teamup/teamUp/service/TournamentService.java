@@ -180,9 +180,7 @@ public class TournamentService {
 
     @Transactional
     public void finishTournamentIfCompleted(UUID tournamentId) {
-
         Tournament tournament = tournamentRepository.findById(tournamentId).orElseThrow(() -> new NotFoundException("Tournament not found"));
-
         var openMatches = matchRepository.findByTournamentIdAndStatus(tournamentId, MatchStatus.OPEN);
 
         if (openMatches.isEmpty()) {
@@ -196,13 +194,9 @@ public class TournamentService {
         return TournamentMapper.toDto(tournament);
     }
 
-    @Transactional(readOnly = true)
     public List<TournamentMatchResponseDto> getMatches(UUID tournamentId) {
-
         Tournament tournament = tournamentRepository.findById(tournamentId).orElseThrow(() -> new NotFoundException("Tournament not found"));
-
-        List<TournamentMatch> matches = matchRepository.findByTournamentId(tournament.getId());
-
+        List<TournamentMatch> matches = matchRepository.findByTournamentIdOrderByMatchDayAscIdAsc(tournament.getId());
         return matches.stream().map(TournamentMatchMapper::toDto).toList();
     }
 

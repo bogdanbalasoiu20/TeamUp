@@ -10,4 +10,5 @@ import java.util.UUID;
 public interface TournamentMatchRepository extends JpaRepository<TournamentMatch, UUID> {
     List<TournamentMatch> findByTournamentId(UUID tournamentId);
     List<TournamentMatch> findByTournamentIdAndStatus(UUID tournamentId, MatchStatus status);
+    List<TournamentMatch> findByTournamentIdOrderByMatchDayAscIdAsc(UUID tournamentId);
 }
