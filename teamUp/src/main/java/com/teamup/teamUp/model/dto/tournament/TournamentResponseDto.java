@@ -16,6 +16,7 @@ public record TournamentResponseDto(
         Integer maxTeams,
         TournamentStatus status,
         LocalDateTime startsAt,
-        LocalDateTime endsAt
+        LocalDateTime endsAt,
+        String creatorUsername
 ) {}
 

@@ -16,7 +16,8 @@ public class TournamentMapper {
                 t.getMaxTeams(),
                 t.getStatus(),
                 t.getStartsAt(),
-                t.getEndsAt()
+                t.getEndsAt(),
+                t.getOrganizer().getUsername()
                 );
     }
 }
