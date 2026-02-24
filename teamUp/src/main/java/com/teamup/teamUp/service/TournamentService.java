@@ -21,6 +21,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -135,20 +136,45 @@ public class TournamentService {
         generateRoundRobinMatches(tournament, teams);
     }
 
-    private void generateRoundRobinMatches(Tournament tournament, List<TournamentTeam> teams) {
-        int matchDay = 1;
-        for (int i = 0; i < teams.size(); i++) {
-            for (int j = i + 1; j < teams.size(); j++) {
+    private void generateRoundRobinMatches(Tournament tournament, List<TournamentTeam> tournamentTeams) {
+        List<Team> teams = tournamentTeams.stream()
+                .map(TournamentTeam::getTeam)
+                .toList();
 
-                TournamentMatch match = TournamentMatch.builder()
-                        .tournament(tournament)
-                        .homeTeam(teams.get(i).getTeam())
-                        .awayTeam(teams.get(j).getTeam())
-                        .matchDay(matchDay++)
-                        .build();
+        int n = teams.size();
 
-                matchRepository.save(match);
+        // Daca e numar impar, adaugam null (BYE)
+        if (n % 2 != 0) {
+            teams = new ArrayList<>(teams);
+            teams.add(null);
+            n++;
+        }
+
+        int totalRounds = n - 1;
+        int matchesPerRound = n / 2;
+
+        List<Team> rotation = new ArrayList<>(teams);
+
+        for (int round = 0; round < totalRounds; round++) {
+            for (int i = 0; i < matchesPerRound; i++) {
+                Team home = rotation.get(i);
+                Team away = rotation.get(n - 1 - i);
+
+                if (home != null && away != null) {
+                    TournamentMatch match = TournamentMatch.builder()
+                            .tournament(tournament)
+                            .homeTeam(home)
+                            .awayTeam(away)
+                            .matchDay(round + 1)
+                            .build();
+
+                    matchRepository.save(match);
+                }
             }
+
+            // rotatie (pastram prima echipa fixa)
+            Team last = rotation.remove(rotation.size() - 1);
+            rotation.add(1, last);
         }
     }
 
@@ -184,6 +210,28 @@ public class TournamentService {
     @Transactional(readOnly = true)
     public List<TournamentStandingResponseDto> getStandings(UUID tournamentId) {
 
+        Tournament tournament = tournamentRepository.findById(tournamentId).orElseThrow(() -> new NotFoundException("Tournament not found"));
+
+        // Daca turneul nu a inceput inca → clasament virtual
+        if (tournament.getStatus() == TournamentStatus.OPEN) {
+            var teams = tournamentTeamRepository.findByTournamentId(tournamentId);
+
+            return teams.stream()
+                    .map(tt -> new TournamentStandingResponseDto(
+                            tt.getTeam().getId(),
+                            tt.getTeam().getName(),
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                    ))
+                    .toList();
+        }
+
+        // Daca turneul a inceput → standings reale
         return standingRepository.findByTournamentIdOrderByPointsDescGoalsForDesc(tournamentId)
                 .stream()
                 .map(StandingMapper::toDto)
