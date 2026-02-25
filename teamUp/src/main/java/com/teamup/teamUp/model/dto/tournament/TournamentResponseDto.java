@@ -15,6 +15,8 @@ public record TournamentResponseDto(
         Double venueLongitude,
         Integer maxTeams,
         TournamentStatus status,
+        String description,
+        Integer playersPerTeam,
         LocalDateTime startsAt,
         LocalDateTime endsAt,
         String creatorUsername

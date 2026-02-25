@@ -21,6 +21,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -44,16 +45,14 @@ public class TournamentService {
         Venue venue = venueRepository.findById(request.getVenueId()).orElseThrow(() -> new NotFoundException("Venue not found"));
 
 
-        if (request.getMaxTeams() == null || request.getMaxTeams() < 2) {
-            throw new IllegalArgumentException("Tournament must allow at least 2 teams");
-        }
-
-        if (request.getStartsAt() == null || request.getEndsAt() == null) {
-            throw new IllegalArgumentException("Tournament period must be defined");
-        }
-
         if (!request.getEndsAt().isAfter(request.getStartsAt())) {
             throw new IllegalArgumentException("End date must be after start date");
+        }
+
+
+        LocalDateTime now = LocalDateTime.now();
+        if (request.getStartsAt().isBefore(now)) {
+            throw new IllegalArgumentException("Tournament cannot start in the past");
         }
 
         Tournament tournament = Tournament.builder()
@@ -64,6 +63,8 @@ public class TournamentService {
                 .endsAt(request.getEndsAt())
                 .organizer(organizer)
                 .status(TournamentStatus.OPEN)
+                .description(request.getDescription())
+                .playersPerTeam(request.getPlayersPerTeam())
                 .build();
 
         tournamentRepository.save(tournament);
