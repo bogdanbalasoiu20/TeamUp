@@ -14,7 +14,8 @@ public class StandingMapper {
                 ts.getLosses(),
                 ts.getGoalsFor(),
                 ts.getGoalsAgainst(),
-                ts.getPoints()
+                ts.getPoints(),
+                ts.getFinalPosition()
         );
     }
 }

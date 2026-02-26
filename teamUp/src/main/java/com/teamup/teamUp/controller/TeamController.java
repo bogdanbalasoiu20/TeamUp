@@ -1,9 +1,6 @@
 package com.teamup.teamUp.controller;
 
-import com.teamup.teamUp.model.dto.team.CreateTeamRequestDto;
-import com.teamup.teamUp.model.dto.team.TeamMemberResponseDto;
-import com.teamup.teamUp.model.dto.team.TeamResponseDto;
-import com.teamup.teamUp.model.dto.team.UpdateTeamMemberPositionRequestDto;
+import com.teamup.teamUp.model.dto.team.*;
 import com.teamup.teamUp.service.TeamService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -75,6 +72,12 @@ public class TeamController {
     ) {
         teamService.updatePosition(teamId, userId, request.squadType(), request.slotIndex(), auth.getName());
         return ResponseEntity.ok(new ResponseApi<>("Position updated successfully", null, true));
+    }
+
+
+    @GetMapping("/{teamId}/profile")
+    public ResponseEntity<ResponseApi<TeamFullProfileDto>> getTeamProfile(@PathVariable UUID teamId) {
+        return ResponseEntity.ok(new ResponseApi<>("Team profile fetched successfully", teamService.getTeamFullProfile(teamId), true));
     }
 }
 

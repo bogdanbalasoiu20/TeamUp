@@ -182,11 +182,25 @@ public class TournamentService {
     @Transactional
     public void finishTournamentIfCompleted(UUID tournamentId) {
         Tournament tournament = tournamentRepository.findById(tournamentId).orElseThrow(() -> new NotFoundException("Tournament not found"));
-        var openMatches = matchRepository.findByTournamentIdAndStatus(tournamentId, MatchStatus.OPEN);
 
-        if (openMatches.isEmpty()) {
-            tournament.setStatus(TournamentStatus.FINISHED);
+        if(tournament.getStatus() ==  TournamentStatus.FINISHED) {
+            return;
         }
+
+        List<TournamentMatch> openMatches = matchRepository.findByTournamentIdAndStatus(tournamentId, MatchStatus.OPEN);
+
+        if (!openMatches.isEmpty()) {
+            return;
+        }
+
+        tournament.setStatus(TournamentStatus.FINISHED);
+        List<TournamentStanding> standings = standingRepository.findByTournamentIdOrderByPointsDescGoalsForDesc(tournamentId);
+
+        for(int i=0;i<standings.size();i++) {
+            standings.get(i).setFinalPosition(i+1);
+        }
+
+        standingRepository.saveAll(standings);
     }
 
     @Transactional(readOnly = true)

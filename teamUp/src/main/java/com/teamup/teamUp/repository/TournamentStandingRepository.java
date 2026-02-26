@@ -10,4 +10,6 @@ import java.util.UUID;
 public interface TournamentStandingRepository extends JpaRepository<TournamentStanding, UUID> {
     List<TournamentStanding> findByTournamentIdOrderByPointsDescGoalsForDesc(UUID tournamentId);
     Optional<TournamentStanding> findByTournamentIdAndTeamId(UUID tournamentId, UUID teamId);
+    List<TournamentStanding> findByTeamId(UUID teamId);
+    int countByTeamIdAndFinalPosition(UUID teamId, Integer finalPosition);
 }

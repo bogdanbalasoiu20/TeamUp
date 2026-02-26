@@ -2,17 +2,16 @@ package com.teamup.teamUp.service;
 
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.mapper.TeamMapper;
+import com.teamup.teamUp.model.dto.team.TeamFullProfileDto;
 import com.teamup.teamUp.model.dto.team.TeamMemberResponseDto;
 import com.teamup.teamUp.model.dto.team.TeamResponseDto;
-import com.teamup.teamUp.model.entity.Team;
-import com.teamup.teamUp.model.entity.TeamMember;
-import com.teamup.teamUp.model.entity.User;
+import com.teamup.teamUp.model.dto.team.TeamStatisticsResponseDto;
+import com.teamup.teamUp.model.dto.tournament.TeamTournamentHistoryDto;
+import com.teamup.teamUp.model.entity.*;
+import com.teamup.teamUp.model.enums.MatchStatus;
 import com.teamup.teamUp.model.enums.SquadType;
 import com.teamup.teamUp.model.enums.TeamRole;
-import com.teamup.teamUp.repository.PlayerCardStatsRepository;
-import com.teamup.teamUp.repository.TeamMemberRepository;
-import com.teamup.teamUp.repository.TeamRepository;
-import com.teamup.teamUp.repository.UserRepository;
+import com.teamup.teamUp.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -35,6 +34,9 @@ public class TeamService {
     private final TeamMemberRepository teamMemberRepository;
     private final UserRepository userRepository;
     private final PlayerCardStatsRepository playerCardStatsRepository;
+    private final TournamentMatchRepository tournamentMatchRepository;
+    private final TournamentTeamRepository tournamentTeamRepository;
+    private final TournamentStandingRepository tournamentStandingRepository;
 
     @Transactional
     public TeamResponseDto createTeam(String name, String captainUsername) {
@@ -218,6 +220,95 @@ public class TeamService {
             moving.setSlotIndex(slotIndex);
             teamMemberRepository.saveAndFlush(moving);
         }
+    }
+
+
+
+    @Transactional(readOnly = true)
+    public TeamStatisticsResponseDto getTeamStatistics(UUID teamId) {
+
+        Team team = teamRepository.findById(teamId).orElseThrow(() -> new NotFoundException("Team not found"));
+
+        List<TournamentMatch> matches = tournamentMatchRepository.findAllByTeamId(teamId);
+
+        int wins = 0, draws = 0, losses = 0;
+        int goalsFor = 0, goalsAgainst = 0;
+
+        for (TournamentMatch match : matches) {
+            if (match.getStatus() != MatchStatus.DONE)
+                continue;
+
+            boolean isHome = match.getHomeTeam().getId().equals(teamId);
+
+            int scored = isHome ? match.getScoreHome() : match.getScoreAway();
+            int conceded = isHome ? match.getScoreAway() : match.getScoreHome();
+
+            goalsFor += scored;
+            goalsAgainst += conceded;
+
+            if (scored > conceded) wins++;
+            else if (scored == conceded) draws++;
+            else losses++;
+        }
+
+        int played = wins + draws + losses;
+
+        int tournamentsPlayed = tournamentStandingRepository.findByTeamId(teamId).size();
+        int tournamentsWon = tournamentStandingRepository.countByTeamIdAndFinalPosition(teamId, 1);
+
+        return new TeamStatisticsResponseDto(
+                teamId,
+                team.getName(),
+                played,
+                wins,
+                draws,
+                losses,
+                goalsFor,
+                goalsAgainst,
+                tournamentsPlayed,
+                tournamentsWon
+        );
+    }
+
+
+    @Transactional(readOnly = true)
+    public List<TeamTournamentHistoryDto> getTeamTournamentHistory(UUID teamId) {
+        if (!teamRepository.existsById(teamId)) {
+            throw new NotFoundException("Team not found");
+        }
+
+        List<TournamentStanding> standings = tournamentStandingRepository.findByTeamId(teamId);
+
+        return standings.stream()
+                .map(s -> new TeamTournamentHistoryDto(
+                        s.getTournament().getId(),
+                        s.getTournament().getName(),
+                        s.getFinalPosition() == null ? 0 : s.getFinalPosition(),
+                        s.getPlayed(),
+                        s.getWins(),
+                        s.getDraws(),
+                        s.getLosses(),
+                        s.getGoalsFor(),
+                        s.getGoalsAgainst()
+                ))
+                .toList();
+    }
+
+
+    @Transactional(readOnly = true)
+    public TeamFullProfileDto getTeamFullProfile(UUID teamId) {
+        Team team = teamRepository.findById(teamId).orElseThrow(() -> new NotFoundException("Team not found"));
+
+        TeamResponseDto teamDto = TeamMapper.toDto(team);
+
+        TeamStatisticsResponseDto statistics = getTeamStatistics(teamId);
+        List<TeamTournamentHistoryDto> history = getTeamTournamentHistory(teamId);
+
+        return new TeamFullProfileDto(
+                teamDto,
+                statistics,
+                history
+        );
     }
 
 

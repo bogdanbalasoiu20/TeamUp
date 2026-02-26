@@ -48,5 +48,7 @@ public class TournamentStanding {
     @Builder.Default
     private int points = 0;
 
+    private Integer finalPosition;
+
 }
 
