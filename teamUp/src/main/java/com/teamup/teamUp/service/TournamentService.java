@@ -235,7 +235,8 @@ public class TournamentService {
                             0,
                             0,
                             0,
-                            0
+                            0,
+                            null
                     ))
                     .toList();
         }
