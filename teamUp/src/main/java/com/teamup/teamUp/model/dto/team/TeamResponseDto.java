@@ -10,9 +10,6 @@ public record TeamResponseDto(
         String captainUsername,
         Double teamRating,
         Double teamChemistry,
-        int wins,
-        int draws,
-        int losses,
         int membersCount,
         LocalDateTime createdAt
 ) {}

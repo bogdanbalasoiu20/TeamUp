@@ -1,0 +1,3 @@
+ALTER TABLE teams DROP COLUMN wins;
+ALTER TABLE teams DROP COLUMN draws;
+ALTER TABLE teams DROP COLUMN losses;

@@ -34,10 +34,6 @@ public class Team {
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    private int wins = 0;
-    private int draws = 0;
-    private int losses = 0;
-
     @Builder.Default
     private Double teamRating = 0.0;
 
