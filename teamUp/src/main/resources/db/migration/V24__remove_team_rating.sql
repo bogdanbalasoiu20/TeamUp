@@ -1,2 +1,2 @@
 ALTER TABLE teams
-FROM COLUMN team_rating;
+DROP COLUMN team_rating;
