@@ -11,7 +11,6 @@ public class TeamMapper {
                 team.getName(),
                 team.getCaptain().getId(),
                 team.getCaptain().getUsername(),
-                team.getTeamRating(),
                 team.getTeamChemistry(),
                 team.getMembers() != null ? team.getMembers().size() : 0,
                 team.getCreatedAt()

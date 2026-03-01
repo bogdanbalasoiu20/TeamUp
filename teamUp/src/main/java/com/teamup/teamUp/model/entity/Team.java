@@ -35,9 +35,6 @@ public class Team {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @Builder.Default
-    private Double teamRating = 0.0;
-
-    @Builder.Default
     private Double teamChemistry = 0.0;
 
 }

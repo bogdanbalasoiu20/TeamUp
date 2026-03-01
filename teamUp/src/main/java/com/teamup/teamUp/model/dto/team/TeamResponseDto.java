@@ -8,7 +8,6 @@ public record TeamResponseDto(
         String name,
         UUID captainId,
         String captainUsername,
-        Double teamRating,
         Double teamChemistry,
         int membersCount,
         LocalDateTime createdAt

@@ -2,6 +2,7 @@ package com.teamup.teamUp.service;
 
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.mapper.TeamMapper;
+import com.teamup.teamUp.model.dto.rating.team.TeamRatingDto;
 import com.teamup.teamUp.model.dto.team.TeamFullProfileDto;
 import com.teamup.teamUp.model.dto.team.TeamMemberResponseDto;
 import com.teamup.teamUp.model.dto.team.TeamResponseDto;
@@ -33,10 +34,9 @@ public class TeamService {
     private final TeamRepository teamRepository;
     private final TeamMemberRepository teamMemberRepository;
     private final UserRepository userRepository;
-    private final PlayerCardStatsRepository playerCardStatsRepository;
     private final TournamentMatchRepository tournamentMatchRepository;
-    private final TournamentTeamRepository tournamentTeamRepository;
     private final TournamentStandingRepository tournamentStandingRepository;
+    private final TeamRatingService teamRatingService;
 
     @Transactional
     public TeamResponseDto createTeam(String name, String captainUsername) {
@@ -46,12 +46,10 @@ public class TeamService {
         }
 
         User captain = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(captainUsername).orElseThrow(() -> new NotFoundException("User not found"));
-        Double captainRating = playerCardStatsRepository.getOverall(captain.getId());
 
         Team team = Team.builder()
                 .name(name)
                 .captain(captain)
-                .teamRating(captainRating)
                 .teamChemistry(0.0)
                 .build();
 
@@ -301,13 +299,16 @@ public class TeamService {
 
         TeamResponseDto teamDto = TeamMapper.toDto(team);
 
+        TeamRatingDto rating = teamRatingService.calculateTeamRating(teamId);
+
         TeamStatisticsResponseDto statistics = getTeamStatistics(teamId);
         List<TeamTournamentHistoryDto> history = getTeamTournamentHistory(teamId);
 
         return new TeamFullProfileDto(
                 teamDto,
                 statistics,
-                history
+                history,
+                rating
         );
     }
 
