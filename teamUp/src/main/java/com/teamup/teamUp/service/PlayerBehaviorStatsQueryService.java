@@ -1,6 +1,6 @@
 package com.teamup.teamUp.service;
 
-import com.teamup.teamUp.model.dto.rating.PlayerBehaviorStatsDto;
+import com.teamup.teamUp.model.dto.rating.player.PlayerBehaviorStatsDto;
 import com.teamup.teamUp.model.entity.PlayerBehaviorStats;
 import com.teamup.teamUp.repository.PlayerBehaviorStatsRepository;
 import org.springframework.stereotype.Service;

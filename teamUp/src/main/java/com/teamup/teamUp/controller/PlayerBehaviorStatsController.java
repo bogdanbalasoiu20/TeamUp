@@ -1,6 +1,6 @@
 package com.teamup.teamUp.controller;
 
-import com.teamup.teamUp.model.dto.rating.PlayerBehaviorStatsDto;
+import com.teamup.teamUp.model.dto.rating.player.PlayerBehaviorStatsDto;
 import com.teamup.teamUp.service.PlayerBehaviorStatsQueryService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

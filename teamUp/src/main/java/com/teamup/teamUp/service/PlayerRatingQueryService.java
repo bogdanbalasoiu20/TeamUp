@@ -1,7 +1,7 @@
 package com.teamup.teamUp.service;
 
 import com.teamup.teamUp.exceptions.NotFoundException;
-import com.teamup.teamUp.model.dto.rating.PlayerToRateDto;
+import com.teamup.teamUp.model.dto.rating.player.PlayerToRateDto;
 import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.repository.MatchParticipantRepository;
 import com.teamup.teamUp.repository.UserRepository;

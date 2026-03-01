@@ -2,7 +2,7 @@ package com.teamup.teamUp.service;
 
 import com.teamup.teamUp.exceptions.BadRequestException;
 import com.teamup.teamUp.exceptions.NotFoundException;
-import com.teamup.teamUp.model.dto.rating.PlayerRatingDto;
+import com.teamup.teamUp.model.dto.rating.player.PlayerRatingDto;
 import com.teamup.teamUp.model.entity.Match;
 import com.teamup.teamUp.model.entity.PlayerBehaviorRating;
 import com.teamup.teamUp.model.entity.PlayerRating;

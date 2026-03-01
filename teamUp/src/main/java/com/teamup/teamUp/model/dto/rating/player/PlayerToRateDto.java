@@ -1,4 +1,4 @@
-package com.teamup.teamUp.model.dto.rating;
+package com.teamup.teamUp.model.dto.rating.player;
 
 import com.teamup.teamUp.model.enums.Position;
 

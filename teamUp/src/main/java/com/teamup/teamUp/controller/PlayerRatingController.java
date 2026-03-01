@@ -1,7 +1,7 @@
 package com.teamup.teamUp.controller;
 
-import com.teamup.teamUp.model.dto.rating.PlayerRatingDto;
-import com.teamup.teamUp.model.dto.rating.PlayerToRateDto;
+import com.teamup.teamUp.model.dto.rating.player.PlayerRatingDto;
+import com.teamup.teamUp.model.dto.rating.player.PlayerToRateDto;
 import com.teamup.teamUp.service.PlayerRatingQueryService;
 import com.teamup.teamUp.service.PlayerRatingService;
 import jakarta.validation.Valid;

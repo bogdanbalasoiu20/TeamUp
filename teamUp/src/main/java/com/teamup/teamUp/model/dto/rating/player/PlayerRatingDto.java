@@ -1,4 +1,4 @@
-package com.teamup.teamUp.model.dto.rating;
+package com.teamup.teamUp.model.dto.rating.player;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
