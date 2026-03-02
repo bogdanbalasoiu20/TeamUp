@@ -1,7 +1,6 @@
 package com.teamup.teamUp.service;
 
 import com.teamup.teamUp.exceptions.NotFoundException;
-import com.teamup.teamUp.mapper.TeamMapper;
 import com.teamup.teamUp.model.dto.rating.team.TeamRatingDto;
 import com.teamup.teamUp.model.dto.team.TeamFullProfileDto;
 import com.teamup.teamUp.model.dto.team.TeamMemberResponseDto;
@@ -63,7 +62,7 @@ public class TeamService {
 
         teamMemberRepository.save(member);
 
-        return TeamMapper.toDto(team);
+        return buildTeamResponse(team);
     }
 
     @Transactional
@@ -132,7 +131,7 @@ public class TeamService {
     @Transactional(readOnly = true)
     public TeamResponseDto getTeam(UUID teamId) {
         Team team = teamRepository.findById(teamId).orElseThrow(() -> new NotFoundException("Team not found"));
-        return TeamMapper.toDto(team);
+        return buildTeamResponse(team);
     }
 
 
@@ -142,7 +141,7 @@ public class TeamService {
                 .stream()
                 .map(TeamMember::getTeam)
                 .distinct()
-                .map(TeamMapper::toDto)
+                .map(this::buildTeamResponse)
                 .toList();
     }
 
@@ -151,7 +150,7 @@ public class TeamService {
     public Page<TeamResponseDto> exploreTeams(String username, int page, int size, String search) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Team> result = teamRepository.exploreTeams(username, search, pageable);
-        return result.map(TeamMapper::toDto);
+        return result.map(this::buildTeamResponse);
     }
 
 
@@ -295,19 +294,30 @@ public class TeamService {
 
     @Transactional(readOnly = true)
     public TeamFullProfileDto getTeamFullProfile(UUID teamId) {
+
         Team team = teamRepository.findById(teamId).orElseThrow(() -> new NotFoundException("Team not found"));
 
-        TeamResponseDto teamDto = TeamMapper.toDto(team);
-
-        TeamRatingDto rating = teamRatingService.calculateTeamRating(teamId);
+        TeamResponseDto teamDto = buildTeamResponse(team);
 
         TeamStatisticsResponseDto statistics = getTeamStatistics(teamId);
         List<TeamTournamentHistoryDto> history = getTeamTournamentHistory(teamId);
 
-        return new TeamFullProfileDto(
-                teamDto,
-                statistics,
-                history,
+        return new TeamFullProfileDto(teamDto, statistics, history);
+    }
+
+
+    private TeamResponseDto buildTeamResponse(Team team) {
+
+        TeamRatingDto rating = teamRatingService.calculateTeamRating(team.getId());
+
+        return new TeamResponseDto(
+                team.getId(),
+                team.getName(),
+                team.getCaptain().getId(),
+                team.getCaptain().getUsername(),
+                team.getTeamChemistry(),
+                team.getMembers() != null ? team.getMembers().size() : 0,
+                team.getCreatedAt(),
                 rating
         );
     }

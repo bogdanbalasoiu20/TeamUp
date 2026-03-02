@@ -4,6 +4,6 @@ public record TeamRatingDto(
         int attack,
         int midfield,
         int defense,
-        double overall
+        int overall
 ) {
 }
