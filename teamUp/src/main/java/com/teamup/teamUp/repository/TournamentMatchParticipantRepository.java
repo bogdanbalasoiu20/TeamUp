@@ -1,6 +1,7 @@
 package com.teamup.teamUp.repository;
 
 import com.teamup.teamUp.model.entity.TournamentMatchParticipant;
+import com.teamup.teamUp.model.enums.MatchStatus;
 import com.teamup.teamUp.model.id.TournamentMatchParticipantId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -20,17 +21,16 @@ public interface TournamentMatchParticipantRepository extends JpaRepository<Tour
       AND tmp1.user.id = :userA
       AND tmp2.user.id = :userB
       AND tmp1.user.id <> tmp2.user.id
-      AND tmp1.match.status = com.teamup.teamUp.model.enums.MatchStatus.DONE
+      AND tmp1.match.status = :status
 """)
-    int countTournamentMatchesTogether(@Param("userA") UUID userA, @Param("userB") UUID userB);
+    int countTournamentMatchesTogether(@Param("userA") UUID userA, @Param("userB") UUID userB, @Param("status") MatchStatus status);
 
 
     @Query("""
     SELECT COUNT(DISTINCT tmp.match.id)
     FROM TournamentMatchParticipant tmp
-    JOIN tmp.match m
     WHERE tmp.user.id = :userId
-      AND m.status = com.teamup.teamUp.model.enums.MatchStatus.DONE
+      AND tmp.match.status = :status
 """)
-    int countTournamentMatchesForUser(@Param("userId") UUID userId);
+    int countTournamentMatchesForUser(@Param("userId") UUID userId, @Param("status") MatchStatus status);
 }

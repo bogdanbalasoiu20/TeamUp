@@ -9,6 +9,7 @@ import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.model.entity.PlayerBehaviorStats;
 import com.teamup.teamUp.model.entity.PlayerCardStats;
 import com.teamup.teamUp.model.entity.User;
+import com.teamup.teamUp.model.enums.MatchStatus;
 import com.teamup.teamUp.repository.*;
 import org.springframework.stereotype.Service;
 
@@ -60,11 +61,11 @@ public class ChemistryServiceImpl implements ChemistryService {
 
         // numaram meciurile celor 2 useri impreuna
         int openMatches = matchRepo.countMatchesTogether(userA, userB);
-        int tournamentMatches = tournamentMatchParticipantRepository.countTournamentMatchesTogether(userA, userB);
+        int tournamentMatches = tournamentMatchParticipantRepository.countTournamentMatchesTogether(userA, userB, MatchStatus.DONE);
         int matchesTogether = openMatches + tournamentMatches;
 
-        int matchesPlayedUserA = matchRepo.countByUser_Id(userA) + tournamentMatchParticipantRepository.countTournamentMatchesForUser(userA);
-        int matchesPlayedUserB = matchRepo.countByUser_Id(userB) + tournamentMatchParticipantRepository.countTournamentMatchesForUser(userB);
+        int matchesPlayedUserA = matchRepo.countByUser_Id(userA) + tournamentMatchParticipantRepository.countTournamentMatchesForUser(userA,MatchStatus.DONE);
+        int matchesPlayedUserB = matchRepo.countByUser_Id(userB) + tournamentMatchParticipantRepository.countTournamentMatchesForUser(userB,MatchStatus.DONE);
 
         //calculez similaritatea sociala dintre cei 2 useri
         double similarity = playerSimilarityService.calculate(behA, behB);
