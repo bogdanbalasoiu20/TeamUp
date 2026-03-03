@@ -13,19 +13,16 @@ public interface TournamentMatchParticipantRepository extends JpaRepository<Tour
 
     @Query("""
     SELECT COUNT(DISTINCT tmp1.match.id)
-    FROM TournamentMatchParticipant tmp1
-    JOIN TournamentMatchParticipant tmp2
-      ON tmp1.match.id = tmp2.match.id
-     AND tmp1.team.id = tmp2.team.id
-    JOIN tmp1.match m
-    WHERE tmp1.user.id = :userA
+    FROM TournamentMatchParticipant tmp1,
+         TournamentMatchParticipant tmp2
+    WHERE tmp1.match.id = tmp2.match.id
+      AND tmp1.team.id = tmp2.team.id
+      AND tmp1.user.id = :userA
       AND tmp2.user.id = :userB
-      AND m.status = com.teamup.teamUp.model.enums.MatchStatus.DONE
+      AND tmp1.user.id <> tmp2.user.id
+      AND tmp1.match.status = com.teamup.teamUp.model.enums.MatchStatus.DONE
 """)
-    int countTournamentMatchesTogether(
-            @Param("userA") UUID userA,
-            @Param("userB") UUID userB
-    );
+    int countTournamentMatchesTogether(@Param("userA") UUID userA, @Param("userB") UUID userB);
 
 
     @Query("""
