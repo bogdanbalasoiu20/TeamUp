@@ -1,16 +1,19 @@
 package com.teamup.teamUp.service;
 
 import com.teamup.teamUp.exceptions.NotFoundException;
-import com.teamup.teamUp.model.entity.Team;
-import com.teamup.teamUp.model.entity.TournamentMatch;
-import com.teamup.teamUp.model.entity.TournamentStanding;
+import com.teamup.teamUp.model.entity.*;
 import com.teamup.teamUp.model.enums.MatchStatus;
+import com.teamup.teamUp.model.enums.SquadType;
+import com.teamup.teamUp.model.id.TournamentMatchParticipantId;
+import com.teamup.teamUp.repository.TeamMemberRepository;
+import com.teamup.teamUp.repository.TournamentMatchParticipantRepository;
 import com.teamup.teamUp.repository.TournamentMatchRepository;
 import com.teamup.teamUp.repository.TournamentStandingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -20,6 +23,8 @@ public class TournamentMatchService {
     private final TournamentMatchRepository matchRepository;
     private final TournamentStandingRepository standingRepository;
     private final TournamentService tournamentService;
+    private final TeamMemberRepository teamMemberRepository;
+    private final TournamentMatchParticipantRepository participantRepository;
 
     @Transactional
     public void finishMatch(UUID matchId, int scoreHome, int scoreAway) {
@@ -38,6 +43,7 @@ public class TournamentMatchService {
         match.setScoreHome(scoreHome);
         match.setScoreAway(scoreAway);
         match.setStatus(MatchStatus.DONE);
+        snapshotLineup(match);
 
         Team home = match.getHomeTeam();
         Team away = match.getAwayTeam();
@@ -87,6 +93,39 @@ public class TournamentMatchService {
             home.setPoints(home.getPoints() + 1);
             away.setPoints(away.getPoints() + 1);
         }
+    }
+
+
+    private void snapshotLineup(TournamentMatch match) {
+
+        if (participantRepository.existsByMatch_Id(match.getId())) {
+            return;
+        }
+
+        saveParticipantsForTeam(match, match.getHomeTeam());
+        saveParticipantsForTeam(match, match.getAwayTeam());
+    }
+
+    private void saveParticipantsForTeam(TournamentMatch match, Team team) {
+        List<TeamMember> lineup = teamMemberRepository.findByTeamIdAndSquadType(team.getId(), SquadType.PITCH);
+
+        if (lineup.isEmpty()) {
+            return;
+        }
+
+        List<TournamentMatchParticipant> participants = lineup.stream()
+                .map(member -> TournamentMatchParticipant.builder()
+                                .id(new TournamentMatchParticipantId(
+                                        match.getId(),
+                                        member.getUser().getId()
+                                ))
+                                .match(match)
+                                .user(member.getUser())
+                                .team(team)
+                                .build()
+                ).toList();
+
+        participantRepository.saveAll(participants);
     }
 }
 
