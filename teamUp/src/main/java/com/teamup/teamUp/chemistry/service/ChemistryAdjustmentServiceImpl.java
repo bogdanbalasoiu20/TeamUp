@@ -40,10 +40,10 @@ public class ChemistryAdjustmentServiceImpl implements ChemistryAdjustmentServic
         double behaviorWeight = 0.15 + (0.25 * maturityFactor);
 
         // pastram tactica constanta
-        double tacticalWeight = 0.4;
+        double tacticalWeight = 0.3;
 
         // experienta constanta
-        double experienceWeight = 0.2;
+        double experienceWeight = 0.3;
 
         // normalizare ca suma sa fie 1
         double totalWeight = behaviorWeight + tacticalWeight + experienceWeight;

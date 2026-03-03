@@ -9,10 +9,7 @@ import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.model.entity.PlayerBehaviorStats;
 import com.teamup.teamUp.model.entity.PlayerCardStats;
 import com.teamup.teamUp.model.entity.User;
-import com.teamup.teamUp.repository.MatchParticipantRepository;
-import com.teamup.teamUp.repository.PlayerBehaviorStatsRepository;
-import com.teamup.teamUp.repository.PlayerCardStatsRepository;
-import com.teamup.teamUp.repository.UserRepository;
+import com.teamup.teamUp.repository.*;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -30,6 +27,7 @@ public class ChemistryServiceImpl implements ChemistryService {
     private final PlayerSimilarityService playerSimilarityService;
     private final ChemistryAdjustmentService chemistryAdjustmentService;
     private final ChemistryScoreMapper scoreMapper;
+    private final TournamentMatchParticipantRepository tournamentMatchParticipantRepository;
 
     public ChemistryServiceImpl(
             PlayerBehaviorStatsRepository behaviorRepo,
@@ -38,7 +36,7 @@ public class ChemistryServiceImpl implements ChemistryService {
             MatchParticipantRepository matchRepo,
             PlayerSimilarityService playerSimilarityService,
             ChemistryAdjustmentService chemistryAdjustmentService,
-            ChemistryScoreMapper scoreMapper) {
+            ChemistryScoreMapper scoreMapper, TournamentMatchParticipantRepository tournamentMatchParticipantRepository) {
         this.behaviorRepo = behaviorRepo;
         this.cardRepo = cardRepo;
         this.userRepo = userRepo;
@@ -46,6 +44,7 @@ public class ChemistryServiceImpl implements ChemistryService {
         this.playerSimilarityService = playerSimilarityService;
         this.chemistryAdjustmentService = chemistryAdjustmentService;
         this.scoreMapper = scoreMapper;
+        this.tournamentMatchParticipantRepository = tournamentMatchParticipantRepository;
     }
 
     @Override
@@ -60,10 +59,12 @@ public class ChemistryServiceImpl implements ChemistryService {
         PlayerBehaviorStats behB = behaviorRepo.findByUser_Id(userB).orElseThrow(() -> new NotFoundException("Behavior B not found"));
 
         // numaram meciurile celor 2 useri impreuna
-        int matchesTogether = matchRepo.countMatchesTogether(userA, userB);
+        int openMatches = matchRepo.countMatchesTogether(userA, userB);
+        int tournamentMatches = tournamentMatchParticipantRepository.countTournamentMatchesTogether(userA, userB);
+        int matchesTogether = openMatches + tournamentMatches;
 
-        int matchesPlayedUserA = matchRepo.countByUser_Id(userA);
-        int matchesPlayedUserB = matchRepo.countByUser_Id(userB);
+        int matchesPlayedUserA = matchRepo.countByUser_Id(userA) + tournamentMatchParticipantRepository.countTournamentMatchesForUser(userA);
+        int matchesPlayedUserB = matchRepo.countByUser_Id(userB) + tournamentMatchParticipantRepository.countTournamentMatchesForUser(userB);
 
         //calculez similaritatea sociala dintre cei 2 useri
         double similarity = playerSimilarityService.calculate(behA, behB);
