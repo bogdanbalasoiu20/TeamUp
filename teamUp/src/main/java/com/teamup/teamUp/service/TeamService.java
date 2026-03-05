@@ -1,5 +1,7 @@
 package com.teamup.teamUp.service;
 
+import com.teamup.teamUp.chemistry.dto.TeamChemistryDto;
+import com.teamup.teamUp.chemistry.service.TeamChemistryService;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.model.dto.rating.team.TeamRatingDto;
 import com.teamup.teamUp.model.dto.team.TeamFullProfileDto;
@@ -36,6 +38,7 @@ public class TeamService {
     private final TournamentMatchRepository tournamentMatchRepository;
     private final TournamentStandingRepository tournamentStandingRepository;
     private final TeamRatingService teamRatingService;
+    private final TeamChemistryService teamChemistryService;
 
     @Transactional
     public TeamResponseDto createTeam(String name, String captainUsername) {
@@ -309,13 +312,14 @@ public class TeamService {
     private TeamResponseDto buildTeamResponse(Team team) {
 
         TeamRatingDto rating = teamRatingService.calculateTeamRating(team.getId());
+        TeamChemistryDto chemistry = teamChemistryService.calculateTeamChemistry(team.getId());
 
         return new TeamResponseDto(
                 team.getId(),
                 team.getName(),
                 team.getCaptain().getId(),
                 team.getCaptain().getUsername(),
-                team.getTeamChemistry(),
+                chemistry,
                 team.getMembers() != null ? team.getMembers().size() : 0,
                 team.getCreatedAt(),
                 rating

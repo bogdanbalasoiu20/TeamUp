@@ -22,4 +22,11 @@ public interface PlayerChemistryRepository extends JpaRepository<PlayerChemistry
     """)
     List<PlayerChemistry> findAllForUser(UUID user);
 
+    @Query("""
+        SELECT pc
+        FROM PlayerChemistry pc
+        WHERE pc.userA IN :users AND pc.userB IN :users
+        """)
+    List<PlayerChemistry> findForUsers(List<UUID> users);
+
 }
