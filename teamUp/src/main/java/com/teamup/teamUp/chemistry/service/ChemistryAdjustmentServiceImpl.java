@@ -83,14 +83,14 @@ public class ChemistryAdjustmentServiceImpl implements ChemistryAdjustmentServic
             reasons.add(new ChemistryReasons("Large skill gap", ReasonType.NEGATIVE));
         }
 
-        int expDiff = Math.abs(matchesPlayedUserA - matchesPlayedUserB);
-        int maxMatches = Math.max(matchesPlayedUserA, matchesPlayedUserB);
-        if (expDiff > 5 && maxMatches > 0) {
-            double ratio = (double) expDiff / maxMatches;
-            double penalty = Math.min(0.12, ratio * 0.12);
-            adjusted -= penalty;
-            reasons.add(new ChemistryReasons("Experience imbalance", ReasonType.NEGATIVE));
-        }
+//        int expDiff = Math.abs(matchesPlayedUserA - matchesPlayedUserB);
+//        int maxMatches = Math.max(matchesPlayedUserA, matchesPlayedUserB);
+//        if (expDiff > 5 && maxMatches > 0) {
+//            double ratio = (double) expDiff / maxMatches;
+//            double penalty = Math.min(0.12, ratio * 0.12);
+//            adjusted -= penalty;
+//            reasons.add(new ChemistryReasons("Experience imbalance", ReasonType.NEGATIVE));
+//        }
 
 
 

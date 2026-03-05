@@ -1,5 +1,6 @@
 package com.teamup.teamUp.service;
 
+import com.teamup.teamUp.chemistry.TeamChemistryManager;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.model.entity.*;
 import com.teamup.teamUp.model.enums.MatchStatus;
@@ -25,6 +26,7 @@ public class TournamentMatchService {
     private final TournamentService tournamentService;
     private final TeamMemberRepository teamMemberRepository;
     private final TournamentMatchParticipantRepository participantRepository;
+    private final TeamChemistryManager teamChemistryManager;
 
     @Transactional
     public void finishMatch(UUID matchId, int scoreHome, int scoreAway) {
@@ -66,6 +68,9 @@ public class TournamentMatchService {
         matchRepository.save(match);
 
         tournamentService.finishTournamentIfCompleted(match.getTournament().getId());
+
+        teamChemistryManager.recalcTeamChemistry(home.getId());
+        teamChemistryManager.recalcTeamChemistry(away.getId());
     }
 
     private void updateStandings(TournamentStanding home, TournamentStanding away, int scoreHome, int scoreAway) {

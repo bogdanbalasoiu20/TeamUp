@@ -1,45 +1,37 @@
 package com.teamup.teamUp.chemistry.service;
 
 import com.teamup.teamUp.chemistry.dto.TeamChemistryDto;
-import com.teamup.teamUp.model.entity.PlayerChemistry;
 import com.teamup.teamUp.model.entity.TeamMember;
 import com.teamup.teamUp.model.enums.Compartment;
 import com.teamup.teamUp.model.enums.SquadType;
-import com.teamup.teamUp.repository.PlayerChemistryRepository;
 import com.teamup.teamUp.repository.TeamMemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class TeamChemistryService {
 
     private final TeamMemberRepository teamMemberRepository;
-    private final PlayerChemistryCacheService chemistryCache;
-    private final PlayerChemistryRepository playerChemistryRepository;
+    private final ChemistryService chemistryService;
+
+    private static record PlayerPair(UUID a, UUID b) {
+
+        static PlayerPair of(UUID u1, UUID u2) {
+            return u1.compareTo(u2) < 0 ? new PlayerPair(u1, u2) : new PlayerPair(u2, u1);
+        }
+    }
 
     public TeamChemistryDto calculateTeamChemistry(UUID teamId){
 
         List<TeamMember> starters = teamMemberRepository.findByTeamIdAndSquadType(teamId, SquadType.PITCH);
 
-        List<UUID> userIds = starters.stream()
-                .map(m -> m.getUser().getId())
-                .toList();
-
-        Map<String, Integer> chemistryMap = playerChemistryRepository.findForUsers(userIds).stream()
-                .collect(Collectors.toMap(
-                        pc -> buildKey(pc.getUserA(), pc.getUserB()),
-                        PlayerChemistry::getChemistryScore
-                ));
-
         if(starters.isEmpty())
             return new TeamChemistryDto(0,0,0,0,0,0,0);
+
+        Map<PlayerPair,Integer> pairCache = new HashMap<>();
 
         List<TeamMember> gk = new ArrayList<>();
         List<TeamMember> def = new ArrayList<>();
@@ -47,7 +39,7 @@ public class TeamChemistryService {
         List<TeamMember> att = new ArrayList<>();
 
         for(TeamMember m : starters){
-            Compartment comp =getCompartmentBySlot(m.getSlotIndex());
+            Compartment comp = getCompartmentBySlot(m.getSlotIndex());
 
             switch (comp){
                 case GK -> gk.add(m);
@@ -57,13 +49,13 @@ public class TeamChemistryService {
             }
         }
 
-        int gkDefChem = avgBetween(gk, def, chemistryMap);
-        int defChem = avgWithin(def, chemistryMap);
-        int midChem = avgWithin(mid, chemistryMap);
-        int attChem = avgWithin(att, chemistryMap);
+        int gkDefChem = avgBetween(gk, def, pairCache);
+        int defChem = avgWithin(def, pairCache);
+        int midChem = avgWithin(mid, pairCache);
+        int attChem = avgWithin(att, pairCache);
 
-        int defMidChem = avgBetween(def, mid, chemistryMap);
-        int midAttChem = avgBetween(mid, att, chemistryMap);
+        int defMidChem = avgBetween(def, mid, pairCache);
+        int midAttChem = avgBetween(mid, att, pairCache);
 
         double overallRaw = defChem * 0.30 +
                         midChem * 0.30 +
@@ -85,7 +77,7 @@ public class TeamChemistryService {
         );
     }
 
-    private int avgWithin(List<TeamMember> group, Map<String,Integer> chemistryMap){
+    private int avgWithin(List<TeamMember> group, Map<PlayerPair,Integer> cache){
 
         if(group.size() < 2)
             return 0;
@@ -94,12 +86,10 @@ public class TeamChemistryService {
         int pairs = 0;
 
         for(int i = 0; i < group.size(); i++){
-            for(int j = i+1; j < group.size(); j++){
-                int chem = getChemistryFromMap(
-                        group.get(i).getUser().getId(),
-                        group.get(j).getUser().getId(),
-                        chemistryMap
-                );
+            UUID a = group.get(i).getUser().getId();
+            for(int j = i + 1; j < group.size(); j++){
+                UUID b = group.get(j).getUser().getId();
+                int chem = getChemistry(a,b,cache);
                 sum += chem;
                 pairs++;
             }
@@ -108,7 +98,8 @@ public class TeamChemistryService {
         return pairs == 0 ? 0 : sum / pairs;
     }
 
-    private int avgBetween(List<TeamMember> a, List<TeamMember> b, Map<String,Integer> chemistryMap){
+    private int avgBetween(List<TeamMember> a, List<TeamMember> b, Map<PlayerPair,Integer> cache){
+
         if(a.isEmpty() || b.isEmpty())
             return 0;
 
@@ -116,12 +107,10 @@ public class TeamChemistryService {
         int pairs = 0;
 
         for(TeamMember m1 : a){
+            UUID userA = m1.getUser().getId();
             for(TeamMember m2 : b){
-                int chem = getChemistryFromMap(
-                        m1.getUser().getId(),
-                        m2.getUser().getId(),
-                        chemistryMap
-                );
+                UUID userB = m2.getUser().getId();
+                int chem = getChemistry(userA,userB,cache);
                 sum += chem;
                 pairs++;
             }
@@ -130,36 +119,42 @@ public class TeamChemistryService {
         return pairs == 0 ? 0 : sum / pairs;
     }
 
+    private int getChemistry(UUID a, UUID b, Map<PlayerPair,Integer> cache){
+
+        PlayerPair key = PlayerPair.of(a,b);
+
+        Integer value = cache.get(key);
+
+        if(value != null)
+            return value;
+
+        int chem = chemistryService.compute(a,b).score();
+
+        cache.put(key,chem);
+
+        return chem;
+    }
+
+
 
     private Compartment getCompartmentBySlot(int slotIndex){
-        if(slotIndex == 0){
+
+        if(slotIndex == 0)
             return Compartment.GK;
-        }
-        if(slotIndex>=1 && slotIndex<=5){
+
+        if(slotIndex >= 1 && slotIndex <= 5)
             return Compartment.DEFENSE;
-        }
-        if(slotIndex>=6 && slotIndex<=11){
+
+        if(slotIndex >= 6 && slotIndex <= 11)
             return Compartment.MIDFIELD;
-        }
-        if(slotIndex>=12 && slotIndex<=15){
+
+        if(slotIndex >= 12 && slotIndex <= 15)
             return Compartment.ATTACK;
-        }
 
         throw new IllegalArgumentException("Invalid slot index");
     }
 
 
-    private String buildKey(UUID a, UUID b) {
-        return a.compareTo(b) < 0 ? a + "-" + b : b + "-" + a;
-    }
-
-    private int getChemistryFromMap(UUID a, UUID b, Map<String,Integer> chemistryMap){
-        String key = buildKey(a,b);
-        Integer value = chemistryMap.get(key);
-
-        if(value != null)
-            return value;
-
-        return chemistryCache.getChemistry(a,b);
-    }
 }
+
+

@@ -11,7 +11,7 @@ public record TeamResponseDto(
         String name,
         UUID captainId,
         String captainUsername,
-        TeamChemistryDto teamChemistry,
+        int teamChemistry,
         int membersCount,
         LocalDateTime createdAt,
         TeamRatingDto rating

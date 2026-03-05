@@ -35,6 +35,7 @@ public class Team {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @Builder.Default
-    private Double teamChemistry = 0.0;
+    @Column(nullable = false)
+    private int teamChemistry = 0;
 
 }

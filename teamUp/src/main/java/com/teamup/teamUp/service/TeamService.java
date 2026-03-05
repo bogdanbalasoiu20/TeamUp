@@ -1,5 +1,6 @@
 package com.teamup.teamUp.service;
 
+import com.teamup.teamUp.chemistry.TeamChemistryManager;
 import com.teamup.teamUp.chemistry.dto.TeamChemistryDto;
 import com.teamup.teamUp.chemistry.service.TeamChemistryService;
 import com.teamup.teamUp.exceptions.NotFoundException;
@@ -38,7 +39,7 @@ public class TeamService {
     private final TournamentMatchRepository tournamentMatchRepository;
     private final TournamentStandingRepository tournamentStandingRepository;
     private final TeamRatingService teamRatingService;
-    private final TeamChemistryService teamChemistryService;
+    private final TeamChemistryManager teamChemistryManager;
 
     @Transactional
     public TeamResponseDto createTeam(String name, String captainUsername) {
@@ -52,7 +53,7 @@ public class TeamService {
         Team team = Team.builder()
                 .name(name)
                 .captain(captain)
-                .teamChemistry(0.0)
+                .teamChemistry(0)
                 .build();
 
         teamRepository.save(team);
@@ -175,7 +176,13 @@ public class TeamService {
             throw new IllegalArgumentException("Cannot remove captain");
         }
 
+        SquadType type = member.getSquadType();
+
         teamMemberRepository.delete(member);
+
+        if(type == SquadType.PITCH){
+            teamChemistryManager.recalcTeamChemistry(teamId);
+        }
     }
 
 
@@ -220,6 +227,8 @@ public class TeamService {
             moving.setSlotIndex(slotIndex);
             teamMemberRepository.saveAndFlush(moving);
         }
+
+        teamChemistryManager.recalcTeamChemistry(teamId);
     }
 
 
@@ -312,14 +321,13 @@ public class TeamService {
     private TeamResponseDto buildTeamResponse(Team team) {
 
         TeamRatingDto rating = teamRatingService.calculateTeamRating(team.getId());
-        TeamChemistryDto chemistry = teamChemistryService.calculateTeamChemistry(team.getId());
 
         return new TeamResponseDto(
                 team.getId(),
                 team.getName(),
                 team.getCaptain().getId(),
                 team.getCaptain().getUsername(),
-                chemistry,
+                team.getTeamChemistry(),
                 team.getMembers() != null ? team.getMembers().size() : 0,
                 team.getCreatedAt(),
                 rating
