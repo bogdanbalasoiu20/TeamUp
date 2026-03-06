@@ -1,8 +1,6 @@
 package com.teamup.teamUp.service;
 
 import com.teamup.teamUp.chemistry.TeamChemistryManager;
-import com.teamup.teamUp.chemistry.dto.TeamChemistryDto;
-import com.teamup.teamUp.chemistry.service.TeamChemistryService;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.model.dto.rating.team.TeamRatingDto;
 import com.teamup.teamUp.model.dto.team.TeamFullProfileDto;

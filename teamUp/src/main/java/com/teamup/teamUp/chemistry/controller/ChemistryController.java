@@ -2,7 +2,9 @@ package com.teamup.teamUp.chemistry.controller;
 
 
 import com.teamup.teamUp.chemistry.dto.ChemistryResult;
+import com.teamup.teamUp.chemistry.dto.TeamChemistryResponseDto;
 import com.teamup.teamUp.chemistry.service.ChemistryService;
+import com.teamup.teamUp.chemistry.service.TeamChemistryService;
 import com.teamup.teamUp.controller.ResponseApi;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.model.entity.User;
@@ -22,10 +24,12 @@ public class ChemistryController {
 
     private final ChemistryService chemistryService;
     private final UserRepository userRepository;
+    private final TeamChemistryService teamChemistryService;
 
-    public ChemistryController(ChemistryService chemistryService, UserRepository userRepository) {
+    public ChemistryController(ChemistryService chemistryService, UserRepository userRepository, TeamChemistryService teamChemistryService) {
         this.chemistryService = chemistryService;
         this.userRepository = userRepository;
+        this.teamChemistryService = teamChemistryService;
     }
 
     @GetMapping("/{otherUserId}")
@@ -34,6 +38,11 @@ public class ChemistryController {
         User me = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(username).orElseThrow(() -> new NotFoundException("User not found"));
 
         return ResponseEntity.ok(new ResponseApi<>("Chemistry with this player calculated", chemistryService.compute(me.getId(), otherUserId), true));
+    }
+
+    @GetMapping("/{teamId}/chemistry")
+    public ResponseEntity<ResponseApi<TeamChemistryResponseDto>> getChemistry(@PathVariable UUID teamId){
+        return ResponseEntity.ok(new ResponseApi<>("Team Chemistry",teamChemistryService.calculateTeamChemistry(teamId), true));
     }
 
 

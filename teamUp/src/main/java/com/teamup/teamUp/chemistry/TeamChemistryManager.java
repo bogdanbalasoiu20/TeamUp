@@ -1,6 +1,6 @@
 package com.teamup.teamUp.chemistry;
 
-import com.teamup.teamUp.chemistry.dto.TeamChemistryDto;
+import com.teamup.teamUp.chemistry.dto.TeamChemistryResponseDto;
 import com.teamup.teamUp.chemistry.service.TeamChemistryService;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.model.entity.Team;
@@ -25,8 +25,8 @@ public class TeamChemistryManager {
 
         Team team = teamRepository.findById(teamId).orElseThrow(() -> new NotFoundException("Team not found"));
 
-        TeamChemistryDto dto = teamChemistryService.calculateTeamChemistry(teamId);
+        TeamChemistryResponseDto chemistry = teamChemistryService.calculateTeamChemistry(teamId);
 
-        team.setTeamChemistry(dto.overallChem());
+        team.setTeamChemistry(chemistry.teamChemistry());
     }
 }
