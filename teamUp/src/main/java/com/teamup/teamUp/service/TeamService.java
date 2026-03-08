@@ -2,7 +2,6 @@ package com.teamup.teamUp.service;
 
 import com.teamup.teamUp.chemistry.TeamChemistryManager;
 import com.teamup.teamUp.exceptions.NotFoundException;
-import com.teamup.teamUp.model.dto.rating.team.TeamRatingDto;
 import com.teamup.teamUp.model.dto.team.TeamFullProfileDto;
 import com.teamup.teamUp.model.dto.team.TeamMemberResponseDto;
 import com.teamup.teamUp.model.dto.team.TeamResponseDto;
@@ -180,6 +179,7 @@ public class TeamService {
 
         if(type == SquadType.PITCH){
             teamChemistryManager.recalcTeamChemistry(teamId);
+            teamRatingService.recalcTeamRating(teamId);
         }
     }
 
@@ -227,6 +227,7 @@ public class TeamService {
         }
 
         teamChemistryManager.recalcTeamChemistry(teamId);
+        teamRatingService.recalcTeamRating(teamId);
     }
 
 
@@ -317,8 +318,7 @@ public class TeamService {
 
 
     private TeamResponseDto buildTeamResponse(Team team) {
-
-        TeamRatingDto rating = teamRatingService.calculateTeamRating(team.getId());
+        int membersCount = teamMemberRepository.countByTeamId(team.getId());
 
         return new TeamResponseDto(
                 team.getId(),
@@ -326,9 +326,12 @@ public class TeamService {
                 team.getCaptain().getId(),
                 team.getCaptain().getUsername(),
                 team.getTeamChemistry(),
-                team.getMembers() != null ? team.getMembers().size() : 0,
+                membersCount,
                 team.getCreatedAt(),
-                rating
+                team.getOverallRating(),
+                team.getAttackRating(),
+                team.getMidfieldRating(),
+                team.getDefenseRating()
         );
     }
 

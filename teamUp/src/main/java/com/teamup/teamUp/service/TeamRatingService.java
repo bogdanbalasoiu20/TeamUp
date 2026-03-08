@@ -1,15 +1,17 @@
 package com.teamup.teamUp.service;
 
 import com.teamup.teamUp.model.dto.rating.team.TeamRatingDto;
-import com.teamup.teamUp.model.entity.PlayerCardStats;
+import com.teamup.teamUp.model.entity.Team;
 import com.teamup.teamUp.model.entity.TeamMember;
 import com.teamup.teamUp.model.enums.Compartment;
 import com.teamup.teamUp.model.enums.Position;
 import com.teamup.teamUp.model.enums.SquadType;
 import com.teamup.teamUp.repository.PlayerCardStatsRepository;
 import com.teamup.teamUp.repository.TeamMemberRepository;
+import com.teamup.teamUp.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -21,9 +23,10 @@ import java.util.stream.Collectors;
 public class TeamRatingService {
     private final TeamMemberRepository teamMemberRepository;
     private final PlayerCardStatsRepository playerCardStatsRepository;
+    private final TeamRepository teamRepository;
 
     public TeamRatingDto calculateTeamRating(UUID teamId){
-        List<TeamMember> starters = teamMemberRepository.findByTeamIdAndSquadType(teamId, SquadType.PITCH);
+        List<TeamMember> starters = teamMemberRepository.findStarters(teamId,SquadType.PITCH);
 
         if(starters.isEmpty()){
             return new TeamRatingDto(0,0,0,0);
@@ -141,6 +144,21 @@ public class TeamRatingService {
             return true;
 
         return false;
+    }
+
+
+    @Transactional
+    public void recalcTeamRating(UUID teamId) {
+
+        TeamRatingDto rating = calculateTeamRating(teamId);
+
+        Team team = teamRepository.findById(teamId).orElseThrow(() -> new RuntimeException("Team not found"));
+
+        team.setAttackRating(rating.attack());
+        team.setMidfieldRating(rating.midfield());
+        team.setDefenseRating(rating.defense());
+        team.setOverallRating(rating.overall());
+
     }
 }
 

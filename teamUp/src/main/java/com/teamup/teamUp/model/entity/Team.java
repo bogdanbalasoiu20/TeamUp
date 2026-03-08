@@ -38,4 +38,20 @@ public class Team {
     @Column(nullable = false)
     private int teamChemistry = 0;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private int overallRating = 0;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private int attackRating = 0;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private int midfieldRating = 0;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private int defenseRating = 0;
+
 }
