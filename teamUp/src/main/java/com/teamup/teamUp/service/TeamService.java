@@ -231,7 +231,9 @@ public class TeamService {
         teamChemistryManager.recalcTeamChemistry(teamId);
         teamRatingService.recalcTeamRating(teamId);
 
-        return buildTeamResponse(team);
+        Team updatedTeam = teamRepository.findById(teamId).orElseThrow(() -> new NotFoundException("Team not found"));
+
+        return buildTeamResponse(updatedTeam);
     }
 
 
