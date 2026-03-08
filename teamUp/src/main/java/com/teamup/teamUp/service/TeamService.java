@@ -185,7 +185,7 @@ public class TeamService {
 
 
     @Transactional
-    public void updatePosition(UUID teamId, UUID userId, SquadType squadType, Integer slotIndex, String captainUsername){
+    public TeamResponseDto updatePosition(UUID teamId, UUID userId, SquadType squadType, Integer slotIndex, String captainUsername){
 
         Team team = teamRepository.findById(teamId).orElseThrow(() -> new NotFoundException("Team not found"));
 
@@ -230,6 +230,8 @@ public class TeamService {
 
         teamChemistryManager.recalcTeamChemistry(teamId);
         teamRatingService.recalcTeamRating(teamId);
+
+        return buildTeamResponse(team);
     }
 
 

@@ -64,14 +64,14 @@ public class TeamController {
     }
 
     @PutMapping("/{teamId}/members/{userId}/position")
-    public ResponseEntity<ResponseApi<Void>> updatePosition(
+    public ResponseEntity<ResponseApi<TeamResponseDto>> updatePosition(
             @PathVariable UUID teamId,
             @PathVariable UUID userId,
             @Valid @RequestBody UpdateTeamMemberPositionRequestDto request,
             Authentication auth
     ) {
-        teamService.updatePosition(teamId, userId, request.squadType(), request.slotIndex(), auth.getName());
-        return ResponseEntity.ok(new ResponseApi<>("Position updated successfully", null, true));
+        TeamResponseDto team = teamService.updatePosition(teamId, userId, request.squadType(), request.slotIndex(), auth.getName());
+        return ResponseEntity.ok(new ResponseApi<>("Position updated successfully", team, true));
     }
 
 
