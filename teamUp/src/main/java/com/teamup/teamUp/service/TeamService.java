@@ -185,11 +185,11 @@ public class TeamService {
 
 
     @Transactional
-    public void updatePosition(UUID teamId, UUID userId, SquadType squadType, Integer slotIndex, String captainUsername){
+    public void updatePosition(UUID teamId, UUID userId, SquadType squadType, Integer slotIndex, String captainUsername) {
 
         Team team = teamRepository.findById(teamId).orElseThrow(() -> new NotFoundException("Team not found"));
 
-        if(!team.getCaptain().getUsername().equals(captainUsername)) {
+        if (!team.getCaptain().getUsername().equals(captainUsername)) {
             throw new AccessDeniedException("Only captain can update positions");
         }
 
@@ -197,7 +197,7 @@ public class TeamService {
             throw new IllegalArgumentException("Invalid slot index");
         }
 
-        TeamMember moving = teamMemberRepository.findByTeamIdAndUserId(teamId,userId).orElseThrow(() -> new NotFoundException("Player not in team"));
+        TeamMember moving = teamMemberRepository.findByTeamIdAndUserId(teamId, userId).orElseThrow(() -> new NotFoundException("Player not in team"));
 
         SquadType oldType = moving.getSquadType();
         Integer oldSlotIndex = moving.getSlotIndex();
@@ -206,25 +206,24 @@ public class TeamService {
 
         if (occupant != null && !occupant.getUser().getId().equals(userId)) {
 
-            // mut occupant temporar
-            occupant.setSlotIndex(Integer.MIN_VALUE);
-            teamMemberRepository.saveAndFlush(occupant);
+            // slot temporar sigur
+            int tempSlot = -999;
 
-            // mut moving în slotul nou
+            occupant.setSlotIndex(tempSlot);
+
             moving.setSquadType(squadType);
             moving.setSlotIndex(slotIndex);
-            teamMemberRepository.saveAndFlush(moving);
 
-            // mut occupant în pozitia veche
             occupant.setSquadType(oldType);
             occupant.setSlotIndex(oldSlotIndex);
-            teamMemberRepository.saveAndFlush(occupant);
 
         } else {
+
             moving.setSquadType(squadType);
             moving.setSlotIndex(slotIndex);
-            teamMemberRepository.saveAndFlush(moving);
         }
+
+        teamMemberRepository.flush();
 
         teamChemistryManager.recalcTeamChemistry(teamId);
         teamRatingService.recalcTeamRating(teamId);
