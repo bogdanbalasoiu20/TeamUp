@@ -27,13 +27,6 @@ public class TeamChemistryService {
         }
     }
 
-    enum PositionGroup {
-        GK,
-        DEF,
-        MID,
-        ATT
-    }
-
     private static final List<PitchPosition> PITCH_POSITIONS = List.of(
             new PitchPosition(12,-0.8,-0.85),
             new PitchPosition(13,-0.25,-0.95),
@@ -60,135 +53,178 @@ public class TeamChemistryService {
             PITCH_POSITIONS.stream()
                     .collect(Collectors.toMap(PitchPosition::slotIndex, p -> p));
 
-    private static final Map<Integer, PositionGroup> SLOT_GROUP = Map.ofEntries(
-
-            Map.entry(0,PositionGroup.GK),
-
-            Map.entry(1,PositionGroup.DEF),
-            Map.entry(2,PositionGroup.DEF),
-            Map.entry(3,PositionGroup.DEF),
-            Map.entry(4,PositionGroup.DEF),
-            Map.entry(5,PositionGroup.DEF),
-
-            Map.entry(7,PositionGroup.MID),
-            Map.entry(8,PositionGroup.MID),
-            Map.entry(10,PositionGroup.MID),
-
-            Map.entry(6,PositionGroup.MID),
-            Map.entry(9,PositionGroup.MID),
-            Map.entry(11,PositionGroup.MID),
-
-            Map.entry(12,PositionGroup.ATT),
-            Map.entry(13,PositionGroup.ATT),
-            Map.entry(14,PositionGroup.ATT),
-            Map.entry(15,PositionGroup.ATT)
-    );
-
     public TeamChemistryResponseDto calculateTeamChemistry(UUID teamId){
 
         List<TeamMember> starters =
-                teamMemberRepository.findByTeamIdAndSquadType(teamId,SquadType.PITCH);
+                teamMemberRepository.findByTeamIdAndSquadType(teamId, SquadType.PITCH);
 
         if(starters.isEmpty())
-            return new TeamChemistryResponseDto(0,List.of());
+            return new TeamChemistryResponseDto(0, List.of());
 
-        Map<Integer,UUID> slotToUser=new HashMap<>();
+        Map<Integer, UUID> slotToUser = new HashMap<>();
 
-        for(TeamMember m:starters)
-            slotToUser.put(m.getSlotIndex(),m.getUser().getId());
+        for(TeamMember m : starters)
+            slotToUser.put(m.getSlotIndex(), m.getUser().getId());
 
-        Set<PlayerPair> pairs=generateLinks(slotToUser);
+        Set<PlayerPair> pairs = generateLinks(slotToUser);
 
-        List<TeamChemistryLinkDto> links=new ArrayList<>();
-        Map<PlayerPair,Integer> cache=new HashMap<>();
+        List<TeamChemistryLinkDto> links = new ArrayList<>();
+        Map<PlayerPair,Integer> cache = new HashMap<>();
 
-        double sum=0;
+        double sum = 0;
 
-        for(PlayerPair pair:pairs){
+        for(PlayerPair pair : pairs){
 
-            int chemistry=cache.computeIfAbsent(
+            int chemistry = cache.computeIfAbsent(
                     pair,
-                    p->chemistryService.compute(pair.a(),pair.b()).score()
+                    p -> chemistryService.compute(pair.a(), pair.b()).score()
             );
 
-            links.add(new TeamChemistryLinkDto(pair.a(),pair.b(),chemistry));
+            links.add(new TeamChemistryLinkDto(pair.a(), pair.b(), chemistry));
 
-            sum+=chemistry;
+            sum += chemistry;
         }
 
-        int overall=pairs.isEmpty()?0:(int)Math.round(sum/pairs.size());
+        int overall = pairs.isEmpty() ? 0 : (int)Math.round(sum / pairs.size());
 
-        return new TeamChemistryResponseDto(overall,links);
+        return new TeamChemistryResponseDto(overall, links);
     }
 
-    private Set<PlayerPair> generateLinks(Map<Integer,UUID> slotToUser){
+    private Set<PlayerPair> generateLinks(Map<Integer, UUID> slotToUser){
 
-        Map<PositionGroup,List<Integer>> groups=new HashMap<>();
+        List<Node> nodes = new ArrayList<>();
 
-        for(Integer slot:slotToUser.keySet()){
+        for(var e : slotToUser.entrySet()){
 
-            PositionGroup g=SLOT_GROUP.get(slot);
+            PitchPosition pos = POSITION_MAP.get(e.getKey());
 
-            if(g==null)
+            if(pos == null)
                 continue;
 
-            groups.computeIfAbsent(g,k->new ArrayList<>()).add(slot);
+            nodes.add(new Node(e.getValue(), pos.x(), pos.y()));
         }
 
-        groups.values().forEach(list ->
-                list.sort(Comparator.comparingDouble(s->POSITION_MAP.get(s).x()))
-        );
+        Set<PlayerPair> pairs = new HashSet<>();
+        List<Edge> edges = new ArrayList<>();
 
-        Set<PlayerPair> pairs=new HashSet<>();
+        // LINKURI PE LINIE (OX)
+        Map<Double,List<Node>> rows = nodes.stream()
+                .collect(Collectors.groupingBy(n -> n.y));
 
-        // linkuri in acelasi compartiment (vecini stanga-dreapta)
-        for(List<Integer> slots:groups.values()){
+        for(List<Node> row : rows.values()){
 
-            for(int i=0;i<slots.size()-1;i++){
+            row.sort(Comparator.comparingDouble(n -> n.x));
 
-                UUID a=slotToUser.get(slots.get(i));
-                UUID b=slotToUser.get(slots.get(i+1));
+            for(int i=0;i<row.size()-1;i++){
 
-                pairs.add(PlayerPair.of(a,b));
+                Node a = row.get(i);
+                Node b = row.get(i+1);
+
+                addEdge(a,b,pairs,edges);
             }
         }
 
-        // legaturi intre compartimente
-        connectAdjacent(groups,slotToUser,PositionGroup.GK,PositionGroup.DEF,pairs);
-        connectAdjacent(groups,slotToUser,PositionGroup.DEF,PositionGroup.MID,pairs);
-        connectAdjacent(groups,slotToUser,PositionGroup.MID,PositionGroup.ATT,pairs);
+        // LINKURI VERTICALE (OY)
+        for(Node a : nodes){
+
+            double bestDy = Double.MAX_VALUE;
+            List<Node> candidates = new ArrayList<>();
+
+            for(Node b : nodes){
+
+                if(b.y >= a.y)
+                    continue;
+
+                double dy = a.y - b.y;
+
+                if(dy < bestDy - 0.01){
+
+                    candidates.clear();
+                    candidates.add(b);
+                    bestDy = dy;
+
+                }else if(Math.abs(dy - bestDy) < 0.01){
+
+                    candidates.add(b);
+                }
+            }
+
+            for(Node b : candidates)
+                addEdge(a,b,pairs,edges);
+        }
 
         return pairs;
     }
 
-    private void connectAdjacent(
-            Map<PositionGroup,List<Integer>> groups,
-            Map<Integer,UUID> slotToUser,
-            PositionGroup g1,
-            PositionGroup g2,
-            Set<PlayerPair> pairs
-    ){
+    private void addEdge(Node a, Node b,
+                         Set<PlayerPair> pairs,
+                         List<Edge> edges){
 
-        List<Integer> a=groups.getOrDefault(g1,List.of());
-        List<Integer> b=groups.getOrDefault(g2,List.of());
+        Edge newEdge = new Edge(a,b);
 
-        if(a.isEmpty()||b.isEmpty())
-            return;
+        for(Edge e : edges){
 
-        for(Integer s1:a){
+            if(intersects(newEdge,e))
+                return;
+        }
 
-            PitchPosition p1=POSITION_MAP.get(s1);
+        edges.add(newEdge);
+        pairs.add(PlayerPair.of(a.user,b.user));
+    }
 
-            b.stream()
-                    .sorted(Comparator.comparingDouble(s->
-                            Math.abs(p1.x()-POSITION_MAP.get(s).x())))
-                    .limit(2)
-                    .forEach(s2->pairs.add(
-                            PlayerPair.of(
-                                    slotToUser.get(s1),
-                                    slotToUser.get(s2)
-                            )
-                    ));
+    private boolean intersects(Edge e1, Edge e2){
+
+        return linesIntersect(
+                e1.a.x, e1.a.y,
+                e1.b.x, e1.b.y,
+                e2.a.x, e2.a.y,
+                e2.b.x, e2.b.y
+        );
+    }
+
+    private boolean linesIntersect(
+            double x1,double y1,
+            double x2,double y2,
+            double x3,double y3,
+            double x4,double y4){
+
+        double d1 = direction(x3,y3,x4,y4,x1,y1);
+        double d2 = direction(x3,y3,x4,y4,x2,y2);
+        double d3 = direction(x1,y1,x2,y2,x3,y3);
+        double d4 = direction(x1,y1,x2,y2,x4,y4);
+
+        return d1*d2 < 0 && d3*d4 < 0;
+    }
+
+    private double direction(
+            double xi,double yi,
+            double xj,double yj,
+            double xk,double yk){
+
+        return (xk-xi)*(yj-yi)-(xj-xi)*(yk-yi);
+    }
+
+    private static class Node{
+
+        UUID user;
+        double x;
+        double y;
+
+        Node(UUID user,double x,double y){
+            this.user = user;
+            this.x = x;
+            this.y = y;
+        }
+    }
+
+    private static class Edge{
+
+        Node a;
+        Node b;
+
+        Edge(Node a,Node b){
+            this.a = a;
+            this.b = b;
         }
     }
 }
