@@ -27,210 +27,132 @@ public class TeamChemistryService {
         }
     }
 
+    // Coordonate aliniate 1:1 cu Frontend-ul tău
     private static final List<PitchPosition> PITCH_POSITIONS = List.of(
-            new PitchPosition(12,-0.8,-0.85),
-            new PitchPosition(13,-0.25,-0.95),
-            new PitchPosition(14,0.25,-0.95),
-            new PitchPosition(15,0.8,-0.85),
+            // --- ATACANȚI ---
+            new PitchPosition(12, -0.8, -0.85),
+            new PitchPosition(13, -0.25, -0.95),
+            new PitchPosition(14, 0.25, -0.95),
+            new PitchPosition(15, 0.8, -0.85),
 
-            new PitchPosition(6,-0.90,-0.30),
-            new PitchPosition(7,-0.40,-0.10),
-            new PitchPosition(8,0.0,0.1),
-            new PitchPosition(9,0.0,-0.5),
-            new PitchPosition(10,0.40,-0.10),
-            new PitchPosition(11,0.90,-0.30),
+            // --- MIJLOCAȘI ---
+            new PitchPosition(6, -0.90, -0.30),
+            new PitchPosition(7, -0.40, -0.10),
+            new PitchPosition(8, 0.0, 0.1),
+            new PitchPosition(9, 0.0, -0.5),
+            new PitchPosition(10, 0.40, -0.10),
+            new PitchPosition(11, 0.90, -0.30),
 
-            new PitchPosition(1,-0.90,0.40),
-            new PitchPosition(2,-0.45,0.50),
-            new PitchPosition(3,0.0,0.55),
-            new PitchPosition(4,0.45,0.50),
-            new PitchPosition(5,0.90,0.40),
+            // --- FUNDAȘI ---
+            new PitchPosition(1, -0.90, 0.40),
+            new PitchPosition(2, -0.45, 0.50),
+            new PitchPosition(3, 0.0, 0.55),
+            new PitchPosition(4, 0.45, 0.50),
+            new PitchPosition(5, 0.90, 0.40),
 
-            new PitchPosition(0,0.0,1.0)
+            // --- PORTAR ---
+            new PitchPosition(0, 0.0, 1.0)
     );
 
     private static final Map<Integer, PitchPosition> POSITION_MAP =
             PITCH_POSITIONS.stream()
                     .collect(Collectors.toMap(PitchPosition::slotIndex, p -> p));
 
-    public TeamChemistryResponseDto calculateTeamChemistry(UUID teamId){
-
+    public TeamChemistryResponseDto calculateTeamChemistry(UUID teamId) {
         List<TeamMember> starters =
                 teamMemberRepository.findByTeamIdAndSquadType(teamId, SquadType.PITCH);
 
-        if(starters.isEmpty())
+        if (starters.isEmpty())
             return new TeamChemistryResponseDto(0, List.of());
 
         Map<Integer, UUID> slotToUser = new HashMap<>();
-
-        for(TeamMember m : starters)
+        for (TeamMember m : starters)
             slotToUser.put(m.getSlotIndex(), m.getUser().getId());
 
         Set<PlayerPair> pairs = generateLinks(slotToUser);
 
         List<TeamChemistryLinkDto> links = new ArrayList<>();
-        Map<PlayerPair,Integer> cache = new HashMap<>();
-
+        Map<PlayerPair, Integer> cache = new HashMap<>();
         double sum = 0;
 
-        for(PlayerPair pair : pairs){
-
+        for (PlayerPair pair : pairs) {
             int chemistry = cache.computeIfAbsent(
                     pair,
                     p -> chemistryService.compute(pair.a(), pair.b()).score()
             );
-
             links.add(new TeamChemistryLinkDto(pair.a(), pair.b(), chemistry));
-
             sum += chemistry;
         }
 
-        int overall = pairs.isEmpty() ? 0 : (int)Math.round(sum / pairs.size());
-
+        int overall = pairs.isEmpty() ? 0 : (int) Math.round(sum / pairs.size());
         return new TeamChemistryResponseDto(overall, links);
     }
 
-    private Set<PlayerPair> generateLinks(Map<Integer, UUID> slotToUser){
-
+    private Set<PlayerPair> generateLinks(Map<Integer, UUID> slotToUser) {
         List<Node> nodes = new ArrayList<>();
-
-        for(var e : slotToUser.entrySet()){
-
+        for (var e : slotToUser.entrySet()) {
             PitchPosition pos = POSITION_MAP.get(e.getKey());
-
-            if(pos == null)
-                continue;
-
-            nodes.add(new Node(e.getValue(), pos.x(), pos.y()));
+            if (pos != null) {
+                int layer = identifyLayer(pos.y());
+                nodes.add(new Node(e.getValue(), pos.x(), pos.y(), layer));
+            }
         }
 
         Set<PlayerPair> pairs = new HashSet<>();
-        List<Edge> edges = new ArrayList<>();
+        Map<Integer, List<Node>> layersMap = nodes.stream()
+                .collect(Collectors.groupingBy(n -> n.layer));
 
-        // LINKURI PE LINIE (OX)
-        Map<Double,List<Node>> rows = nodes.stream()
-                .collect(Collectors.groupingBy(n -> n.y));
-
-        for(List<Node> row : rows.values()){
-
-            row.sort(Comparator.comparingDouble(n -> n.x));
-
-            for(int i=0;i<row.size()-1;i++){
-
-                Node a = row.get(i);
-                Node b = row.get(i+1);
-
-                addEdge(a,b,pairs,edges);
+        // 1. Legături Orizontale (ex: CB cu CB, ST cu ST)
+        layersMap.forEach((layerIdx, playersInLayer) -> {
+            playersInLayer.sort(Comparator.comparingDouble(n -> n.x));
+            for (int i = 0; i < playersInLayer.size() - 1; i++) {
+                pairs.add(PlayerPair.of(playersInLayer.get(i).user, playersInLayer.get(i + 1).user));
             }
-        }
+        });
 
-        // LINKURI VERTICALE (OY)
-        for(Node a : nodes){
+        // 2. Legături Verticale între straturi (GK -> DEF -> MID -> ATK)
+        List<Integer> sortedLayerIndices = layersMap.keySet().stream().sorted().toList();
 
-            double bestDy = Double.MAX_VALUE;
-            List<Node> candidates = new ArrayList<>();
+        for (int i = 0; i < sortedLayerIndices.size() - 1; i++) {
+            List<Node> currentLayerNodes = layersMap.get(sortedLayerIndices.get(i));
+            List<Node> nextLayerNodes = layersMap.get(sortedLayerIndices.get(i + 1));
 
-            for(Node b : nodes){
-
-                if(b.y >= a.y)
-                    continue;
-
-                double dx = Math.abs(a.x - b.x);
-
-                // FILTRU IMPORTANT -> evita legaturi laterale absurde
-                if(dx > 0.45)
-                    continue;
-
-                double dy = a.y - b.y;
-
-                if(dy < bestDy - 0.01){
-
-                    candidates.clear();
-                    candidates.add(b);
-                    bestDy = dy;
-
-                }else if(Math.abs(dy - bestDy) < 0.01){
-
-                    candidates.add(b);
-                }
+            for (Node p1 : currentLayerNodes) {
+                nextLayerNodes.stream()
+                        // Filtru distanță X: previne link-uri absurde de tip LB la RM
+                        .filter(p2 -> Math.abs(p1.x - p2.x) < 0.7)
+                        // Conectăm la cei mai apropiați 2 vecini din stratul următor
+                        .sorted(Comparator.comparingDouble(p2 -> Math.abs(p1.x - p2.x)))
+                        .limit(2)
+                        .forEach(p2 -> pairs.add(PlayerPair.of(p1.user, p2.user)));
             }
-
-            for(Node b : candidates)
-                addEdge(a,b,pairs,edges);
         }
 
         return pairs;
     }
 
-    private void addEdge(Node a, Node b,
-                         Set<PlayerPair> pairs,
-                         List<Edge> edges){
-
-        Edge newEdge = new Edge(a,b);
-
-        for(Edge e : edges){
-
-            if(intersects(newEdge,e))
-                return;
-        }
-
-        edges.add(newEdge);
-        pairs.add(PlayerPair.of(a.user,b.user));
+    /**
+     * Grupează pozițiile în straturi orizontale pe baza coordonatei Y.
+     * Valorile sunt alese pentru a cuprinde variațiile din Frontend.
+     */
+    private int identifyLayer(double y) {
+        if (y > 0.75) return 0;      // Layer 0: Portar (y=1.0)
+        if (y >= 0.35) return 1;     // Layer 1: Fundași (y=0.40 până la 0.55)
+        if (y >= -0.60) return 2;    // Layer 2: Mijlocași (y=-0.50 până la 0.10)
+        return 3;                    // Layer 3: Atacanți (y=-0.85 până la -0.95)
     }
 
-    private boolean intersects(Edge e1, Edge e2){
-
-        return linesIntersect(
-                e1.a.x, e1.a.y,
-                e1.b.x, e1.b.y,
-                e2.a.x, e2.a.y,
-                e2.b.x, e2.b.y
-        );
-    }
-
-    private boolean linesIntersect(
-            double x1,double y1,
-            double x2,double y2,
-            double x3,double y3,
-            double x4,double y4){
-
-        double d1 = direction(x3,y3,x4,y4,x1,y1);
-        double d2 = direction(x3,y3,x4,y4,x2,y2);
-        double d3 = direction(x1,y1,x2,y2,x3,y3);
-        double d4 = direction(x1,y1,x2,y2,x4,y4);
-
-        return d1*d2 < 0 && d3*d4 < 0;
-    }
-
-    private double direction(
-            double xi,double yi,
-            double xj,double yj,
-            double xk,double yk){
-
-        return (xk-xi)*(yj-yi)-(xj-xi)*(yk-yi);
-    }
-
-    private static class Node{
-
+    private static class Node {
         UUID user;
         double x;
         double y;
+        int layer;
 
-        Node(UUID user,double x,double y){
+        Node(UUID user, double x, double y, int layer) {
             this.user = user;
             this.x = x;
             this.y = y;
-        }
-    }
-
-    private static class Edge{
-
-        Node a;
-        Node b;
-
-        Edge(Node a,Node b){
-            this.a = a;
-            this.b = b;
+            this.layer = layer;
         }
     }
 }
