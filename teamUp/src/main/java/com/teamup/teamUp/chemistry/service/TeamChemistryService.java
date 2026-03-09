@@ -7,6 +7,8 @@ import com.teamup.teamUp.model.entity.TeamMember;
 import com.teamup.teamUp.model.enums.SquadType;
 import com.teamup.teamUp.repository.TeamMemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.locationtech.jts.geom.*;
+import org.locationtech.jts.triangulate.DelaunayTriangulationBuilder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -20,9 +22,10 @@ public class TeamChemistryService {
     private final ChemistryService chemistryService;
 
     private record PlayerPair(UUID a, UUID b) {
-
         static PlayerPair of(UUID u1, UUID u2) {
-            return u1.compareTo(u2) < 0 ? new PlayerPair(u1, u2) : new PlayerPair(u2, u1);
+            return u1.compareTo(u2) < 0
+                    ? new PlayerPair(u1, u2)
+                    : new PlayerPair(u2, u1);
         }
     }
 
@@ -50,81 +53,117 @@ public class TeamChemistryService {
 
     private static final Map<Integer, PitchPosition> POSITION_MAP =
             PITCH_POSITIONS.stream()
-                    .collect(Collectors.toMap(
-                            PitchPosition::slotIndex,
-                            p -> p
-                    ));
+                    .collect(Collectors.toMap(PitchPosition::slotIndex, p -> p));
 
+    public TeamChemistryResponseDto calculateTeamChemistry(UUID teamId) {
 
-    public TeamChemistryResponseDto calculateTeamChemistry(UUID teamId){
-        List<TeamChemistryLinkDto> links = new ArrayList<>();
+        List<TeamMember> starters =
+                teamMemberRepository.findByTeamIdAndSquadType(teamId, SquadType.PITCH);
 
-        List<TeamMember> starters = teamMemberRepository.findByTeamIdAndSquadType(teamId, SquadType.PITCH);
-
-        if(starters.isEmpty())
+        if (starters.isEmpty())
             return new TeamChemistryResponseDto(0, List.of());
 
         Map<Integer, UUID> slotToUser = new HashMap<>();
 
-        for(TeamMember m : starters)
+        for (TeamMember m : starters)
             slotToUser.put(m.getSlotIndex(), m.getUser().getId());
 
-        Map<PlayerPair,Integer> cache = new HashMap<>();
+        Set<PlayerPair> pairs = generateLinks(slotToUser);
+
+        List<TeamChemistryLinkDto> links = new ArrayList<>();
+
+        Map<PlayerPair, Integer> cache = new HashMap<>();
 
         double weightedSum = 0;
         double totalWeight = 0;
 
-        double threshold = 0.75;
+        for (PlayerPair pair : pairs) {
 
-        for(var entryA : slotToUser.entrySet()){
+            int chemistry = cache.computeIfAbsent(
+                    pair,
+                    p -> chemistryService.compute(pair.a(), pair.b()).score()
+            );
 
-            PitchPosition posA = POSITION_MAP.get(entryA.getKey());
-            UUID userA = entryA.getValue();
+            links.add(new TeamChemistryLinkDto(pair.a(), pair.b(), chemistry));
 
-            for(var entryB : slotToUser.entrySet()){
-
-                if(entryA.getKey() >= entryB.getKey())
-                    continue;
-
-                PitchPosition posB = POSITION_MAP.get(entryB.getKey());
-                UUID userB = entryB.getValue();
-
-                double dist = distance(posA,posB);
-
-                if(dist > threshold)
-                    continue;
-
-                PlayerPair pair = PlayerPair.of(userA,userB);
-
-                int chem = cache.computeIfAbsent(pair, p -> chemistryService.compute(userA,userB).score());
-
-                links.add(new TeamChemistryLinkDto(userA, userB, chem));
-
-                double weight = 1.0 / (dist + 0.15);
-
-                weightedSum += chem * weight;
-                totalWeight += weight;
-            }
+            weightedSum += chemistry;
+            totalWeight += 1;
         }
 
-        if(totalWeight == 0)
+        if (totalWeight == 0)
             return new TeamChemistryResponseDto(0, List.of());
 
-        int overall = (int)Math.round(weightedSum / totalWeight);
+        int overall = (int) Math.round(weightedSum / totalWeight);
 
         return new TeamChemistryResponseDto(overall, links);
     }
 
+    private Set<PlayerPair> generateLinks(Map<Integer, UUID> slotToUser) {
 
-    private double distance(PitchPosition a, PitchPosition b){
+        Map<Coordinate, UUID> coordinateMap = new HashMap<>();
 
-        double dx = a.x() - b.x();
-        double dy = a.y() - b.y();
+        for (var entry : slotToUser.entrySet()) {
 
-        return Math.sqrt(dx*dx + dy*dy);
+            PitchPosition pos = POSITION_MAP.get(entry.getKey());
+
+            if (pos == null)
+                continue;
+
+            Coordinate coord = new Coordinate(pos.x(), pos.y());
+
+            coordinateMap.put(coord, entry.getValue());
+        }
+
+        List<Coordinate> coordinates = new ArrayList<>(coordinateMap.keySet());
+
+        if (coordinates.size() < 3) {
+
+            Set<PlayerPair> pairs = new HashSet<>();
+
+            for (int i = 0; i < coordinates.size(); i++) {
+                for (int j = i + 1; j < coordinates.size(); j++) {
+
+                    UUID a = coordinateMap.get(coordinates.get(i));
+                    UUID b = coordinateMap.get(coordinates.get(j));
+
+                    pairs.add(PlayerPair.of(a, b));
+                }
+            }
+
+            return pairs;
+        }
+
+        GeometryFactory geometryFactory = new GeometryFactory();
+
+        DelaunayTriangulationBuilder builder = new DelaunayTriangulationBuilder();
+        builder.setSites(coordinates);
+
+        Geometry triangles = builder.getTriangles(geometryFactory);
+
+        Set<PlayerPair> pairs = new HashSet<>();
+
+        for (int i = 0; i < triangles.getNumGeometries(); i++) {
+
+            Polygon triangle = (Polygon) triangles.getGeometryN(i);
+
+            Coordinate[] coords = triangle.getCoordinates();
+
+            for (int j = 0; j < coords.length - 1; j++) {
+
+                Coordinate a = coords[j];
+                Coordinate b = coords[(j + 1) % (coords.length - 1)];
+
+                UUID userA = coordinateMap.get(a);
+                UUID userB = coordinateMap.get(b);
+
+                if (userA == null || userB == null)
+                    continue;
+
+                if (!userA.equals(userB))
+                    pairs.add(PlayerPair.of(userA, userB));
+            }
+        }
+
+        return pairs;
     }
-
-
 }
-
-
