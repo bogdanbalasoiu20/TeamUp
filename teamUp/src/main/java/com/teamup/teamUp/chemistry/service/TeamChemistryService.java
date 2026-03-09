@@ -135,6 +135,12 @@ public class TeamChemistryService {
                 if(b.y >= a.y)
                     continue;
 
+                double dx = Math.abs(a.x - b.x);
+
+                // FILTRU IMPORTANT -> evita legaturi laterale absurde
+                if(dx > 0.45)
+                    continue;
+
                 double dy = a.y - b.y;
 
                 if(dy < bestDy - 0.01){
