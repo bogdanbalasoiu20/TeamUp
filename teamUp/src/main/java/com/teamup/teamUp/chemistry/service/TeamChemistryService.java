@@ -7,8 +7,6 @@ import com.teamup.teamUp.model.entity.TeamMember;
 import com.teamup.teamUp.model.enums.SquadType;
 import com.teamup.teamUp.repository.TeamMemberRepository;
 import lombok.RequiredArgsConstructor;
-import org.locationtech.jts.geom.*;
-import org.locationtech.jts.triangulate.DelaunayTriangulationBuilder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -55,6 +53,30 @@ public class TeamChemistryService {
             PITCH_POSITIONS.stream()
                     .collect(Collectors.toMap(PitchPosition::slotIndex, p -> p));
 
+    // axe tactice
+    private static final Map<Integer, Integer> SLOT_AXIS = Map.ofEntries(
+            Map.entry(0, 1), // GK
+
+            Map.entry(1, 2),
+            Map.entry(2, 2),
+            Map.entry(3, 2),
+            Map.entry(4, 2),
+            Map.entry(5, 2),
+
+            Map.entry(7, 3),
+            Map.entry(8, 3),
+            Map.entry(10, 3),
+
+            Map.entry(6, 4),
+            Map.entry(9, 4),
+            Map.entry(11, 4),
+
+            Map.entry(12, 5),
+            Map.entry(13, 5),
+            Map.entry(14, 5),
+            Map.entry(15, 5)
+    );
+
     public TeamChemistryResponseDto calculateTeamChemistry(UUID teamId) {
 
         List<TeamMember> starters =
@@ -74,8 +96,7 @@ public class TeamChemistryService {
 
         Map<PlayerPair, Integer> cache = new HashMap<>();
 
-        double weightedSum = 0;
-        double totalWeight = 0;
+        double sum = 0;
 
         for (PlayerPair pair : pairs) {
 
@@ -86,84 +107,74 @@ public class TeamChemistryService {
 
             links.add(new TeamChemistryLinkDto(pair.a(), pair.b(), chemistry));
 
-            weightedSum += chemistry;
-            totalWeight += 1;
+            sum += chemistry;
         }
 
-        if (totalWeight == 0)
-            return new TeamChemistryResponseDto(0, List.of());
-
-        int overall = (int) Math.round(weightedSum / totalWeight);
+        int overall = pairs.isEmpty() ? 0 : (int) Math.round(sum / pairs.size());
 
         return new TeamChemistryResponseDto(overall, links);
     }
 
     private Set<PlayerPair> generateLinks(Map<Integer, UUID> slotToUser) {
 
-        Map<Coordinate, UUID> coordinateMap = new HashMap<>();
+        Map<Integer, List<UUID>> axisPlayers = new HashMap<>();
 
         for (var entry : slotToUser.entrySet()) {
 
-            PitchPosition pos = POSITION_MAP.get(entry.getKey());
+            Integer axis = SLOT_AXIS.get(entry.getKey());
 
-            if (pos == null)
+            if (axis == null)
                 continue;
 
-            Coordinate coord = new Coordinate(pos.x(), pos.y());
-
-            coordinateMap.put(coord, entry.getValue());
+            axisPlayers.computeIfAbsent(axis, k -> new ArrayList<>())
+                    .add(entry.getValue());
         }
-
-        List<Coordinate> coordinates = new ArrayList<>(coordinateMap.keySet());
-
-        if (coordinates.size() < 3) {
-
-            Set<PlayerPair> pairs = new HashSet<>();
-
-            for (int i = 0; i < coordinates.size(); i++) {
-                for (int j = i + 1; j < coordinates.size(); j++) {
-
-                    UUID a = coordinateMap.get(coordinates.get(i));
-                    UUID b = coordinateMap.get(coordinates.get(j));
-
-                    pairs.add(PlayerPair.of(a, b));
-                }
-            }
-
-            return pairs;
-        }
-
-        GeometryFactory geometryFactory = new GeometryFactory();
-
-        DelaunayTriangulationBuilder builder = new DelaunayTriangulationBuilder();
-        builder.setSites(coordinates);
-
-        Geometry triangles = builder.getTriangles(geometryFactory);
 
         Set<PlayerPair> pairs = new HashSet<>();
 
-        for (int i = 0; i < triangles.getNumGeometries(); i++) {
+        for (var entry : slotToUser.entrySet()) {
 
-            Polygon triangle = (Polygon) triangles.getGeometryN(i);
+            UUID user = entry.getValue();
+            PitchPosition pos = POSITION_MAP.get(entry.getKey());
+            int axis = SLOT_AXIS.get(entry.getKey());
 
-            Coordinate[] coords = triangle.getCoordinates();
+            List<UUID> neighbors = findNeighborAxis(axisPlayers, axis);
 
-            for (int j = 0; j < coords.length - 1; j++) {
+            if (neighbors.isEmpty())
+                continue;
 
-                Coordinate a = coords[j];
-                Coordinate b = coords[(j + 1) % (coords.length - 1)];
-
-                UUID userA = coordinateMap.get(a);
-                UUID userB = coordinateMap.get(b);
-
-                if (userA == null || userB == null)
-                    continue;
-
-                if (!userA.equals(userB))
-                    pairs.add(PlayerPair.of(userA, userB));
-            }
+            neighbors.stream()
+                    .sorted(Comparator.comparingDouble(n ->
+                            Math.abs(pos.x() - getPosition(slotToUser, n).x())))
+                    .limit(2)
+                    .forEach(n -> pairs.add(PlayerPair.of(user, n)));
         }
 
         return pairs;
+    }
+
+    private List<UUID> findNeighborAxis(Map<Integer, List<UUID>> axisPlayers, int axis) {
+
+        for (int i = 1; i <= 4; i++) {
+
+            List<UUID> up = axisPlayers.get(axis + i);
+            if (up != null)
+                return up;
+
+            List<UUID> down = axisPlayers.get(axis - i);
+            if (down != null)
+                return down;
+        }
+
+        return List.of();
+    }
+
+    private PitchPosition getPosition(Map<Integer, UUID> slotToUser, UUID userId) {
+
+        for (var entry : slotToUser.entrySet())
+            if (entry.getValue().equals(userId))
+                return POSITION_MAP.get(entry.getKey());
+
+        return null;
     }
 }
