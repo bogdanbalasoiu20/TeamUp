@@ -72,40 +72,50 @@ public class TeamChemistryService {
         Set<PlayerPair> pairs = new HashSet<>();
         Map<Integer, List<Node>> layersMap = nodes.stream().collect(Collectors.groupingBy(n -> n.layer));
 
-        // 1. Orizontal
+        // 1. Legături Orizontale
         layersMap.forEach((idx, list) -> {
             list.sort(Comparator.comparingDouble(n -> n.x));
             for (int i = 0; i < list.size() - 1; i++) pairs.add(PlayerPair.of(list.get(i).user, list.get(i + 1).user));
         });
 
-        // 2. Vertical & Flancuri
+        // 2. Reguli Verticale și Logica Tactica
         List<Integer> sortedLayers = layersMap.keySet().stream().sorted().toList();
         for (int i = 0; i < sortedLayers.size(); i++) {
-            int currentIdx = sortedLayers.get(i);
-            List<Node> currentLayer = layersMap.get(currentIdx);
+            int currentLayerIdx = sortedLayers.get(i);
+            List<Node> currentLayer = layersMap.get(currentLayerIdx);
 
             for (Node p1 : currentLayer) {
-                // REGULĂ GK: Portarul se leagă de până la 3 fundași centrali
+                // REGULĂ GK: Doar cu CB (x între -0.5 și 0.5)
                 if (p1.layer == 0) {
-                    if (i + 1 < sortedLayers.size()) {
-                        layersMap.get(sortedLayers.get(i + 1)).stream()
-                                .sorted(Comparator.comparingDouble(p2 -> Math.abs(p1.x - p2.x)))
-                                .limit(3).forEach(p2 -> pairs.add(PlayerPair.of(p1.user, p2.user)));
-                    }
+                    nodes.stream()
+                            .filter(p2 -> p2.layer == 1 && Math.abs(p2.x) <= 0.5)
+                            .forEach(p2 -> pairs.add(PlayerPair.of(p1.user, p2.user)));
                     continue;
                 }
 
-                // REGULĂ FLANC (LB/RB, LM/RM, LW/RW): Caută partener pe verticală pe aceeași bandă
+                // REGULĂ CM -> LW/RW (Legătură diagonală pe flanc)
+                if (p1.layer == 3 && Math.abs(p1.x) > 0.3 && Math.abs(p1.x) < 0.6) {
+                    nodes.stream()
+                            .filter(p2 -> p2.layer == 5 && Math.abs(p2.x) > 0.6 && Math.signum(p1.x) == Math.signum(p2.x))
+                            .forEach(p2 -> pairs.add(PlayerPair.of(p1.user, p2.user)));
+                }
+
+                // REGULĂ FLANC (LB -> LM/LW sau RB -> RM/RW)
                 if (Math.abs(p1.x) > 0.6) {
                     nodes.stream()
-                            .filter(p2 -> p2.layer > p1.layer) // Doar în straturi "mai sus" (spre atac)
-                            .filter(p2 -> Math.abs(p2.x) > 0.5) // Să fie tot pe bandă
-                            .filter(p2 -> Math.signum(p1.x) == Math.signum(p2.x)) // Aceeași parte (stânga/dreapta)
-                            .min(Comparator.comparingDouble(p2 -> Math.abs(p1.y - p2.y))) // Cel mai apropiat partener de bandă
+                            .filter(p2 -> p2.layer > p1.layer && Math.abs(p2.x) > 0.5 && Math.signum(p1.x) == Math.signum(p2.x))
+                            .min(Comparator.comparingDouble(p2 -> Math.abs(p1.y - p2.y)))
                             .ifPresent(p2 -> pairs.add(PlayerPair.of(p1.user, p2.user)));
                 }
 
-                // REGULĂ STANDARD STRATIFICATĂ (pt zona centrală)
+                // REGULĂ SPECIALĂ CDM -> CAM (Bypass dacă rândul de CM/LM/RM lipsește)
+                if (p1.layer == 2 && !layersMap.containsKey(3)) {
+                    nodes.stream()
+                            .filter(p2 -> p2.layer == 4)
+                            .forEach(p2 -> pairs.add(PlayerPair.of(p1.user, p2.user)));
+                }
+
+                // REGULĂ STANDARD STRATIFICATĂ
                 if (i + 1 < sortedLayers.size()) {
                     layersMap.get(sortedLayers.get(i + 1)).stream()
                             .filter(p2 -> Math.abs(p1.x - p2.x) < 0.7)
@@ -118,12 +128,12 @@ public class TeamChemistryService {
     }
 
     private int identifyLayer(double y) {
-        if (y > 0.80) return 0;
-        if (y >= 0.35) return 1;
-        if (y > 0.05) return 2;
-        if (y >= -0.4) return 3;
-        if (y >= -0.7) return 4;
-        return 5;
+        if (y > 0.80) return 0;  // GK
+        if (y >= 0.35) return 1; // DEF
+        if (y > 0.05) return 2;  // CDM
+        if (y >= -0.4) return 3; // MID (CM, LM, RM)
+        if (y >= -0.7) return 4; // CAM
+        return 5;                // ATK
     }
 
     private static class Node {
