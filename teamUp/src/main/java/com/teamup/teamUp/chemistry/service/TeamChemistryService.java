@@ -27,154 +27,168 @@ public class TeamChemistryService {
         }
     }
 
+    enum PositionGroup {
+        GK,
+        DEF,
+        MID,
+        ATT
+    }
+
     private static final List<PitchPosition> PITCH_POSITIONS = List.of(
-            new PitchPosition(12, -0.8, -0.85),
-            new PitchPosition(13, -0.25, -0.95),
-            new PitchPosition(14, 0.25, -0.95),
-            new PitchPosition(15, 0.8, -0.85),
+            new PitchPosition(12,-0.8,-0.85),
+            new PitchPosition(13,-0.25,-0.95),
+            new PitchPosition(14,0.25,-0.95),
+            new PitchPosition(15,0.8,-0.85),
 
-            new PitchPosition(6, -0.90, -0.30),
-            new PitchPosition(7, -0.40, -0.10),
-            new PitchPosition(8, 0.0, 0.1),
-            new PitchPosition(9, 0.0, -0.5),
-            new PitchPosition(10, 0.40, -0.10),
-            new PitchPosition(11, 0.90, -0.30),
+            new PitchPosition(6,-0.90,-0.30),
+            new PitchPosition(7,-0.40,-0.10),
+            new PitchPosition(8,0.0,0.1),
+            new PitchPosition(9,0.0,-0.5),
+            new PitchPosition(10,0.40,-0.10),
+            new PitchPosition(11,0.90,-0.30),
 
-            new PitchPosition(1, -0.90, 0.40),
-            new PitchPosition(2, -0.45, 0.50),
-            new PitchPosition(3, 0.0, 0.55),
-            new PitchPosition(4, 0.45, 0.50),
-            new PitchPosition(5, 0.90, 0.40),
+            new PitchPosition(1,-0.90,0.40),
+            new PitchPosition(2,-0.45,0.50),
+            new PitchPosition(3,0.0,0.55),
+            new PitchPosition(4,0.45,0.50),
+            new PitchPosition(5,0.90,0.40),
 
-            new PitchPosition(0, 0.0, 1.0)
+            new PitchPosition(0,0.0,1.0)
     );
 
     private static final Map<Integer, PitchPosition> POSITION_MAP =
             PITCH_POSITIONS.stream()
                     .collect(Collectors.toMap(PitchPosition::slotIndex, p -> p));
 
-    // axe tactice
-    private static final Map<Integer, Integer> SLOT_AXIS = Map.ofEntries(
-            Map.entry(0, 1), // GK
+    private static final Map<Integer, PositionGroup> SLOT_GROUP = Map.ofEntries(
 
-            Map.entry(1, 2),
-            Map.entry(2, 2),
-            Map.entry(3, 2),
-            Map.entry(4, 2),
-            Map.entry(5, 2),
+            Map.entry(0,PositionGroup.GK),
 
-            Map.entry(7, 3),
-            Map.entry(8, 3),
-            Map.entry(10, 3),
+            Map.entry(1,PositionGroup.DEF),
+            Map.entry(2,PositionGroup.DEF),
+            Map.entry(3,PositionGroup.DEF),
+            Map.entry(4,PositionGroup.DEF),
+            Map.entry(5,PositionGroup.DEF),
 
-            Map.entry(6, 4),
-            Map.entry(9, 4),
-            Map.entry(11, 4),
+            Map.entry(7,PositionGroup.MID),
+            Map.entry(8,PositionGroup.MID),
+            Map.entry(10,PositionGroup.MID),
 
-            Map.entry(12, 5),
-            Map.entry(13, 5),
-            Map.entry(14, 5),
-            Map.entry(15, 5)
+            Map.entry(6,PositionGroup.MID),
+            Map.entry(9,PositionGroup.MID),
+            Map.entry(11,PositionGroup.MID),
+
+            Map.entry(12,PositionGroup.ATT),
+            Map.entry(13,PositionGroup.ATT),
+            Map.entry(14,PositionGroup.ATT),
+            Map.entry(15,PositionGroup.ATT)
     );
 
-    public TeamChemistryResponseDto calculateTeamChemistry(UUID teamId) {
+    public TeamChemistryResponseDto calculateTeamChemistry(UUID teamId){
 
         List<TeamMember> starters =
-                teamMemberRepository.findByTeamIdAndSquadType(teamId, SquadType.PITCH);
+                teamMemberRepository.findByTeamIdAndSquadType(teamId,SquadType.PITCH);
 
-        if (starters.isEmpty())
-            return new TeamChemistryResponseDto(0, List.of());
+        if(starters.isEmpty())
+            return new TeamChemistryResponseDto(0,List.of());
 
-        Map<Integer, UUID> slotToUser = new HashMap<>();
+        Map<Integer,UUID> slotToUser=new HashMap<>();
 
-        for (TeamMember m : starters)
-            slotToUser.put(m.getSlotIndex(), m.getUser().getId());
+        for(TeamMember m:starters)
+            slotToUser.put(m.getSlotIndex(),m.getUser().getId());
 
-        Set<PlayerPair> pairs = generateLinks(slotToUser);
+        Set<PlayerPair> pairs=generateLinks(slotToUser);
 
-        List<TeamChemistryLinkDto> links = new ArrayList<>();
+        List<TeamChemistryLinkDto> links=new ArrayList<>();
+        Map<PlayerPair,Integer> cache=new HashMap<>();
 
-        Map<PlayerPair, Integer> cache = new HashMap<>();
+        double sum=0;
 
-        double sum = 0;
+        for(PlayerPair pair:pairs){
 
-        for (PlayerPair pair : pairs) {
-
-            int chemistry = cache.computeIfAbsent(
+            int chemistry=cache.computeIfAbsent(
                     pair,
-                    p -> chemistryService.compute(pair.a(), pair.b()).score()
+                    p->chemistryService.compute(pair.a(),pair.b()).score()
             );
 
-            links.add(new TeamChemistryLinkDto(pair.a(), pair.b(), chemistry));
+            links.add(new TeamChemistryLinkDto(pair.a(),pair.b(),chemistry));
 
-            sum += chemistry;
+            sum+=chemistry;
         }
 
-        int overall = pairs.isEmpty() ? 0 : (int) Math.round(sum / pairs.size());
+        int overall=pairs.isEmpty()?0:(int)Math.round(sum/pairs.size());
 
-        return new TeamChemistryResponseDto(overall, links);
+        return new TeamChemistryResponseDto(overall,links);
     }
 
-    private Set<PlayerPair> generateLinks(Map<Integer, UUID> slotToUser) {
+    private Set<PlayerPair> generateLinks(Map<Integer,UUID> slotToUser){
 
-        Map<Integer, List<UUID>> axisPlayers = new HashMap<>();
+        Map<PositionGroup,List<Integer>> groups=new HashMap<>();
 
-        for (var entry : slotToUser.entrySet()) {
+        for(Integer slot:slotToUser.keySet()){
 
-            Integer axis = SLOT_AXIS.get(entry.getKey());
+            PositionGroup g=SLOT_GROUP.get(slot);
 
-            if (axis == null)
+            if(g==null)
                 continue;
 
-            axisPlayers.computeIfAbsent(axis, k -> new ArrayList<>())
-                    .add(entry.getValue());
+            groups.computeIfAbsent(g,k->new ArrayList<>()).add(slot);
         }
 
-        Set<PlayerPair> pairs = new HashSet<>();
+        groups.values().forEach(list ->
+                list.sort(Comparator.comparingDouble(s->POSITION_MAP.get(s).x()))
+        );
 
-        for (var entry : slotToUser.entrySet()) {
+        Set<PlayerPair> pairs=new HashSet<>();
 
-            UUID user = entry.getValue();
-            PitchPosition pos = POSITION_MAP.get(entry.getKey());
-            int axis = SLOT_AXIS.get(entry.getKey());
+        // linkuri in acelasi compartiment (vecini stanga-dreapta)
+        for(List<Integer> slots:groups.values()){
 
-            List<UUID> neighbors = findNeighborAxis(axisPlayers, axis);
+            for(int i=0;i<slots.size()-1;i++){
 
-            if (neighbors.isEmpty())
-                continue;
+                UUID a=slotToUser.get(slots.get(i));
+                UUID b=slotToUser.get(slots.get(i+1));
 
-            neighbors.stream()
-                    .sorted(Comparator.comparingDouble(n ->
-                            Math.abs(pos.x() - getPosition(slotToUser, n).x())))
-                    .limit(2)
-                    .forEach(n -> pairs.add(PlayerPair.of(user, n)));
+                pairs.add(PlayerPair.of(a,b));
+            }
         }
+
+        // legaturi intre compartimente
+        connectAdjacent(groups,slotToUser,PositionGroup.GK,PositionGroup.DEF,pairs);
+        connectAdjacent(groups,slotToUser,PositionGroup.DEF,PositionGroup.MID,pairs);
+        connectAdjacent(groups,slotToUser,PositionGroup.MID,PositionGroup.ATT,pairs);
 
         return pairs;
     }
 
-    private List<UUID> findNeighborAxis(Map<Integer, List<UUID>> axisPlayers, int axis) {
+    private void connectAdjacent(
+            Map<PositionGroup,List<Integer>> groups,
+            Map<Integer,UUID> slotToUser,
+            PositionGroup g1,
+            PositionGroup g2,
+            Set<PlayerPair> pairs
+    ){
 
-        for (int i = 1; i <= 4; i++) {
+        List<Integer> a=groups.getOrDefault(g1,List.of());
+        List<Integer> b=groups.getOrDefault(g2,List.of());
 
-            List<UUID> up = axisPlayers.get(axis + i);
-            if (up != null)
-                return up;
+        if(a.isEmpty()||b.isEmpty())
+            return;
 
-            List<UUID> down = axisPlayers.get(axis - i);
-            if (down != null)
-                return down;
+        for(Integer s1:a){
+
+            PitchPosition p1=POSITION_MAP.get(s1);
+
+            b.stream()
+                    .sorted(Comparator.comparingDouble(s->
+                            Math.abs(p1.x()-POSITION_MAP.get(s).x())))
+                    .limit(2)
+                    .forEach(s2->pairs.add(
+                            PlayerPair.of(
+                                    slotToUser.get(s1),
+                                    slotToUser.get(s2)
+                            )
+                    ));
         }
-
-        return List.of();
-    }
-
-    private PitchPosition getPosition(Map<Integer, UUID> slotToUser, UUID userId) {
-
-        for (var entry : slotToUser.entrySet())
-            if (entry.getValue().equals(userId))
-                return POSITION_MAP.get(entry.getKey());
-
-        return null;
     }
 }
