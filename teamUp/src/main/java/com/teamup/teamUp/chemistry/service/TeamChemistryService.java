@@ -111,7 +111,10 @@ public class TeamChemistryService {
                 layersMap.keySet().stream().sorted().toList();
 
         // horizontal neighbors
-        for(List<Node> layerNodes: layersMap.values()){
+        for(Map.Entry<Integer,List<Node>> entry : layersMap.entrySet()){
+
+            int layer = entry.getKey();
+            List<Node> layerNodes = entry.getValue();
 
             layerNodes.sort(Comparator.comparingDouble(n->n.x));
 
@@ -119,6 +122,10 @@ public class TeamChemistryService {
 
                 Node left=layerNodes.get(i);
                 Node right=layerNodes.get(i+1);
+
+                // ❌ blocăm LM ↔ RM
+                if(layer==3 && Math.abs(left.x)>0.6 && Math.abs(right.x)>0.6)
+                    continue;
 
                 pairs.add(PlayerPair.of(left.user,right.user));
             }
@@ -193,6 +200,18 @@ public class TeamChemistryService {
                         pairs.add(PlayerPair.of(rb.user,rm.user))
                 ));
 
+        // LW ↔ LM (mereu)
+        attackers.stream().filter(a->a.x<-0.6).findFirst().ifPresent(lw->
+                mids.stream().filter(m->m.x<-0.6).findFirst().ifPresent(lm->
+                        pairs.add(PlayerPair.of(lw.user,lm.user))
+                ));
+
+        // RW ↔ RM (mereu)
+        attackers.stream().filter(a->a.x>0.6).findFirst().ifPresent(rw->
+                mids.stream().filter(m->m.x>0.6).findFirst().ifPresent(rm->
+                        pairs.add(PlayerPair.of(rw.user,rm.user))
+                ));
+
         // CAM links
         if(hasCAM){
 
@@ -210,6 +229,17 @@ public class TeamChemistryService {
                     .forEach(st ->
                             pairs.add(PlayerPair.of(cam.user,st.user))
                     );
+
+            boolean hasCM = mids.stream().anyMatch(m -> Math.abs(m.x) < 0.4);
+
+            if(!hasCM){
+
+                nodes.stream()
+                        .filter(n -> n.layer==2)
+                        .forEach(cdm ->
+                                pairs.add(PlayerPair.of(cams.get(0).user,cdm.user))
+                        );
+            }
         }
 
         // CM ↔ ST dacă nu există CAM
