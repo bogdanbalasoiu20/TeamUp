@@ -193,14 +193,23 @@ public class TeamChemistryService {
                         pairs.add(PlayerPair.of(rb.user,rm.user))
                 ));
 
-        // CAM ↔ aripi + mijlocași laterali
+        // CAM links
         if(hasCAM){
+
             Node cam = cams.get(0);
 
+            // CAM ↔ LW RW LM RM
             nodes.stream()
                     .filter(n -> n.layer==3 || n.layer==5)
                     .filter(n -> Math.abs(n.x) > 0.35)
                     .forEach(n -> pairs.add(PlayerPair.of(cam.user,n.user)));
+
+            // 🔥 CAM ↔ ST (ambele)
+            attackers.stream()
+                    .filter(a -> Math.abs(a.x) < 0.5)
+                    .forEach(st ->
+                            pairs.add(PlayerPair.of(cam.user,st.user))
+                    );
         }
 
         // CM ↔ ST dacă nu există CAM
@@ -214,30 +223,56 @@ public class TeamChemistryService {
                     .filter(a -> Math.abs(a.x) < 0.5)
                     .toList();
 
+            if(cms.isEmpty() || sts.isEmpty())
+                return;
+
+            // 1 ST
             if(sts.size()==1){
+
                 Node st = sts.get(0);
+
                 cms.forEach(cm ->
                         pairs.add(PlayerPair.of(cm.user,st.user))
                 );
             }
+
+            // 2 ST
             else if(sts.size()==2){
 
+                // 1 CM → link cu ambii ST
                 if(cms.size()==1){
+
                     Node cm = cms.get(0);
+
                     sts.forEach(st ->
                             pairs.add(PlayerPair.of(cm.user,st.user))
                     );
                 }
+
+                // 2 CM → stânga ↔ stânga, dreapta ↔ dreapta
                 else{
-                    for(Node cm : cms){
 
-                        Node best = sts.stream()
-                                .min(Comparator.comparingDouble(st -> Math.abs(st.x - cm.x)))
-                                .orElse(null);
+                    Node leftST = sts.stream()
+                            .min(Comparator.comparingDouble(st -> st.x))
+                            .orElse(null);
 
-                        if(best!=null)
-                            pairs.add(PlayerPair.of(cm.user,best.user));
-                    }
+                    Node rightST = sts.stream()
+                            .max(Comparator.comparingDouble(st -> st.x))
+                            .orElse(null);
+
+                    Node leftCM = cms.stream()
+                            .min(Comparator.comparingDouble(cm -> cm.x))
+                            .orElse(null);
+
+                    Node rightCM = cms.stream()
+                            .max(Comparator.comparingDouble(cm -> cm.x))
+                            .orElse(null);
+
+                    if(leftCM != null && leftST != null)
+                        pairs.add(PlayerPair.of(leftCM.user,leftST.user));
+
+                    if(rightCM != null && rightST != null)
+                        pairs.add(PlayerPair.of(rightCM.user,rightST.user));
                 }
             }
         }
