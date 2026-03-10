@@ -168,33 +168,78 @@ public class TeamChemistryService {
         List<Node> defenders = nodes.stream().filter(n->n.layer==1).toList();
         List<Node> mids = nodes.stream().filter(n->n.layer==3).toList();
         List<Node> attackers = nodes.stream().filter(n->n.layer==5).toList();
+        List<Node> cams = nodes.stream().filter(n->n.layer==4).toList();
 
-        boolean hasCAM = nodes.stream().anyMatch(n->n.layer==4);
+        boolean hasCAM = !cams.isEmpty();
 
         Node gk = nodes.stream().filter(n->n.layer==0).findFirst().orElse(null);
 
+        // GK ↔ CB (toți)
         if(gk!=null){
             defenders.stream()
-                    .filter(cb->Math.abs(cb.x)<0.4)
+                    .filter(cb->Math.abs(cb.x)<0.6)
                     .forEach(cb->pairs.add(PlayerPair.of(gk.user,cb.user)));
         }
 
+        // LB ↔ LM
         defenders.stream().filter(d->d.x<-0.6).findFirst().ifPresent(lb->
                 mids.stream().filter(m->m.x<-0.6).findFirst().ifPresent(lm->
                         pairs.add(PlayerPair.of(lb.user,lm.user))
                 ));
 
+        // RB ↔ RM
         defenders.stream().filter(d->d.x>0.6).findFirst().ifPresent(rb->
                 mids.stream().filter(m->m.x>0.6).findFirst().ifPresent(rm->
                         pairs.add(PlayerPair.of(rb.user,rm.user))
                 ));
 
+        // CAM ↔ aripi + mijlocași laterali
+        if(hasCAM){
+            Node cam = cams.get(0);
+
+            nodes.stream()
+                    .filter(n -> n.layer==3 || n.layer==5)
+                    .filter(n -> Math.abs(n.x) > 0.35)
+                    .forEach(n -> pairs.add(PlayerPair.of(cam.user,n.user)));
+        }
+
+        // CM ↔ ST dacă nu există CAM
         if(!hasCAM){
-            mids.stream()
-                    .filter(m->Math.abs(m.x)<0.4)
-                    .forEach(cm-> attackers.stream()
-                            .min(Comparator.comparingDouble(a->Math.abs(a.x-cm.x)))
-                            .ifPresent(st->pairs.add(PlayerPair.of(cm.user,st.user))));
+
+            List<Node> cms = mids.stream()
+                    .filter(m -> Math.abs(m.x) < 0.4)
+                    .toList();
+
+            List<Node> sts = attackers.stream()
+                    .filter(a -> Math.abs(a.x) < 0.5)
+                    .toList();
+
+            if(sts.size()==1){
+                Node st = sts.get(0);
+                cms.forEach(cm ->
+                        pairs.add(PlayerPair.of(cm.user,st.user))
+                );
+            }
+            else if(sts.size()==2){
+
+                if(cms.size()==1){
+                    Node cm = cms.get(0);
+                    sts.forEach(st ->
+                            pairs.add(PlayerPair.of(cm.user,st.user))
+                    );
+                }
+                else{
+                    for(Node cm : cms){
+
+                        Node best = sts.stream()
+                                .min(Comparator.comparingDouble(st -> Math.abs(st.x - cm.x)))
+                                .orElse(null);
+
+                        if(best!=null)
+                            pairs.add(PlayerPair.of(cm.user,best.user));
+                    }
+                }
+            }
         }
     }
 
@@ -221,6 +266,24 @@ public class TeamChemistryService {
                             .min(Comparator.comparingDouble(a->Math.abs(a.x-rm.x)))
                             .ifPresent(st->pairs.add(PlayerPair.of(rm.user,st.user))));
         }
+
+        // LW ↔ LB dacă nu există LM
+        nodes.stream().filter(n->n.layer==5 && n.x<-0.6).findFirst().ifPresent(lw->{
+            boolean hasLM = nodes.stream().anyMatch(n->n.layer==3 && n.x<-0.6);
+            if(!hasLM){
+                nodes.stream().filter(n->n.layer==1 && n.x<-0.6).findFirst()
+                        .ifPresent(lb -> pairs.add(PlayerPair.of(lb.user,lw.user)));
+            }
+        });
+
+// RW ↔ RB dacă nu există RM
+        nodes.stream().filter(n->n.layer==5 && n.x>0.6).findFirst().ifPresent(rw->{
+            boolean hasRM = nodes.stream().anyMatch(n->n.layer==3 && n.x>0.6);
+            if(!hasRM){
+                nodes.stream().filter(n->n.layer==1 && n.x>0.6).findFirst()
+                        .ifPresent(rb -> pairs.add(PlayerPair.of(rb.user,rw.user)));
+            }
+        });
     }
 
     private int identifyLayer(double y){
