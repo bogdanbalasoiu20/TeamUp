@@ -63,67 +63,93 @@ public class TeamChemistryService {
     }
 
     private Set<PlayerPair> generateLinks(Map<Integer, UUID> slotToUser) {
+
         List<Node> nodes = new ArrayList<>();
         for (var e : slotToUser.entrySet()) {
             PitchPosition pos = POSITION_MAP.get(e.getKey());
-            if (pos != null) nodes.add(new Node(e.getValue(), pos.x(), pos.y(), identifyLayer(pos.y())));
+            if (pos != null) {
+                nodes.add(new Node(e.getValue(), pos.x(), pos.y(), identifyLayer(pos.y())));
+            }
         }
 
         Set<PlayerPair> pairs = new HashSet<>();
-        Map<Integer, List<Node>> layersMap = nodes.stream().collect(Collectors.groupingBy(n -> n.layer));
 
-        // 1. Legături Orizontale
-        layersMap.forEach((idx, list) -> {
-            list.sort(Comparator.comparingDouble(n -> n.x));
-            for (int i = 0; i < list.size() - 1; i++) pairs.add(PlayerPair.of(list.get(i).user, list.get(i + 1).user));
-        });
+        Map<Integer, List<Node>> layersMap =
+                nodes.stream().collect(Collectors.groupingBy(n -> n.layer));
 
-        // 2. Reguli Verticale și Logica Tactica
-        List<Integer> sortedLayers = layersMap.keySet().stream().sorted().toList();
-        for (int i = 0; i < sortedLayers.size(); i++) {
-            int currentLayerIdx = sortedLayers.get(i);
-            List<Node> currentLayer = layersMap.get(currentLayerIdx);
+        List<Integer> sortedLayers =
+                layersMap.keySet().stream().sorted().toList();
+
+    /*
+        1️⃣ ORIZONTAL LINKS
+        fiecare jucător se leagă doar cu vecinii direcți
+        după poziția pe X
+     */
+
+        for (List<Node> layerNodes : layersMap.values()) {
+
+            layerNodes.sort(Comparator.comparingDouble(n -> n.x));
+
+            for (int i = 0; i < layerNodes.size() - 1; i++) {
+
+                Node left = layerNodes.get(i);
+                Node right = layerNodes.get(i + 1);
+
+                pairs.add(PlayerPair.of(left.user, right.user));
+            }
+        }
+
+    /*
+        2️⃣ VERTICAL LINKS
+        doar între layer-uri consecutive
+     */
+
+        for (int i = 0; i < sortedLayers.size() - 1; i++) {
+
+            List<Node> currentLayer = layersMap.get(sortedLayers.get(i));
+            List<Node> nextLayer = layersMap.get(sortedLayers.get(i + 1));
 
             for (Node p1 : currentLayer) {
-                // REGULĂ GK: Doar cu CB (x între -0.5 și 0.5)
-                if (p1.layer == 0) {
-                    nodes.stream()
-                            .filter(p2 -> p2.layer == 1 && Math.abs(p2.x) <= 0.5)
-                            .forEach(p2 -> pairs.add(PlayerPair.of(p1.user, p2.user)));
-                    continue;
+
+                Node best = null;
+                double bestDist = Double.MAX_VALUE;
+
+                for (Node p2 : nextLayer) {
+
+                    double dx = Math.abs(p1.x - p2.x);
+
+                /*
+                    evităm legături stânga -> dreapta
+                    și traversări mari
+                 */
+
+                    if (dx > 0.55) continue;
+
+                /*
+                    nu conectăm extreme opuse
+                 */
+
+                    if (Math.signum(p1.x) != Math.signum(p2.x)
+                            && Math.abs(p1.x) > 0.35
+                            && Math.abs(p2.x) > 0.35) {
+                        continue;
+                    }
+
+                    double dy = Math.abs(p1.y - p2.y);
+                    double dist = dx * dx + dy * dy;
+
+                    if (dist < bestDist) {
+                        bestDist = dist;
+                        best = p2;
+                    }
                 }
 
-                // REGULĂ CM -> LW/RW (Legătură diagonală pe flanc)
-                if (p1.layer == 3 && Math.abs(p1.x) > 0.3 && Math.abs(p1.x) < 0.6) {
-                    nodes.stream()
-                            .filter(p2 -> p2.layer == 5 && Math.abs(p2.x) > 0.6 && Math.signum(p1.x) == Math.signum(p2.x))
-                            .forEach(p2 -> pairs.add(PlayerPair.of(p1.user, p2.user)));
-                }
-
-                // REGULĂ FLANC (LB -> LM/LW sau RB -> RM/RW)
-                if (Math.abs(p1.x) > 0.6) {
-                    nodes.stream()
-                            .filter(p2 -> p2.layer > p1.layer && Math.abs(p2.x) > 0.5 && Math.signum(p1.x) == Math.signum(p2.x))
-                            .min(Comparator.comparingDouble(p2 -> Math.abs(p1.y - p2.y)))
-                            .ifPresent(p2 -> pairs.add(PlayerPair.of(p1.user, p2.user)));
-                }
-
-                // REGULĂ SPECIALĂ CDM -> CAM (Bypass dacă rândul de CM/LM/RM lipsește)
-                if (p1.layer == 2 && !layersMap.containsKey(3)) {
-                    nodes.stream()
-                            .filter(p2 -> p2.layer == 4)
-                            .forEach(p2 -> pairs.add(PlayerPair.of(p1.user, p2.user)));
-                }
-
-                // REGULĂ STANDARD STRATIFICATĂ
-                if (i + 1 < sortedLayers.size()) {
-                    layersMap.get(sortedLayers.get(i + 1)).stream()
-                            .filter(p2 -> Math.abs(p1.x - p2.x) < 0.7)
-                            .sorted(Comparator.comparingDouble(p2 -> Math.abs(p1.x - p2.x)))
-                            .limit(2).forEach(p2 -> pairs.add(PlayerPair.of(p1.user, p2.user)));
+                if (best != null) {
+                    pairs.add(PlayerPair.of(p1.user, best.user));
                 }
             }
         }
+
         return pairs;
     }
 
