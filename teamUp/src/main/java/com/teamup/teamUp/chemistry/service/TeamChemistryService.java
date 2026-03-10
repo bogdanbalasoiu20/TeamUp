@@ -216,7 +216,7 @@ public class TeamChemistryService {
         if(!hasCAM){
 
             List<Node> cms = mids.stream()
-                    .filter(m -> Math.abs(m.x) < 0.4)
+                    .filter(m -> Math.abs(m.x) < 0.5)
                     .toList();
 
             List<Node> sts = attackers.stream()
@@ -226,53 +226,51 @@ public class TeamChemistryService {
             if(cms.isEmpty() || sts.isEmpty())
                 return;
 
+            // sortare stânga → dreapta
+            List<Node> cmsSorted = cms.stream()
+                    .sorted(Comparator.comparingDouble(n -> n.x))
+                    .toList();
+
+            List<Node> stsSorted = sts.stream()
+                    .sorted(Comparator.comparingDouble(n -> n.x))
+                    .toList();
+
             // 1 ST
-            if(sts.size()==1){
+            if(stsSorted.size()==1){
 
-                Node st = sts.get(0);
+                Node st = stsSorted.get(0);
 
-                cms.forEach(cm ->
-                        pairs.add(PlayerPair.of(cm.user,st.user))
+                cmsSorted.forEach(cm ->
+                        pairs.add(PlayerPair.of(cm.user, st.user))
                 );
             }
 
             // 2 ST
-            else if(sts.size()==2){
+            else{
 
-                // 1 CM → link cu ambii ST
-                if(cms.size()==1){
+                // 1 CM
+                if(cmsSorted.size()==1){
 
-                    Node cm = cms.get(0);
+                    Node cm = cmsSorted.get(0);
 
-                    sts.forEach(st ->
-                            pairs.add(PlayerPair.of(cm.user,st.user))
+                    stsSorted.forEach(st ->
+                            pairs.add(PlayerPair.of(cm.user, st.user))
                     );
                 }
 
-                // 2 CM → stânga ↔ stânga, dreapta ↔ dreapta
+                // 2 CM sau mai multe
                 else{
 
-                    Node leftST = sts.stream()
-                            .min(Comparator.comparingDouble(st -> st.x))
-                            .orElse(null);
+                    for(int i=0;i<cmsSorted.size();i++){
 
-                    Node rightST = sts.stream()
-                            .max(Comparator.comparingDouble(st -> st.x))
-                            .orElse(null);
+                        Node cm = cmsSorted.get(i);
 
-                    Node leftCM = cms.stream()
-                            .min(Comparator.comparingDouble(cm -> cm.x))
-                            .orElse(null);
+                        Node st = stsSorted.get(
+                                Math.min(i, stsSorted.size()-1)
+                        );
 
-                    Node rightCM = cms.stream()
-                            .max(Comparator.comparingDouble(cm -> cm.x))
-                            .orElse(null);
-
-                    if(leftCM != null && leftST != null)
-                        pairs.add(PlayerPair.of(leftCM.user,leftST.user));
-
-                    if(rightCM != null && rightST != null)
-                        pairs.add(PlayerPair.of(rightCM.user,rightST.user));
+                        pairs.add(PlayerPair.of(cm.user, st.user));
+                    }
                 }
             }
         }
