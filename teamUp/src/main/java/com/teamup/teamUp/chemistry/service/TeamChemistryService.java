@@ -233,11 +233,10 @@ public class TeamChemistryService {
             boolean hasCM = mids.stream().anyMatch(m -> Math.abs(m.x) < 0.4);
 
             if(!hasCM){
-
                 nodes.stream()
-                        .filter(n -> n.layer==2)
+                        .filter(n -> n.layer==2 && Math.abs(n.x) < 0.4)
                         .forEach(cdm ->
-                                pairs.add(PlayerPair.of(cams.get(0).user,cdm.user))
+                                pairs.add(PlayerPair.of(cam.user, cdm.user))
                         );
             }
         }
@@ -304,6 +303,74 @@ public class TeamChemistryService {
                 }
             }
         }
+
+
+        // CDM ↔ LM dacă nu există CM stânga
+        nodes.stream()
+                .filter(n -> n.layer == 2 && Math.abs(n.x) < 0.4) // CDM
+                .findFirst()
+                .ifPresent(cdm -> {
+
+                    boolean hasLeftCM = mids.stream().anyMatch(m -> m.x < -0.2 && Math.abs(m.x) < 0.5);
+
+                    if(!hasLeftCM){
+                        mids.stream()
+                                .filter(m -> m.x < -0.6) // LM
+                                .findFirst()
+                                .ifPresent(lm ->
+                                        pairs.add(PlayerPair.of(cdm.user, lm.user))
+                                );
+                    }
+
+                    boolean hasRightCM = mids.stream().anyMatch(m -> m.x > 0.2 && Math.abs(m.x) < 0.5);
+
+                    if(!hasRightCM){
+                        mids.stream()
+                                .filter(m -> m.x > 0.6) // RM
+                                .findFirst()
+                                .ifPresent(rm ->
+                                        pairs.add(PlayerPair.of(cdm.user, rm.user))
+                                );
+                    }
+                });
+
+
+        // CB stânga ↔ LM dacă nu există LB
+        defenders.stream()
+                .filter(d -> d.x < -0.2 && Math.abs(d.x) < 0.6) // CB stânga
+                .findFirst()
+                .ifPresent(cbLeft -> {
+
+                    boolean hasLB = defenders.stream().anyMatch(d -> d.x < -0.6);
+
+                    if(!hasLB){
+                        mids.stream()
+                                .filter(m -> m.x < -0.6)
+                                .findFirst()
+                                .ifPresent(lm ->
+                                        pairs.add(PlayerPair.of(cbLeft.user, lm.user))
+                                );
+                    }
+                });
+
+
+        // CB dreapta ↔ RM dacă nu există RB
+        defenders.stream()
+                .filter(d -> d.x > 0.2 && Math.abs(d.x) < 0.6) // CB dreapta
+                .findFirst()
+                .ifPresent(cbRight -> {
+
+                    boolean hasRB = defenders.stream().anyMatch(d -> d.x > 0.6);
+
+                    if(!hasRB){
+                        mids.stream()
+                                .filter(m -> m.x > 0.6)
+                                .findFirst()
+                                .ifPresent(rm ->
+                                        pairs.add(PlayerPair.of(cbRight.user, rm.user))
+                                );
+                    }
+                });
     }
 
     /* ---------------- FALLBACK LINKS ---------------- */
