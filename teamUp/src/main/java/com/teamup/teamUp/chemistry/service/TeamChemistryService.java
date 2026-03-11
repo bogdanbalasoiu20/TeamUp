@@ -309,32 +309,51 @@ public class TeamChemistryService {
 
 
         // CDM ↔ LM dacă nu există CM stânga
+        // CDM ↔ LM/RM rules
         nodes.stream()
-                .filter(n -> n.layer == 2 && Math.abs(n.x) < 0.4) // CDM
+                .filter(n -> n.layer == 2 && Math.abs(n.x) < 0.4)
                 .findFirst()
                 .ifPresent(cdm -> {
 
-                    boolean hasLeftCM = mids.stream().anyMatch(m -> m.x < -0.2 && Math.abs(m.x) < 0.5);
+                    long cmCount = mids.stream()
+                            .filter(m -> Math.abs(m.x) < 0.5)
+                            .count();
 
-                    if(!hasLeftCM){
-                        mids.stream()
-                                .filter(m -> m.x < -0.6) // LM
-                                .findFirst()
-                                .ifPresent(lm ->
-                                        pairs.add(PlayerPair.of(cdm.user, lm.user))
-                                );
+                    Optional<Node> lm = mids.stream()
+                            .filter(m -> m.x < -0.6)
+                            .findFirst();
+
+                    Optional<Node> rm = mids.stream()
+                            .filter(m -> m.x > 0.6)
+                            .findFirst();
+
+                    // caz 1: nu există CM deloc → link cu ambele aripi
+                    if(cmCount == 0) {
+
+                        lm.ifPresent(n ->
+                                pairs.add(PlayerPair.of(cdm.user, n.user))
+                        );
+
+                        rm.ifPresent(n ->
+                                pairs.add(PlayerPair.of(cdm.user, n.user))
+                        );
+
+                        return;
                     }
 
-                    boolean hasRightCM = mids.stream().anyMatch(m -> m.x > 0.2 && Math.abs(m.x) < 0.5);
+                    // caz 2: există CM stânga
+                    boolean hasLeftCM = mids.stream()
+                            .anyMatch(m -> m.x < -0.2 && Math.abs(m.x) < 0.5);
 
-                    if(!hasRightCM){
-                        mids.stream()
-                                .filter(m -> m.x > 0.6) // RM
-                                .findFirst()
-                                .ifPresent(rm ->
-                                        pairs.add(PlayerPair.of(cdm.user, rm.user))
-                                );
-                    }
+                    // caz 3: există CM dreapta
+                    boolean hasRightCM = mids.stream()
+                            .anyMatch(m -> m.x > 0.2 && Math.abs(m.x) < 0.5);
+
+                    if(hasLeftCM && rm.isPresent())
+                        pairs.add(PlayerPair.of(cdm.user, rm.get().user));
+
+                    if(hasRightCM && lm.isPresent())
+                        pairs.add(PlayerPair.of(cdm.user, lm.get().user));
                 });
 
 
@@ -384,7 +403,7 @@ public class TeamChemistryService {
                 .ifPresent(cdm -> {
 
                     mids.stream()
-                            .filter(cm -> Math.abs(cm.x) < 0.5)
+                            .filter(cm -> cm.x > -0.5 && cm.x < 0.5) // toate CM
                             .forEach(cm ->
                                     pairs.add(PlayerPair.of(cdm.user, cm.user))
                             );
