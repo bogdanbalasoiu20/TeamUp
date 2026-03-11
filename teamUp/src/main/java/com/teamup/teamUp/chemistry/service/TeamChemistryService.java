@@ -144,6 +144,17 @@ public class TeamChemistryService {
 
                 for(Node p2: nextLayer){
 
+                    // blocăm cross links: LW-RM și RW-LM
+                    if(p1.layer == 5 && p2.layer == 3){
+                        if((p1.x < -0.6 && p2.x > 0.6) || (p1.x > 0.6 && p2.x < -0.6))
+                            continue;
+                    }
+
+                    if(p1.layer == 3 && p2.layer == 5){
+                        if((p1.x < -0.6 && p2.x > 0.6) || (p1.x > 0.6 && p2.x < -0.6))
+                            continue;
+                    }
+
                     double dx=Math.abs(p1.x-p2.x);
 
                     if(dx>0.55) continue;
@@ -255,53 +266,53 @@ public class TeamChemistryService {
                     .filter(a -> Math.abs(a.x) < 0.5)
                     .toList();
 
-            if(cms.isEmpty() || sts.isEmpty())
-                return;
+            if(!(cms.isEmpty() || sts.isEmpty())) {
 
-            // sortare stânga → dreapta
-            List<Node> cmsSorted = cms.stream()
-                    .sorted(Comparator.comparingDouble(n -> n.x))
-                    .toList();
+                // sortare stânga → dreapta
+                List<Node> cmsSorted = cms.stream()
+                        .sorted(Comparator.comparingDouble(n -> n.x))
+                        .toList();
 
-            List<Node> stsSorted = sts.stream()
-                    .sorted(Comparator.comparingDouble(n -> n.x))
-                    .toList();
+                List<Node> stsSorted = sts.stream()
+                        .sorted(Comparator.comparingDouble(n -> n.x))
+                        .toList();
 
-            // 1 ST
-            if(stsSorted.size()==1){
+                // 1 ST
+                if (stsSorted.size() == 1) {
 
-                Node st = stsSorted.get(0);
+                    Node st = stsSorted.get(0);
 
-                cmsSorted.forEach(cm ->
-                        pairs.add(PlayerPair.of(cm.user, st.user))
-                );
-            }
-
-            // 2 ST
-            else{
-
-                // 1 CM
-                if(cmsSorted.size()==1){
-
-                    Node cm = cmsSorted.get(0);
-
-                    stsSorted.forEach(st ->
+                    cmsSorted.forEach(cm ->
                             pairs.add(PlayerPair.of(cm.user, st.user))
                     );
                 }
 
-                // 2 CM sau mai multe
-                else{
+                // 2 ST
+                else {
 
-                    for(int i=0;i<cmsSorted.size();i++){
+                    // 1 CM
+                    if (cmsSorted.size() == 1) {
 
-                        Node cm = cmsSorted.get(i);
+                        Node cm = cmsSorted.get(0);
 
-                        Node st = stsSorted.get(
-                                Math.min(i, stsSorted.size()-1)
+                        stsSorted.forEach(st ->
+                                pairs.add(PlayerPair.of(cm.user, st.user))
                         );
+                    }
 
-                        pairs.add(PlayerPair.of(cm.user, st.user));
+                    // 2 CM sau mai multe
+                    else {
+
+                        for (int i = 0; i < cmsSorted.size(); i++) {
+
+                            Node cm = cmsSorted.get(i);
+
+                            Node st = stsSorted.get(
+                                    Math.min(i, stsSorted.size() - 1)
+                            );
+
+                            pairs.add(PlayerPair.of(cm.user, st.user));
+                        }
                     }
                 }
             }
