@@ -232,7 +232,7 @@ public class TeamChemistryService {
 
 
             long cmCount = mids.stream()
-                    .filter(m -> Math.abs(m.x) < 0.4)
+                    .filter(m -> m.x > -0.5 && m.x < 0.5)
                     .count();
 
             if(cmCount <= 1){
@@ -348,6 +348,9 @@ public class TeamChemistryService {
                     // caz 3: există CM dreapta
                     boolean hasRightCM = mids.stream()
                             .anyMatch(m -> m.x > 0.2 && Math.abs(m.x) < 0.5);
+
+                    if(hasLeftCM && hasRightCM)
+                        return;
 
                     if(hasLeftCM && rm.isPresent())
                         pairs.add(PlayerPair.of(cdm.user, rm.get().user));
