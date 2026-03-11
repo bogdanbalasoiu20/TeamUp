@@ -230,9 +230,12 @@ public class TeamChemistryService {
                             pairs.add(PlayerPair.of(cam.user,st.user))
                     );
 
-            boolean hasCM = mids.stream().anyMatch(m -> Math.abs(m.x) < 0.4);
 
-            if(!hasCM){
+            long cmCount = mids.stream()
+                    .filter(m -> Math.abs(m.x) < 0.4)
+                    .count();
+
+            if(cmCount <= 1){
                 nodes.stream()
                         .filter(n -> n.layer==2 && Math.abs(n.x) < 0.4)
                         .forEach(cdm ->
@@ -370,6 +373,35 @@ public class TeamChemistryService {
                                         pairs.add(PlayerPair.of(cbRight.user, rm.user))
                                 );
                     }
+                });
+
+
+
+        // CDM ↔ CM (mereu)
+        nodes.stream()
+                .filter(n -> n.layer == 2 && Math.abs(n.x) < 0.4)
+                .findFirst()
+                .ifPresent(cdm -> {
+
+                    mids.stream()
+                            .filter(cm -> Math.abs(cm.x) < 0.5)
+                            .forEach(cm ->
+                                    pairs.add(PlayerPair.of(cdm.user, cm.user))
+                            );
+                });
+
+
+        // CB central ↔ CM stânga / dreapta (pentru sisteme cu 3 CB)
+        defenders.stream()
+                .filter(d -> Math.abs(d.x) < 0.2) // CB central
+                .findFirst()
+                .ifPresent(cbCenter -> {
+
+                    mids.stream()
+                            .filter(cm -> Math.abs(cm.x) < 0.5)
+                            .forEach(cm ->
+                                    pairs.add(PlayerPair.of(cbCenter.user, cm.user))
+                            );
                 });
     }
 
