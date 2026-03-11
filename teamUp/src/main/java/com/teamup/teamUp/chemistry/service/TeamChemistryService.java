@@ -391,17 +391,31 @@ public class TeamChemistryService {
                 });
 
 
-        // CB central ↔ CM stânga / dreapta (pentru sisteme cu 3 CB)
+        // CB central links
         defenders.stream()
                 .filter(d -> Math.abs(d.x) < 0.2) // CB central
                 .findFirst()
                 .ifPresent(cbCenter -> {
 
-                    mids.stream()
-                            .filter(cm -> Math.abs(cm.x) < 0.5)
-                            .forEach(cm ->
-                                    pairs.add(PlayerPair.of(cbCenter.user, cm.user))
-                            );
+                    Optional<Node> cdmOpt = nodes.stream()
+                            .filter(n -> n.layer == 2 && Math.abs(n.x) < 0.4)
+                            .findFirst();
+
+                    if(cdmOpt.isPresent()) {
+
+                        // dacă există CDM → CB central ↔ CDM
+                        Node cdm = cdmOpt.get();
+                        pairs.add(PlayerPair.of(cbCenter.user, cdm.user));
+
+                    } else {
+
+                        // dacă NU există CDM → CB central ↔ CM
+                        mids.stream()
+                                .filter(cm -> Math.abs(cm.x) < 0.5)
+                                .forEach(cm ->
+                                        pairs.add(PlayerPair.of(cbCenter.user, cm.user))
+                                );
+                    }
                 });
     }
 
