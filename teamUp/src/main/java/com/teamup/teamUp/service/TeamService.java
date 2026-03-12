@@ -231,8 +231,8 @@ public class TeamService {
 
         teamRepository.flush();
 
-//        teamChemistryManager.recalcTeamChemistry(teamId);
-//        teamRatingService.recalcTeamRating(teamId);
+        teamChemistryManager.recalcTeamChemistry(teamId);
+        teamRatingService.recalcTeamRating(teamId);
 
 
         return buildTeamResponse(team);
