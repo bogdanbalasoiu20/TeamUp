@@ -19,7 +19,6 @@ public class TeamChemistryManager {
     private final TeamRepository teamRepository;
     private final TeamChemistryService teamChemistryService;
 
-    @Async
     @Transactional
     public void recalcTeamChemistry(UUID teamId){
 
@@ -28,5 +27,6 @@ public class TeamChemistryManager {
         TeamChemistryResponseDto chemistry = teamChemistryService.calculateTeamChemistry(teamId);
 
         team.setTeamChemistry(chemistry.teamChemistry());
+        teamRepository.saveAndFlush(team);
     }
 }

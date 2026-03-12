@@ -159,6 +159,8 @@ public class TeamRatingService {
         team.setDefenseRating(rating.defense());
         team.setOverallRating(rating.overall());
 
+        teamRepository.save(team);
+
     }
 }
 
