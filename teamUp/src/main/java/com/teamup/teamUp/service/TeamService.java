@@ -1,6 +1,8 @@
 package com.teamup.teamUp.service;
 
 import com.teamup.teamUp.chemistry.TeamChemistryManager;
+import com.teamup.teamUp.chemistry.dto.TeamChemistryResponseDto;
+import com.teamup.teamUp.chemistry.service.TeamChemistryService;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.model.dto.team.TeamFullProfileDto;
 import com.teamup.teamUp.model.dto.team.TeamMemberResponseDto;
@@ -37,6 +39,7 @@ public class TeamService {
     private final TournamentStandingRepository tournamentStandingRepository;
     private final TeamRatingService teamRatingService;
     private final TeamChemistryManager teamChemistryManager;
+    private final TeamChemistryService teamChemistryService;
 
     @Transactional
     public TeamResponseDto createTeam(String name, String captainUsername) {
@@ -228,12 +231,11 @@ public class TeamService {
 
         teamRepository.flush();
 
-        teamChemistryManager.recalcTeamChemistry(teamId);
-        teamRatingService.recalcTeamRating(teamId);
+//        teamChemistryManager.recalcTeamChemistry(teamId);
+//        teamRatingService.recalcTeamRating(teamId);
 
-        Team updatedTeam = teamRepository.findById(teamId).orElseThrow(() -> new NotFoundException("Team not found"));
 
-        return buildTeamResponse(updatedTeam);
+        return buildTeamResponse(team);
     }
 
 
@@ -324,20 +326,22 @@ public class TeamService {
 
 
     private TeamResponseDto buildTeamResponse(Team team) {
-        int membersCount = teamMemberRepository.countByTeamId(team.getId());
+        TeamChemistryResponseDto chemistry =
+                teamChemistryService.calculateTeamChemistry(team.getId());
 
         return new TeamResponseDto(
                 team.getId(),
                 team.getName(),
                 team.getCaptain().getId(),
                 team.getCaptain().getUsername(),
-                team.getTeamChemistry(),
-                membersCount,
+                chemistry.teamChemistry(),
+                team.getMembers().size(),
                 team.getCreatedAt(),
                 team.getOverallRating(),
                 team.getAttackRating(),
                 team.getMidfieldRating(),
-                team.getDefenseRating()
+                team.getDefenseRating(),
+                chemistry.links()
         );
     }
 
