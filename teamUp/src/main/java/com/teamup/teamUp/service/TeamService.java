@@ -229,13 +229,12 @@ public class TeamService {
             teamMemberRepository.saveAndFlush(moving);
         }
 
-        teamRepository.flush();
-
         teamChemistryManager.recalcTeamChemistry(teamId);
         teamRatingService.recalcTeamRating(teamId);
 
+        Team updatedTeam = teamRepository.findById(teamId).orElseThrow(() -> new NotFoundException("Team not found"));
 
-        return buildTeamResponse(team);
+        return buildTeamResponse(updatedTeam);
     }
 
 
@@ -326,22 +325,20 @@ public class TeamService {
 
 
     private TeamResponseDto buildTeamResponse(Team team) {
-        TeamChemistryResponseDto chemistry =
-                teamChemistryService.calculateTeamChemistry(team.getId());
 
         return new TeamResponseDto(
                 team.getId(),
                 team.getName(),
                 team.getCaptain().getId(),
                 team.getCaptain().getUsername(),
-                chemistry.teamChemistry(),
+                team.getTeamChemistry(),
                 team.getMembers().size(),
                 team.getCreatedAt(),
                 team.getOverallRating(),
                 team.getAttackRating(),
                 team.getMidfieldRating(),
                 team.getDefenseRating(),
-                chemistry.links()
+                teamChemistryService.calculateTeamChemistry(team.getId()).links()
         );
     }
 
