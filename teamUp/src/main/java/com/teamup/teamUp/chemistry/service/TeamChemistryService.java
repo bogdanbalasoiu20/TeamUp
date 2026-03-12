@@ -211,6 +211,33 @@ public class TeamChemistryService {
                         pairs.add(PlayerPair.of(rb.user,rm.user))
                 ));
 
+        // CM ↔ LB (permanent)
+        defenders.stream()
+                .filter(d -> d.x < -0.6) // LB
+                .findFirst()
+                .ifPresent(lb -> {
+
+                    mids.stream()
+                            .filter(cm -> cm.x > -0.5 && cm.x < 0) // CM stânga
+                            .forEach(cm ->
+                                    pairs.add(PlayerPair.of(lb.user, cm.user))
+                            );
+                });
+
+
+        // CM ↔ RB (permanent)
+        defenders.stream()
+                .filter(d -> d.x > 0.6) // RB
+                .findFirst()
+                .ifPresent(rb -> {
+
+                    mids.stream()
+                            .filter(cm -> cm.x < 0.5 && cm.x > 0) // CM dreapta
+                            .forEach(cm ->
+                                    pairs.add(PlayerPair.of(rb.user, cm.user))
+                            );
+                });
+
         // LW ↔ LM (mereu)
         attackers.stream().filter(a->a.x<-0.6).findFirst().ifPresent(lw->
                 mids.stream().filter(m->m.x<-0.6).findFirst().ifPresent(lm->
