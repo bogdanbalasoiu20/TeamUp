@@ -77,7 +77,12 @@ public class TeamRatingService {
         int midfield = midCount == 0?0:(int) Math.round(midSum/midCount);
         int defense = defCount == 0?0:(int) Math.round(defSum/defCount);
 
-        double overallRaw = attack * 0.35 + midfield * 0.35 + defense * 0.30;
+        int totalPlayers = starters.size();
+
+        defense = applyDefensePenalty(defense, defCount, totalPlayers);
+        midfield = applyMidfieldPenalty(midfield, midCount, totalPlayers);
+
+        double overallRaw = attack * 0.33 + midfield * 0.34 + defense * 0.33;
 
         boolean missingLine = attCount == 0 || midCount == 0 || defCount == 0;
 
@@ -108,18 +113,32 @@ public class TeamRatingService {
     }
 
     private double applyPositionPenalty(TeamMember member, double overall, Compartment current) {
+
         if (member.getUser().getPosition() == null)
             return overall;
 
         Compartment natural = mapPositionToCompartment(member.getUser().getPosition());
 
-        if (natural == current)
-            return overall;
+        int distance = Math.abs(compartmentIndex(natural) - compartmentIndex(current));
 
-        if (areRelated(natural, current))
-            return overall * 0.9;
+        double factor = switch (distance) {
+            case 0 -> 1.0;
+            case 1 -> 0.90;
+            case 2 -> 0.75;
+            default -> 0.55;
+        };
 
-        return overall * 0.8;
+        return overall * factor;
+    }
+
+
+    private int compartmentIndex(Compartment c) {
+        return switch (c) {
+            case GK -> 0;
+            case DEFENSE -> 1;
+            case MIDFIELD -> 2;
+            case ATTACK -> 3;
+        };
     }
 
 
@@ -131,19 +150,6 @@ public class TeamRatingService {
             case DEFENDER -> Compartment.DEFENSE;
             case GOALKEEPER -> Compartment.GK;
         };
-    }
-
-    private boolean areRelated(Compartment a, Compartment b) {
-
-        if ((a == Compartment.MIDFIELD && b == Compartment.ATTACK) ||
-                (a == Compartment.ATTACK && b == Compartment.MIDFIELD))
-            return true;
-
-        if ((a == Compartment.MIDFIELD && b == Compartment.DEFENSE) ||
-                (a == Compartment.DEFENSE && b == Compartment.MIDFIELD))
-            return true;
-
-        return false;
     }
 
 
@@ -161,6 +167,33 @@ public class TeamRatingService {
 
         teamRepository.save(team);
 
+    }
+
+    private int applyDefensePenalty(int defenseRating, int defenders, int totalPlayers){
+
+        double ratio = (double) defenders / totalPlayers;
+
+        if(ratio >= 0.30)
+            return defenseRating;
+
+        if(ratio >= 0.20)
+            return (int)Math.round(defenseRating * 0.9);
+
+        return (int)Math.round(defenseRating * 0.70);
+    }
+
+
+    private int applyMidfieldPenalty(int midfieldRating, int mids, int totalPlayers){
+
+        double ratio = (double) mids / totalPlayers;
+
+        if(ratio >= 0.25)
+            return midfieldRating;
+
+        if(ratio >= 0.15)
+            return (int)Math.round(midfieldRating * 0.90);
+
+        return (int)Math.round(midfieldRating * 0.75);
     }
 }
 
