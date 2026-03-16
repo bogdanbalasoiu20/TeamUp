@@ -4,6 +4,8 @@ import com.teamup.teamUp.chemistry.PitchPosition;
 import com.teamup.teamUp.chemistry.dto.TeamChemistryLinkDto;
 import com.teamup.teamUp.chemistry.dto.TeamChemistryResponseDto;
 import com.teamup.teamUp.model.entity.TeamMember;
+import com.teamup.teamUp.model.enums.Compartment;
+import com.teamup.teamUp.model.enums.Position;
 import com.teamup.teamUp.model.enums.SquadType;
 import com.teamup.teamUp.repository.TeamMemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -46,15 +48,18 @@ public class TeamChemistryService {
     public TeamChemistryResponseDto calculateTeamChemistry(UUID teamId){
 
         List<TeamMember> starters =
-                teamMemberRepository.findByTeamIdAndSquadType(teamId,SquadType.PITCH);
+                teamMemberRepository.findByTeamIdAndSquadType(teamId, SquadType.PITCH);
 
         if(starters.isEmpty())
-            return new TeamChemistryResponseDto(0,List.of());
+            return new TeamChemistryResponseDto(0, List.of());
 
-        Map<Integer,UUID> slotToUser = new HashMap<>();
+        Map<Integer, UUID> slotToUser = new HashMap<>();
+        Map<UUID, TeamMember> userToMember = new HashMap<>();
 
-        for(TeamMember m: starters)
-            slotToUser.put(m.getSlotIndex(),m.getUser().getId());
+        for(TeamMember m : starters){
+            slotToUser.put(m.getSlotIndex(), m.getUser().getId());
+            userToMember.put(m.getUser().getId(), m);
+        }
 
         Set<PlayerPair> pairs = generateLinks(slotToUser);
 
@@ -62,21 +67,89 @@ public class TeamChemistryService {
 
         Map<PlayerPair,Integer> cache = new HashMap<>();
 
-        double sum=0;
+        double sum = 0;
 
-        for(PlayerPair pair: pairs){
+        for(PlayerPair pair : pairs){
 
-            int chemistry = cache.computeIfAbsent(pair,
-                    p->chemistryService.compute(pair.a(),pair.b()).score());
+            int baseChemistry = cache.computeIfAbsent(pair,
+                    p -> chemistryService.compute(pair.a(), pair.b()).score());
 
-            links.add(new TeamChemistryLinkDto(pair.a(),pair.b(),chemistry));
+            TeamMember a = userToMember.get(pair.a());
+            TeamMember b = userToMember.get(pair.b());
 
-            sum+=chemistry;
+            double penaltyA = getPositionPenalty(a);
+            double penaltyB = getPositionPenalty(b);
+
+            int chemistry = (int)Math.round(baseChemistry * penaltyA * penaltyB);
+
+            links.add(new TeamChemistryLinkDto(pair.a(), pair.b(), chemistry));
+
+            sum += chemistry;
         }
 
-        int overall = pairs.isEmpty()?0:(int)Math.round(sum/pairs.size());
+        int overall = pairs.isEmpty()
+                ? 0
+                : (int)Math.round(sum / pairs.size());
 
-        return new TeamChemistryResponseDto(overall,links);
+        return new TeamChemistryResponseDto(overall, links);
+    }
+
+    private double getPositionPenalty(TeamMember member){
+
+        if(member.getUser().getPosition() == null)
+            return 1.0;
+
+        Compartment natural =
+                mapPositionToCompartment(member.getUser().getPosition());
+
+        Compartment current =
+                getCompartmentBySlot(member.getSlotIndex());
+
+        int distance =
+                Math.abs(compartmentIndex(natural) - compartmentIndex(current));
+
+        return switch (distance) {
+            case 0 -> 1.0;
+            case 1 -> 0.90;
+            case 2 -> 0.75;
+            default -> 0.55;
+        };
+    }
+
+
+    private Compartment getCompartmentBySlot(int slotIndex){
+
+        if(slotIndex == 0)
+            return Compartment.GK;
+
+        if(slotIndex >= 1 && slotIndex <= 5)
+            return Compartment.DEFENSE;
+
+        if(slotIndex >= 6 && slotIndex <= 11)
+            return Compartment.MIDFIELD;
+
+        if(slotIndex >= 12 && slotIndex <= 15)
+            return Compartment.ATTACK;
+
+        throw new IllegalArgumentException("Invalid slot index");
+    }
+
+    private int compartmentIndex(Compartment c){
+        return switch (c) {
+            case GK -> 0;
+            case DEFENSE -> 1;
+            case MIDFIELD -> 2;
+            case ATTACK -> 3;
+        };
+    }
+
+    private Compartment mapPositionToCompartment(Position position){
+        return switch (position) {
+            case FORWARD -> Compartment.ATTACK;
+            case MIDFIELDER -> Compartment.MIDFIELD;
+            case DEFENDER -> Compartment.DEFENSE;
+            case GOALKEEPER -> Compartment.GK;
+        };
     }
 
     private Set<PlayerPair> generateLinks(Map<Integer,UUID> slotToUser){
@@ -123,7 +196,7 @@ public class TeamChemistryService {
                 Node left=layerNodes.get(i);
                 Node right=layerNodes.get(i+1);
 
-                // ❌ blocăm LM ↔ RM
+                // blochez LM ↔ RM
                 if(layer==3 && Math.abs(left.x)>0.6 && Math.abs(right.x)>0.6)
                     continue;
 
@@ -144,7 +217,7 @@ public class TeamChemistryService {
 
                 for(Node p2: nextLayer){
 
-                    // blocăm cross links: LW-RM și RW-LM
+                    // blochez cross links: LW-RM si RW-LM
                     if(p1.layer == 5 && p2.layer == 3){
                         if((p1.x < -0.6 && p2.x > 0.6) || (p1.x > 0.6 && p2.x < -0.6))
                             continue;
@@ -192,7 +265,7 @@ public class TeamChemistryService {
 
         Node gk = nodes.stream().filter(n->n.layer==0).findFirst().orElse(null);
 
-        // GK ↔ CB (toți)
+        // GK ↔ CB
         if(gk!=null){
             defenders.stream()
                     .filter(cb->Math.abs(cb.x)<0.6)
@@ -218,7 +291,7 @@ public class TeamChemistryService {
                 .ifPresent(lb -> {
 
                     mids.stream()
-                            .filter(cm -> cm.x > -0.5 && cm.x < 0) // CM stânga
+                            .filter(cm -> cm.x > -0.5 && cm.x < 0) // CM stanga
                             .forEach(cm ->
                                     pairs.add(PlayerPair.of(lb.user, cm.user))
                             );
@@ -261,7 +334,7 @@ public class TeamChemistryService {
                     .filter(n -> Math.abs(n.x) > 0.35)
                     .forEach(n -> pairs.add(PlayerPair.of(cam.user,n.user)));
 
-            // 🔥 CAM ↔ ST (ambele)
+            // CAM ↔ ST (ambele)
             attackers.stream()
                     .filter(a -> Math.abs(a.x) < 0.5)
                     .forEach(st ->
@@ -282,7 +355,7 @@ public class TeamChemistryService {
             }
         }
 
-        // CM ↔ ST dacă nu există CAM
+        // CM ↔ ST daca nu exista CAM
         if(!hasCAM){
 
             List<Node> cms = mids.stream()
@@ -295,7 +368,7 @@ public class TeamChemistryService {
 
             if(!(cms.isEmpty() || sts.isEmpty())) {
 
-                // sortare stânga → dreapta
+                // sortare stanga → dreapta
                 List<Node> cmsSorted = cms.stream()
                         .sorted(Comparator.comparingDouble(n -> n.x))
                         .toList();
@@ -346,7 +419,7 @@ public class TeamChemistryService {
         }
 
 
-        // CDM ↔ LM dacă nu există CM stânga
+        // CDM ↔ LM daca nu exista CM stanga
         // CDM ↔ LM/RM rules
         nodes.stream()
                 .filter(n -> n.layer == 2 && Math.abs(n.x) < 0.4)
@@ -365,7 +438,7 @@ public class TeamChemistryService {
                             .filter(m -> m.x > 0.6)
                             .findFirst();
 
-                    // caz 1: nu există CM deloc → link cu ambele aripi
+                    // caz 1: nu exista CM deloc → link cu ambele aripi
                     if(cmCount == 0) {
 
                         lm.ifPresent(n ->
@@ -379,11 +452,11 @@ public class TeamChemistryService {
                         return;
                     }
 
-                    // caz 2: există CM stânga
+                    // caz 2: exista CM stanga
                     boolean hasLeftCM = mids.stream()
                             .anyMatch(m -> m.x < -0.2 && Math.abs(m.x) < 0.5);
 
-                    // caz 3: există CM dreapta
+                    // caz 3: exista CM dreapta
                     boolean hasRightCM = mids.stream()
                             .anyMatch(m -> m.x > 0.2 && Math.abs(m.x) < 0.5);
 
@@ -398,9 +471,9 @@ public class TeamChemistryService {
                 });
 
 
-        // CB stânga ↔ LM dacă nu există LB
+        // CB stanga ↔ LM daca nu exista LB
         defenders.stream()
-                .filter(d -> d.x < -0.2 && Math.abs(d.x) < 0.6) // CB stânga
+                .filter(d -> d.x < -0.2 && Math.abs(d.x) < 0.6) // CB stanga
                 .findFirst()
                 .ifPresent(cbLeft -> {
 
@@ -417,7 +490,7 @@ public class TeamChemistryService {
                 });
 
 
-        // CB dreapta ↔ RM dacă nu există RB
+        // CB dreapta ↔ RM dacă nu exista RB
         defenders.stream()
                 .filter(d -> d.x > 0.2 && Math.abs(d.x) < 0.6) // CB dreapta
                 .findFirst()
@@ -463,13 +536,13 @@ public class TeamChemistryService {
 
                     if(cdmOpt.isPresent()) {
 
-                        // dacă există CDM → CB central ↔ CDM
+                        // daca exista CDM → CB central ↔ CDM
                         Node cdm = cdmOpt.get();
                         pairs.add(PlayerPair.of(cbCenter.user, cdm.user));
 
                     } else {
 
-                        // dacă NU există CDM → CB central ↔ CM
+                        // daca NU exista CDM → CB central ↔ CM
                         mids.stream()
                                 .filter(cm -> Math.abs(cm.x) < 0.5)
                                 .forEach(cm ->
@@ -503,7 +576,7 @@ public class TeamChemistryService {
                             .ifPresent(st->pairs.add(PlayerPair.of(rm.user,st.user))));
         }
 
-        // LW ↔ LB dacă nu există LM
+        // LW ↔ LB daca nu exista LM
         nodes.stream().filter(n->n.layer==5 && n.x<-0.6).findFirst().ifPresent(lw->{
             boolean hasLM = nodes.stream().anyMatch(n->n.layer==3 && n.x<-0.6);
             if(!hasLM){
@@ -512,7 +585,7 @@ public class TeamChemistryService {
             }
         });
 
-// RW ↔ RB dacă nu există RM
+        // RW ↔ RB daca nu exista RM
         nodes.stream().filter(n->n.layer==5 && n.x>0.6).findFirst().ifPresent(rw->{
             boolean hasRM = nodes.stream().anyMatch(n->n.layer==3 && n.x>0.6);
             if(!hasRM){
