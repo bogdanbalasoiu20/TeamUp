@@ -19,4 +19,32 @@ public interface TournamentMatchRepository extends JpaRepository<TournamentMatch
           OR m.awayTeam.id = :teamId
        """)
     List<TournamentMatch> findAllByTeamId(UUID teamId);
+
+    @Query("""
+        SELECT m FROM TournamentMatch m
+        JOIN m.tournament t
+        WHERE 
+            (m.homeTeam.id = :teamId OR m.awayTeam.id = :teamId)
+            AND m.status = 'FINISHED'
+        ORDER BY 
+            COALESCE(t.endsAt, t.createdAt) DESC,
+            m.matchDay DESC
+    """)
+    List<TournamentMatch> findLastMatches(UUID teamId);
+
+    @Query("""
+        SELECT m FROM TournamentMatch m
+        JOIN m.tournament t
+        WHERE 
+            (
+                (m.homeTeam.id = :teamA AND m.awayTeam.id = :teamB)
+                OR
+                (m.homeTeam.id = :teamB AND m.awayTeam.id = :teamA)
+            )
+            AND m.status = 'FINISHED'
+        ORDER BY 
+            COALESCE(t.endsAt, t.createdAt) DESC,
+            m.matchDay DESC
+    """)
+    List<TournamentMatch> findHeadToHeadMatches(UUID teamA, UUID teamB);
 }

@@ -3,13 +3,16 @@ package com.teamup.teamUp.service;
 import com.teamup.teamUp.chemistry.service.TeamChemistryService;
 import com.teamup.teamUp.model.dto.odds.MatchOddsDto;
 import com.teamup.teamUp.model.entity.TeamMember;
+import com.teamup.teamUp.model.entity.TournamentMatch;
 import com.teamup.teamUp.model.enums.SquadType;
 import com.teamup.teamUp.repository.TeamMemberRepository;
+import com.teamup.teamUp.repository.TournamentMatchRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
@@ -19,19 +22,34 @@ public class MatchOddsService {
     private final TeamRatingService teamRatingService;
     private final TeamChemistryService teamChemistryService;
     private final LiveFormService liveFormService;
+    private final TournamentMatchRepository tournamentMatchRepository;
 
     public MatchOddsDto calculateMatchOdds(UUID homeTeamId, UUID awayTeamId) {
 
-        double homeScore = calculateTeamScore(homeTeamId);
-        double awayScore = calculateTeamScore(awayTeamId);
+        double homeScore = calculateTeamScore(homeTeamId, awayTeamId);
+        double awayScore = calculateTeamScore(awayTeamId, homeTeamId);
+
+        double diff = Math.abs(homeScore - awayScore);
+        double scale = 0.04 * (1 - Math.min(diff, 1));
+
+        double noise = ThreadLocalRandom.current().nextDouble(-scale, scale);
+
+        homeScore += noise;
+        awayScore -= noise;
+        diff = Math.abs(homeScore - awayScore);
 
         // probabilitati
-        double pHome = Math.exp(homeScore) / (Math.exp(homeScore) + Math.exp(awayScore));
-        double pAway = Math.exp(awayScore) / (Math.exp(homeScore) + Math.exp(awayScore));
+        double max = Math.max(homeScore, awayScore);
+
+        double expHome = Math.exp(homeScore - max);
+        double expAway = Math.exp(awayScore - max);
+
+        double pHome = expHome / (expHome + expAway);
+        double pAway = expAway / (expHome + expAway);
 
         // draw
-        double diff = Math.abs(homeScore - awayScore);
-        double pDraw = Math.max(0.15, 0.3 - diff);
+        double pDraw = 0.25 * Math.exp(-2 * diff);
+        pDraw = Math.max(0.1, pDraw);
 
         // normalizare
         double total = pHome + pAway + pDraw;
@@ -56,18 +74,22 @@ public class MatchOddsService {
         );
     }
 
-    private double calculateTeamScore(UUID teamId) {
+    private double calculateTeamScore(UUID teamId, UUID opponentId) {
 
         double rating = teamRatingService.calculateTeamRating(teamId).overall();
         double chemistry = teamChemistryService.calculateTeamChemistry(teamId).teamChemistry();
-        double form = calculateTeamForm(teamId); // [-1,1]
-        double liveForm = calculateTeamLiveForm(teamId); // [-1,1]
+        double form = calculateTeamForm(teamId);
+        double liveForm = calculateTeamLiveForm(teamId);
+        double headToHead = calculateHeadToHead(teamId, opponentId);
 
-        // normalizare
         double normRating = rating / 100.0;
         double normChemistry = chemistry / 100.0;
 
-        return 0.5 * normRating + 0.2 * normChemistry + 0.2 * form + 0.1 * liveForm;
+        return 0.45 * normRating
+                + 0.2 * normChemistry
+                + 0.15 * form
+                + 0.1 * liveForm
+                + 0.1 * headToHead;
     }
 
 
@@ -87,8 +109,43 @@ public class MatchOddsService {
 
 
     private double calculateTeamForm(UUID teamId) {
-        // TODO: de implementat forma echipei in ultimele 3-5 meciuri
-        return 0;
+
+        List<TournamentMatch> lastMatches = tournamentMatchRepository.findLastMatches(teamId)
+                        .stream()
+                        .limit(5)
+                        .toList();
+
+        if (lastMatches.isEmpty()) return 0;
+
+        double sum = 0;
+
+        for (TournamentMatch match : lastMatches) {
+            sum += getResultForTeam(match, teamId);
+        }
+
+        double avg = sum / lastMatches.size();
+
+        return clamp(avg, -1, 1);
+    }
+
+    private int getResultForTeam(TournamentMatch match, UUID teamId) {
+
+        if (match.getScoreHome() == null || match.getScoreAway() == null) {
+            return 0;
+        }
+
+        if (match.getHomeTeam().getId().equals(teamId)) {
+
+            if (match.getScoreHome() > match.getScoreAway()) return 1;
+            if (match.getScoreHome() < match.getScoreAway()) return -1;
+            return 0;
+
+        } else {
+
+            if (match.getScoreAway() > match.getScoreHome()) return 1;
+            if (match.getScoreAway() < match.getScoreHome()) return -1;
+            return 0;
+        }
     }
 
 
@@ -98,5 +155,26 @@ public class MatchOddsService {
 
     private double round(double value) {
         return Math.round(value * 100.0) / 100.0;
+    }
+
+
+    private double calculateHeadToHead(UUID teamAId, UUID teamBId) {
+
+        List<TournamentMatch> matches = tournamentMatchRepository.findHeadToHeadMatches(teamAId, teamBId)
+                        .stream()
+                        .limit(5)
+                        .toList();
+
+        if (matches.isEmpty()) return 0;
+
+        double sum = 0;
+
+        for (TournamentMatch match : matches) {
+            sum += getResultForTeam(match, teamAId);
+        }
+
+        double avg = sum / matches.size();
+
+        return clamp(avg, -1, 1);
     }
 }
