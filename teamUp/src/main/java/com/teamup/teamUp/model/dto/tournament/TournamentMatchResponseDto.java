@@ -15,6 +15,10 @@ public record TournamentMatchResponseDto(
         Integer scoreAway,
 
         MatchStatus status,
-        Integer matchDay
+        Integer matchDay,
+
+        Double oddsHome,
+        Double oddsDraw,
+        Double oddsAway
 ) {
 }

@@ -3,7 +3,7 @@ package com.teamup.teamUp.service;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.mapper.StandingMapper;
 import com.teamup.teamUp.mapper.TournamentMapper;
-import com.teamup.teamUp.mapper.TournamentMatchMapper;
+import com.teamup.teamUp.model.dto.odds.MatchOddsDto;
 import com.teamup.teamUp.model.dto.tournament.CreateTournamentRequestDto;
 import com.teamup.teamUp.model.dto.tournament.TournamentMatchResponseDto;
 import com.teamup.teamUp.model.dto.tournament.TournamentResponseDto;
@@ -37,6 +37,7 @@ public class TournamentService {
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
     private final VenueRepository venueRepository;
+    private final MatchOddsService matchOddsService;
 
     @Transactional
     public TournamentResponseDto createTournament(CreateTournamentRequestDto request, String organizerUsername) {
@@ -212,7 +213,50 @@ public class TournamentService {
     public List<TournamentMatchResponseDto> getMatches(UUID tournamentId) {
         Tournament tournament = tournamentRepository.findById(tournamentId).orElseThrow(() -> new NotFoundException("Tournament not found"));
         List<TournamentMatch> matches = matchRepository.findByTournamentIdOrderByMatchDayAscIdAsc(tournament.getId());
-        return matches.stream().map(TournamentMatchMapper::toDto).toList();
+        return matches.stream()
+                .map(this::mapWithOdds)
+                .toList();
+    }
+
+
+    private TournamentMatchResponseDto mapWithOdds(TournamentMatch match) {
+
+        Double oddsHome;
+        Double oddsDraw;
+        Double oddsAway;
+
+        if (match.getStatus() == MatchStatus.DONE && match.getOddsHome() != null && match.getOddsDraw() != null && match.getOddsAway() != null) {
+
+            // folosesc snapshot din DB
+            oddsHome = match.getOddsHome();
+            oddsDraw = match.getOddsDraw();
+            oddsAway = match.getOddsAway();
+
+        } else {
+
+            // calcul live
+            MatchOddsDto odds = matchOddsService.calculateMatchOdds(match.getHomeTeam().getId(), match.getAwayTeam().getId()
+            );
+
+            oddsHome = odds.homeWinOdds();
+            oddsDraw = odds.drawOdds();
+            oddsAway = odds.awayWinOdds();
+        }
+
+        return new TournamentMatchResponseDto(
+                match.getId(),
+                match.getHomeTeam().getId(),
+                match.getHomeTeam().getName(),
+                match.getAwayTeam().getId(),
+                match.getAwayTeam().getName(),
+                match.getScoreHome(),
+                match.getScoreAway(),
+                match.getStatus(),
+                match.getMatchDay(),
+                oddsHome,
+                oddsDraw,
+                oddsAway
+        );
     }
 
 

@@ -47,4 +47,8 @@ public class TournamentMatch {
 
     private Integer matchDay;
 
+    private Double oddsHome;
+    private Double oddsDraw;
+    private Double oddsAway;
+
 }

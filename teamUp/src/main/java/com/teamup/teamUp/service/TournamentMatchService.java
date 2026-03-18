@@ -2,6 +2,7 @@ package com.teamup.teamUp.service;
 
 import com.teamup.teamUp.chemistry.TeamChemistryManager;
 import com.teamup.teamUp.exceptions.NotFoundException;
+import com.teamup.teamUp.model.dto.odds.MatchOddsDto;
 import com.teamup.teamUp.model.entity.*;
 import com.teamup.teamUp.model.enums.MatchStatus;
 import com.teamup.teamUp.model.enums.SquadType;
@@ -27,6 +28,7 @@ public class TournamentMatchService {
     private final TeamMemberRepository teamMemberRepository;
     private final TournamentMatchParticipantRepository participantRepository;
     private final TeamChemistryManager teamChemistryManager;
+    private final MatchOddsService matchOddsService;
 
     @Transactional
     public void finishMatch(UUID matchId, int scoreHome, int scoreAway) {
@@ -40,15 +42,20 @@ public class TournamentMatchService {
         if (scoreHome < 0 || scoreAway < 0) {
             throw new IllegalArgumentException("Score cannot be negative");
         }
+        Team home = match.getHomeTeam();
+        Team away = match.getAwayTeam();
 
+        MatchOddsDto odds = matchOddsService.calculateMatchOdds(home.getId(), away.getId());
+
+        match.setOddsHome(odds.homeWinOdds());
+        match.setOddsDraw(odds.drawOdds());
+        match.setOddsAway(odds.awayWinOdds());
 
         match.setScoreHome(scoreHome);
         match.setScoreAway(scoreAway);
         match.setStatus(MatchStatus.DONE);
         snapshotLineup(match);
 
-        Team home = match.getHomeTeam();
-        Team away = match.getAwayTeam();
 
         if (scoreHome > scoreAway) {
             match.setWinner(home);
