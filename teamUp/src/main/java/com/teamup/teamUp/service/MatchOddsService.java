@@ -29,35 +29,24 @@ public class MatchOddsService {
         double homeScore = calculateTeamScore(homeTeamId, awayTeamId);
         double awayScore = calculateTeamScore(awayTeamId, homeTeamId);
 
-        double diff = Math.abs(homeScore - awayScore);
-        double scale = 0.04 * (1 - Math.min(diff, 1));
-
-        double noise = ThreadLocalRandom.current().nextDouble(-scale, scale);
-
-        homeScore += noise;
-        awayScore -= noise;
-        diff = Math.abs(homeScore - awayScore);
-
-        // probabilitati
         double max = Math.max(homeScore, awayScore);
 
         double expHome = Math.exp(homeScore - max);
         double expAway = Math.exp(awayScore - max);
 
-        double pHome = expHome / (expHome + expAway);
-        double pAway = expAway / (expHome + expAway);
+        double baseTotal = expHome + expAway;
+        double pHome = expHome / baseTotal;
+        double pAway = expAway / baseTotal;
 
         // draw
-        double pDraw = 0.25 * Math.exp(-2 * diff);
-        pDraw = Math.max(0.1, pDraw);
+        double diff = Math.abs(homeScore - awayScore);
+        double pDraw = clamp(0.2 * (1 - diff), 0.15, 0.3);
 
-        // normalizare
-        double total = pHome + pAway + pDraw;
-        pHome /= total;
-        pAway /= total;
-        pDraw /= total;
+        double scale = 1 - pDraw;
+        pHome *= scale;
+        pAway *= scale;
 
-        // odds (cu margina)
+        // odds
         double margin = 1.05;
 
         double homeOdds = margin / pHome;
