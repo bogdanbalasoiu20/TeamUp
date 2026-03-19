@@ -25,7 +25,7 @@ public interface TournamentMatchRepository extends JpaRepository<TournamentMatch
         JOIN m.tournament t
         WHERE 
             (m.homeTeam.id = :teamId OR m.awayTeam.id = :teamId)
-            AND m.status = 'FINISHED'
+            AND m.status = 'DONE'
         ORDER BY 
             COALESCE(t.endsAt, t.createdAt) DESC,
             m.matchDay DESC
@@ -41,7 +41,7 @@ public interface TournamentMatchRepository extends JpaRepository<TournamentMatch
                 OR
                 (m.homeTeam.id = :teamB AND m.awayTeam.id = :teamA)
             )
-            AND m.status = 'FINISHED'
+            AND m.status = 'DONE'
         ORDER BY 
             COALESCE(t.endsAt, t.createdAt) DESC,
             m.matchDay DESC
