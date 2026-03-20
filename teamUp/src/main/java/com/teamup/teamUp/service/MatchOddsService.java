@@ -42,8 +42,8 @@ public class MatchOddsService {
 
         double diff = Math.abs(homeScore - awayScore);
 
-        double pDraw = 0.20 * Math.exp(-0.1 * diff);
-        pDraw = clamp(pDraw, 0.10, 0.25);
+        double pDraw = 0.30 * Math.exp(-0.05 * diff);
+        pDraw = clamp(pDraw, 0.18, 0.30);
 
         double scale = 1 - pDraw;
         pHome *= scale;
