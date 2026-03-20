@@ -31,7 +31,8 @@ public class MatchOddsService {
 
         double max = Math.max(homeScore, awayScore);
 
-        double scaleFactor = 5.0;
+        double scaleFactor = 0.08;
+
         double expHome = Math.exp((homeScore - max) * scaleFactor);
         double expAway = Math.exp((awayScore - max) * scaleFactor);
 
@@ -39,10 +40,10 @@ public class MatchOddsService {
         double pHome = expHome / baseTotal;
         double pAway = expAway / baseTotal;
 
-        // draw
         double diff = Math.abs(homeScore - awayScore);
-        double pDraw = 0.25 * Math.exp(-3 * diff);
-        pDraw = clamp(pDraw, 0.05, 0.25);
+
+        double pDraw = 0.20 * Math.exp(-0.1 * diff);
+        pDraw = clamp(pDraw, 0.10, 0.25);
 
         double scale = 1 - pDraw;
         pHome *= scale;
@@ -53,12 +54,24 @@ public class MatchOddsService {
         pAway /= total;
         pDraw /= total;
 
-        // odds
+        pHome = clamp(pHome, 0.01, 0.98);
+        pAway = clamp(pAway, 0.01, 0.98);
+        pDraw = clamp(pDraw, 0.01, 0.98);
+
+        double total2 = pHome + pAway + pDraw;
+        pHome /= total2;
+        pAway /= total2;
+        pDraw /= total2;
+
         double margin = 1.05;
 
         double homeOdds = margin / pHome;
         double drawOdds = margin / pDraw;
         double awayOdds = margin / pAway;
+
+        homeOdds = clamp(homeOdds, 1.05, 20);
+        drawOdds = clamp(drawOdds, 2, 30);
+        awayOdds = clamp(awayOdds, 2, 50);
 
         return new MatchOddsDto(
                 round(pHome),
