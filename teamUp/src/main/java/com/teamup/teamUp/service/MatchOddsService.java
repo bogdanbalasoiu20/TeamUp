@@ -31,8 +31,9 @@ public class MatchOddsService {
 
         double max = Math.max(homeScore, awayScore);
 
-        double expHome = Math.exp(homeScore - max);
-        double expAway = Math.exp(awayScore - max);
+        double scaleFactor = 5.0;
+        double expHome = Math.exp((homeScore - max) * scaleFactor);
+        double expAway = Math.exp((awayScore - max) * scaleFactor);
 
         double baseTotal = expHome + expAway;
         double pHome = expHome / baseTotal;
@@ -40,11 +41,17 @@ public class MatchOddsService {
 
         // draw
         double diff = Math.abs(homeScore - awayScore);
-        double pDraw = clamp(0.2 * (1 - diff), 0.15, 0.3);
+        double pDraw = 0.25 * Math.exp(-3 * diff);
+        pDraw = clamp(pDraw, 0.05, 0.25);
 
         double scale = 1 - pDraw;
         pHome *= scale;
         pAway *= scale;
+
+        double total = pHome + pAway + pDraw;
+        pHome /= total;
+        pAway /= total;
+        pDraw /= total;
 
         // odds
         double margin = 1.05;
@@ -71,14 +78,14 @@ public class MatchOddsService {
         double liveForm = calculateTeamLiveForm(teamId);
         double headToHead = calculateHeadToHead(teamId, opponentId);
 
-        double normRating = rating / 100.0;
-        double normChemistry = chemistry / 100.0;
 
-        return 0.45 * normRating
-                + 0.2 * normChemistry
-                + 0.15 * form
-                + 0.1 * liveForm
-                + 0.1 * headToHead;
+        double score = rating * 0.6 +
+                        chemistry * 0.25 +
+                        (form * 50) * 0.1 +
+                        (liveForm * 50) * 0.05 +
+                        (headToHead * 50) * 0.05;
+
+        return score;
     }
 
 
