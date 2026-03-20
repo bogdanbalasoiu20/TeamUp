@@ -58,6 +58,12 @@ public class MatchOddsService {
         pAway /= total;
         pDraw /= total;
 
+        double alpha = 0.1;
+
+        pHome = pHome * (1 - alpha) + alpha / 3;
+        pAway = pAway * (1 - alpha) + alpha / 3;
+        pDraw = pDraw * (1 - alpha) + alpha / 3;
+
         pHome = clamp(pHome, 0.01, 0.98);
         pAway = clamp(pAway, 0.01, 0.98);
         pDraw = clamp(pDraw, 0.01, 0.98);
@@ -67,7 +73,7 @@ public class MatchOddsService {
         pAway /= total2;
         pDraw /= total2;
 
-        double margin = 1.05;
+        double margin = 1.03;
 
         double homeOdds = margin / pHome;
         double drawOdds = margin / pDraw;
@@ -96,9 +102,9 @@ public class MatchOddsService {
         double headToHead = calculateHeadToHead(teamId, opponentId);
 
 
-        double score = rating * 0.6 +
-                        chemistry * 0.25 +
-                        (form * 50) * 0.1 +
+        double score = rating * 0.45 +
+                        chemistry * 0.30 +
+                        (form * 50) * 0.15 +
                         (liveForm * 50) * 0.05 +
                         (headToHead * 50) * 0.05;
 
