@@ -45,13 +45,10 @@ public class MatchOddsService {
 
         double normalizedDiff = diff / 50.0;
 
-// draw realist
         double baseDraw = 0.22;
 
-// decay mai agresiv
-        double pDraw = baseDraw * Math.exp(-3.5 * normalizedDiff);
+        double pDraw = baseDraw * Math.exp(-2.5 * normalizedDiff);
 
-// clamp
         pDraw = clamp(pDraw, 0.10, 0.26);
 
 
