@@ -29,56 +29,30 @@ public class MatchOddsService {
         double homeScore = calculateTeamScore(homeTeamId, awayTeamId);
         double awayScore = calculateTeamScore(awayTeamId, homeTeamId);
 
-        double max = Math.max(homeScore, awayScore);
+        double diff = homeScore - awayScore;
 
-        double scaleFactor = 0.08;
+        double scaleFactor = 0.06;
 
-        double expHome = Math.exp((homeScore - max) * scaleFactor);
-        double expAway = Math.exp((awayScore - max) * scaleFactor);
+        double expHome = Math.exp(diff * scaleFactor);
+        double pHomeBase = expHome / (expHome + 1.0);
+        double pAwayBase = 1.0 - pHomeBase;
 
-        double baseTotal = expHome + expAway;
-        double pHome = expHome / baseTotal;
-        double pAway = expAway / baseTotal;
+        double maxDrawChance = 0.28;
 
-        double diff = Math.abs(homeScore - awayScore);
+        double variance = 2000.0;
 
+        double pDraw = maxDrawChance * Math.exp(-(diff * diff) / variance);
 
-        double normalizedDiff = diff / 25.0;
+        pDraw = clamp(pDraw, 0.14, 0.32);
 
-        double balance = 1 - Math.abs(pHome - pAway);
-
-        double baseDraw = 0.20;
-
-        double pDraw = baseDraw * (0.7 + 0.6 * balance)
-                * Math.exp(-1.2 * normalizedDiff);
-
-        pDraw = clamp(pDraw, 0.10, 0.28);
-
-
-
-        double scale = 1 - pDraw;
-        pHome *= scale;
-        pAway *= scale;
+        double remainingProb = 1.0 - pDraw;
+        double pHome = pHomeBase * remainingProb;
+        double pAway = pAwayBase * remainingProb;
 
         double total = pHome + pAway + pDraw;
         pHome /= total;
         pAway /= total;
         pDraw /= total;
-
-        double alpha = 0;
-
-        pHome = pHome * (1 - alpha) + alpha / 3;
-        pAway = pAway * (1 - alpha) + alpha / 3;
-        pDraw = pDraw * (1 - alpha) + alpha / 3;
-
-        pHome = clamp(pHome, 0.01, 0.98);
-        pAway = clamp(pAway, 0.01, 0.98);
-        pDraw = clamp(pDraw, 0.01, 0.98);
-
-        double total2 = pHome + pAway + pDraw;
-        pHome /= total2;
-        pAway /= total2;
-        pDraw /= total2;
 
         double margin = 1.03;
 
@@ -86,9 +60,9 @@ public class MatchOddsService {
         double drawOdds = margin / pDraw;
         double awayOdds = margin / pAway;
 
-        homeOdds = clamp(homeOdds, 1.05, 20);
-        drawOdds = clamp(drawOdds, 2, 30);
-        awayOdds = clamp(awayOdds, 2, 50);
+        homeOdds = clamp(homeOdds, 1.01, 50);
+        drawOdds = clamp(drawOdds, 2.0, 15);
+        awayOdds = clamp(awayOdds, 1.01, 50);
 
         return new MatchOddsDto(
                 round(pHome),
