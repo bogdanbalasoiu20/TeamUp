@@ -46,13 +46,13 @@ public class MatchOddsService {
         double normalizedDiff = diff / 25.0;
 
         double balance = 1 - Math.abs(pHome - pAway);
-        balance = Math.pow(balance, 1.5);
 
-        double baseDraw = 0.16;
+        double baseDraw = 0.20;
 
-        double pDraw = baseDraw * (0.6 + 0.8 * balance) * Math.exp(-1.8 * normalizedDiff);
+        double pDraw = baseDraw * (0.7 + 0.6 * balance)
+                * Math.exp(-1.2 * normalizedDiff);
 
-        pDraw = clamp(pDraw, 0.08, 0.26);
+        pDraw = clamp(pDraw, 0.10, 0.28);
 
 
 
