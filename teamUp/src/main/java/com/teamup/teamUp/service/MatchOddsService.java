@@ -31,7 +31,7 @@ public class MatchOddsService {
 
         double diff = homeScore - awayScore;
 
-        double scaleFactor = 0.12;
+        double scaleFactor = 0.09;
 
         double expHome = Math.exp(diff * scaleFactor);
         double pHomeBase = expHome / (expHome + 1.0);
