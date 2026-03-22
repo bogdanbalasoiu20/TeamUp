@@ -43,7 +43,7 @@ public class MatchOddsService {
         double diff = Math.abs(homeScore - awayScore);
 
 
-        double normalizedDiff = diff / 50.0;
+        double normalizedDiff = diff / 25.0;
 
         double baseDraw = 0.22;
 
