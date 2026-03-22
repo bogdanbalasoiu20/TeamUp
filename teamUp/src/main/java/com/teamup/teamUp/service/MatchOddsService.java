@@ -31,7 +31,7 @@ public class MatchOddsService {
 
         double max = Math.max(homeScore, awayScore);
 
-        double scaleFactor = 0.05;
+        double scaleFactor = 0.08;
 
         double expHome = Math.exp((homeScore - max) * scaleFactor);
         double expAway = Math.exp((awayScore - max) * scaleFactor);
@@ -42,16 +42,19 @@ public class MatchOddsService {
 
         double diff = Math.abs(homeScore - awayScore);
 
-        if (diff < 5) {
-            diff *= 0.5;
-        }
 
-        double baseDraw = 0.22 * Math.exp(-0.04 * diff);
+        double normalizedDiff = diff / 50.0;
 
-        double balance = 1 - Math.abs(pHome - pAway);
-        double pDraw = baseDraw + 0.10 * balance;
+// draw realist
+        double baseDraw = 0.22;
 
-        pDraw = clamp(pDraw, 0.12, 0.28);
+// decay mai agresiv
+        double pDraw = baseDraw * Math.exp(-3.5 * normalizedDiff);
+
+// clamp
+        pDraw = clamp(pDraw, 0.10, 0.26);
+
+
 
         double scale = 1 - pDraw;
         pHome *= scale;
@@ -62,7 +65,7 @@ public class MatchOddsService {
         pAway /= total;
         pDraw /= total;
 
-        double alpha = 0.1;
+        double alpha = 0;
 
         pHome = pHome * (1 - alpha) + alpha / 3;
         pAway = pAway * (1 - alpha) + alpha / 3;
