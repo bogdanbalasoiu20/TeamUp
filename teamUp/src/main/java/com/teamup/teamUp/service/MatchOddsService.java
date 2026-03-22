@@ -31,7 +31,7 @@ public class MatchOddsService {
 
         double diff = homeScore - awayScore;
 
-        double scaleFactor = 0.06;
+        double scaleFactor = 0.12;
 
         double expHome = Math.exp(diff * scaleFactor);
         double pHomeBase = expHome / (expHome + 1.0);
@@ -39,7 +39,7 @@ public class MatchOddsService {
 
         double maxDrawChance = 0.28;
 
-        double variance = 2000.0;
+        double variance = 1000.0;
 
         double pDraw = maxDrawChance * Math.exp(-(diff * diff) / variance);
 
