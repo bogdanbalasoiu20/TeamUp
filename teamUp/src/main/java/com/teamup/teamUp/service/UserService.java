@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Locale;
+import java.util.UUID;
 
 @Service
 public class UserService {
@@ -109,6 +110,13 @@ public class UserService {
         User user = findByUsername(username);
         Integer tv = user.getTokenVersion();
         user.setTokenVersion(tv == null ? 1 : tv + 1);
+        userRepository.save(user);
+    }
+
+
+    public void updateUserImage(UUID userId, String imageUrl) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        user.setPhotoUrl(imageUrl);
         userRepository.save(user);
     }
 }

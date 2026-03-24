@@ -9,12 +9,14 @@ import com.teamup.teamUp.model.dto.user.UpdateProfileRequestDto;
 import com.teamup.teamUp.model.dto.user.UserProfileResponseDto;
 import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.model.enums.PlayerArchetype;
+import com.teamup.teamUp.service.CloudinaryService;
 import com.teamup.teamUp.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -24,12 +26,14 @@ public class UserController {
     private final UserService userService;
     private final UserMapper userMapper;
     private final UserRoleService userRoleService;
+    private final CloudinaryService cloudinaryService;
 
     @Autowired
-    public UserController(UserService userService, UserMapper userMapper, UserRoleService userRoleService) {
+    public UserController(UserService userService, UserMapper userMapper, UserRoleService userRoleService, CloudinaryService cloudinaryService) {
         this.userService = userService;
         this.userMapper = userMapper;
         this.userRoleService = userRoleService;
+        this.cloudinaryService = cloudinaryService;
     }
 
     @GetMapping("/{username}")
@@ -78,6 +82,13 @@ public class UserController {
     public ResponseEntity<ResponseApi<UserRoleResponse>> getUserRole(@PathVariable UUID id) {
         PlayerArchetype role = userRoleService.getRole(id);
         return ResponseEntity.ok(new ResponseApi<>("Player role retrieved successfully",new UserRoleResponse(role),true));
+    }
+
+    @PostMapping("/{userId}/upload-avatar")
+    public ResponseEntity<ResponseApi<String>> uploadAvatar(@PathVariable UUID userId, @RequestParam("file") MultipartFile file) {
+        String imageUrl = cloudinaryService.upload(file);
+        userService.updateUserImage(userId, imageUrl);
+        return ResponseEntity.ok(new ResponseApi<>("Image uploaded successfully", imageUrl, true));
     }
 
 }
