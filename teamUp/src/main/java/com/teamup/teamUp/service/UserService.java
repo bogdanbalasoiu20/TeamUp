@@ -114,8 +114,8 @@ public class UserService {
     }
 
 
-    public void updateUserImage(UUID userId, String imageUrl) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+    public void updateUserImage(String username, String imageUrl) {
+        User user = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(username).orElseThrow(()->new NotFoundException("User not found with username: " + username));
         user.setPhotoUrl(imageUrl);
         userRepository.save(user);
     }

@@ -84,10 +84,10 @@ public class UserController {
         return ResponseEntity.ok(new ResponseApi<>("Player role retrieved successfully",new UserRoleResponse(role),true));
     }
 
-    @PostMapping("/{userId}/upload-avatar")
-    public ResponseEntity<ResponseApi<String>> uploadAvatar(@PathVariable UUID userId, @RequestParam("file") MultipartFile file) {
+    @PostMapping("/me/upload-avatar")
+    public ResponseEntity<ResponseApi<String>> uploadAvatar(Authentication auth,@RequestParam("file") MultipartFile file) {
         String imageUrl = cloudinaryService.upload(file);
-        userService.updateUserImage(userId, imageUrl);
+        userService.updateUserImage(auth.getName(), imageUrl);
         return ResponseEntity.ok(new ResponseApi<>("Image uploaded successfully", imageUrl, true));
     }
 
