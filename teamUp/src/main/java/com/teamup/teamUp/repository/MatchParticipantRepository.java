@@ -38,7 +38,8 @@ public interface MatchParticipantRepository extends JpaRepository<MatchParticipa
      mp.user.username,
      mp.status,
      mp.bringsBall,
-     mp.createdAt
+     mp.createdAt,
+     mp.user.photoUrl
    )
    from MatchParticipant mp
    where mp.id.matchId = :matchId
