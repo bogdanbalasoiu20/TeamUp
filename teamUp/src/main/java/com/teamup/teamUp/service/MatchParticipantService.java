@@ -484,7 +484,8 @@ public class MatchParticipantService {
                 participant.getUser().getUsername(),
                 participant.getStatus(),
                 participant.getBringsBall(),
-                participant.getCreatedAt()
+                participant.getCreatedAt(),
+                participant.getUser().getPhotoUrl()
         );
     }
 

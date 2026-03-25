@@ -10,6 +10,7 @@ public record ParticipantDto(
         String username,
         MatchParticipantStatus status,
         Boolean bringsBall,
-        Instant joinedAt
+        Instant joinedAt,
+        String photoUrl
 ) {
 }
