@@ -86,6 +86,9 @@ public class UserController {
 
     @PostMapping("/me/upload-avatar")
     public ResponseEntity<ResponseApi<String>> uploadAvatar(Authentication auth,@RequestParam("file") MultipartFile file) {
+        if (file.getSize() > 2 * 1024 * 1024) {
+            throw new RuntimeException("File too large (max 2MB)");
+        }
         String imageUrl = cloudinaryService.upload(file);
         userService.updateUserImage(auth.getName(), imageUrl);
         return ResponseEntity.ok(new ResponseApi<>("Image uploaded successfully", imageUrl, true));
