@@ -63,7 +63,8 @@ select new com.teamup.teamUp.model.dto.match.MatchMapPinDto(
      v.name,
      m.durationMinutes,
      m.totalPrice,
-     m.notes
+     m.notes,
+     null
 )
 from Match m
 join m.venue v
