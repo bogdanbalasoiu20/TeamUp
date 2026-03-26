@@ -86,6 +86,17 @@ order by m.startsAt asc
 
 
     @Query("""
+select mp.match.id, u.username, u.photoUrl
+from MatchParticipant mp
+join mp.user u
+where mp.match.id in :matchIds
+  and mp.status = 'ACCEPTED'
+order by mp.createdAt asc
+""")
+    List<Object[]> findParticipantsPreview(List<UUID> matchIds);
+
+
+    @Query("""
         select m from Match m
         where m.status = 'DONE'
           and m.ratingsFinalized = false

@@ -6,6 +6,7 @@ import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.exceptions.ResourceConflictException;
 import com.teamup.teamUp.mapper.MatchMapper;
 import com.teamup.teamUp.model.dto.match.*;
+import com.teamup.teamUp.model.dto.user.UserPreviewDto;
 import com.teamup.teamUp.model.entity.Match;
 import com.teamup.teamUp.model.entity.MatchParticipant;
 import com.teamup.teamUp.model.entity.User;
@@ -26,10 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class MatchService {
@@ -203,11 +201,48 @@ public class MatchService {
         Pageable pageable = PageRequest.of(0, Math.min(limit, 500),
                 Sort.by("startsAt").ascending());
 
-        return matchRepository.findPinsInBBOx(
+        List<MatchMapPinDto> pins = matchRepository.findPinsInBBOx(
                 minLat, minLng, maxLat, maxLng,
                 dateFrom, dateTo,
                 pageable
         );
+
+        List<UUID> matchIds = pins.stream()
+                .map(MatchMapPinDto::matchId)
+                .toList();
+
+        List<Object[]> rows = matchRepository.findParticipantsPreview(matchIds);
+
+        Map<UUID, List<UserPreviewDto>> map = new HashMap<>();
+
+        for (Object[] row : rows) {
+            UUID matchId = (UUID) row[0];
+            String username = (String) row[1];
+            String imageUrl = (String) row[2];
+
+            map.computeIfAbsent(matchId, k -> new ArrayList<>());
+
+            if (map.get(matchId).size() < 3) {
+                map.get(matchId).add(new UserPreviewDto(username, imageUrl));
+            }
+        }
+
+        return pins.stream()
+                .map(pin -> new MatchMapPinDto(
+                        pin.matchId(),
+                        pin.lat(),
+                        pin.lng(),
+                        pin.title(),
+                        pin.startsAt(),
+                        pin.currentPlayers(),
+                        pin.maxPlayers(),
+                        pin.venueName(),
+                        pin.durationMinutes(),
+                        pin.totalPrice(),
+                        pin.notes(),
+                        map.getOrDefault(pin.matchId(), List.of())
+                ))
+                .toList();
     }
 
 
