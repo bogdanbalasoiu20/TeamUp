@@ -5,6 +5,7 @@ import java.util.UUID;
 public record InvitableFriendDto(
         UUID userId,
         String username,
-        boolean invited
+        boolean invited,
+        String photoUrl
 ) {
 }

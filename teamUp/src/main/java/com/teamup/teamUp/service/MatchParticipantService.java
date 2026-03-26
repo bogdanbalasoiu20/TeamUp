@@ -313,7 +313,8 @@ public class MatchParticipantService {
                 .map(friend -> new InvitableFriendDto(
                         friend.getId(),
                         friend.getUsername(),
-                        invitedIds.contains(friend.getId())
+                        invitedIds.contains(friend.getId()),
+                        friend.getPhotoUrl()
                 ))
                 .toList();
     }
