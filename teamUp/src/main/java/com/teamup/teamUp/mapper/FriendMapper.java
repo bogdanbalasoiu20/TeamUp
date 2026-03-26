@@ -29,7 +29,8 @@ public class FriendMapper {
                 friend.getId(),
                 friend.getUsername(),
                 friend.getCity(),
-                f.getCreatedAt()
+                f.getCreatedAt(),
+                friend.getPhotoUrl()
         );
     }
 }

@@ -7,6 +7,7 @@ public record FriendshipResponseDto(
         UUID userId,
         String username,
         String city,
-        Instant since
+        Instant since,
+        String photoUrl
 ) {
 }
