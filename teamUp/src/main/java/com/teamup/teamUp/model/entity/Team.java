@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,8 +28,9 @@ public class Team {
     @JoinColumn(name = "captain_id")
     private User captain;
 
+    @Builder.Default
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<TeamMember> members;
+    private List<TeamMember> members = new ArrayList<>();
 
     @Builder.Default
     @Column(nullable = false)

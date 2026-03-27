@@ -335,7 +335,7 @@ public class TeamService {
                 team.getCaptain().getId(),
                 team.getCaptain().getUsername(),
                 team.getTeamChemistry(),
-                team.getMembers().size(),
+                team.getMembers() != null ? team.getMembers().size() : 0,
                 team.getCreatedAt(),
                 team.getOverallRating(),
                 team.getAttackRating(),
