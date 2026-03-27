@@ -1,12 +1,14 @@
 package com.teamup.teamUp.controller;
 
 import com.teamup.teamUp.model.dto.team.*;
+import com.teamup.teamUp.service.CloudinaryService;
 import com.teamup.teamUp.service.TeamService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,9 +17,11 @@ import java.util.UUID;
 @RequestMapping("/api/teams")
 public class TeamController {
     private final TeamService teamService;
+    private final CloudinaryService cloudinaryService;
 
-    public TeamController(TeamService teamService) {
+    public TeamController(TeamService teamService, CloudinaryService cloudinaryService) {
         this.teamService = teamService;
+        this.cloudinaryService = cloudinaryService;
     }
 
     @PostMapping
@@ -78,6 +82,17 @@ public class TeamController {
     @GetMapping("/{teamId}/profile")
     public ResponseEntity<ResponseApi<TeamFullProfileDto>> getTeamProfile(@PathVariable UUID teamId) {
         return ResponseEntity.ok(new ResponseApi<>("Team profile fetched successfully", teamService.getTeamFullProfile(teamId), true));
+    }
+
+    @PostMapping("/{teamId}/upload-badge")
+    public ResponseEntity<ResponseApi<String>> uploadTeamBadge(@PathVariable UUID teamId, Authentication auth, @RequestParam("file") MultipartFile file) {
+        if (file.getSize() > 2 * 1024 * 1024) {
+            throw new RuntimeException("File too large (max 2MB)");
+        }
+
+        String imageUrl = cloudinaryService.upload(file);
+        teamService.updateTeamBadge(teamId, auth.getName(), imageUrl);
+        return ResponseEntity.ok(new ResponseApi<>("Badge uploaded successfully", imageUrl, true));
     }
 }
 

@@ -54,4 +54,6 @@ public class Team {
     @Column(nullable = false)
     private int defenseRating = 0;
 
+    private String badgeUrl;
+
 }

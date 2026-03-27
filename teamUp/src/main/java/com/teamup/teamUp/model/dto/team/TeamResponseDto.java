@@ -19,6 +19,7 @@ public record TeamResponseDto(
         int attackRating,
         int midfieldRating,
         int defenseRating,
-        List<TeamChemistryLinkDto> chemistryLinks
+        List<TeamChemistryLinkDto> chemistryLinks,
+        String badgeUrl
 ) {}
 

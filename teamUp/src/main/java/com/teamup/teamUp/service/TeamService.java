@@ -3,6 +3,7 @@ package com.teamup.teamUp.service;
 import com.teamup.teamUp.chemistry.TeamChemistryManager;
 import com.teamup.teamUp.chemistry.dto.TeamChemistryResponseDto;
 import com.teamup.teamUp.chemistry.service.TeamChemistryService;
+import com.teamup.teamUp.exceptions.ForbiddenException;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.model.dto.team.TeamFullProfileDto;
 import com.teamup.teamUp.model.dto.team.TeamMemberResponseDto;
@@ -14,6 +15,7 @@ import com.teamup.teamUp.model.enums.MatchStatus;
 import com.teamup.teamUp.model.enums.SquadType;
 import com.teamup.teamUp.model.enums.TeamRole;
 import com.teamup.teamUp.repository.*;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,6 +24,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Comparator;
 import java.util.List;
@@ -338,8 +341,23 @@ public class TeamService {
                 team.getAttackRating(),
                 team.getMidfieldRating(),
                 team.getDefenseRating(),
-                teamChemistryService.calculateTeamChemistry(team.getId()).links()
+                teamChemistryService.calculateTeamChemistry(team.getId()).links(),
+                team.getBadgeUrl()
         );
+    }
+
+
+
+    public void updateTeamBadge(UUID teamId, String username, String imageUrl) {
+        Team team = teamRepository.findById(teamId).orElseThrow(() -> new NotFoundException("Team not found"));
+        User user = userRepository.findByUsernameIgnoreCaseAndDeletedFalse(username).orElseThrow(() -> new NotFoundException("User not found"));
+
+        if (!team.getCaptain().getId().equals(user.getId())) {
+            throw new RuntimeException("Only captain can update team badge");
+        }
+
+        team.setBadgeUrl(imageUrl);
+        teamRepository.save(team);
     }
 
 
