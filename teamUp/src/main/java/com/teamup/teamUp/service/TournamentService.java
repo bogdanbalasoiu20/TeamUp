@@ -255,7 +255,9 @@ public class TournamentService {
                 match.getMatchDay(),
                 oddsHome,
                 oddsDraw,
-                oddsAway
+                oddsAway,
+                match.getHomeTeam().getBadgeUrl(),
+                match.getAwayTeam().getBadgeUrl()
         );
     }
 
@@ -280,7 +282,8 @@ public class TournamentService {
                             0,
                             0,
                             0,
-                            null
+                            null,
+                            tt.getTeam().getBadgeUrl()
                     ))
                     .toList();
         }

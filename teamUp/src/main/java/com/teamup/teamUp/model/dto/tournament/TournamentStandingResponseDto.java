@@ -14,6 +14,8 @@ public record TournamentStandingResponseDto(
         int goalsAgainst,
         int points,
 
-        Integer finalPosition
+        Integer finalPosition,
+
+        String badgeUrl
 ) {
 }

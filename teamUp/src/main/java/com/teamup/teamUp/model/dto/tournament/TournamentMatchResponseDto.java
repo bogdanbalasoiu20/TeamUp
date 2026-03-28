@@ -19,6 +19,9 @@ public record TournamentMatchResponseDto(
 
         Double oddsHome,
         Double oddsDraw,
-        Double oddsAway
+        Double oddsAway,
+
+        String homeTeamBadgeUrl,
+        String awayTeamBadgeUrl
 ) {
 }
