@@ -129,7 +129,8 @@ public class TeamService {
                         member.getRole(),
                         member.getJoinedAt(),
                         member.getSquadType(),
-                        member.getSlotIndex()
+                        member.getSlotIndex(),
+                        member.getUser().getPhotoUrl()
                 ))
                 .toList();
     }

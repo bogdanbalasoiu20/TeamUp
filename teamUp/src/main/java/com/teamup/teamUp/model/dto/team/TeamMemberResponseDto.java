@@ -12,6 +12,7 @@ public record TeamMemberResponseDto(
         TeamRole role,
         LocalDateTime joinedAt,
         SquadType squadType,
-        Integer slotIndex
+        Integer slotIndex,
+        String photoUrl
 ) {
 }
