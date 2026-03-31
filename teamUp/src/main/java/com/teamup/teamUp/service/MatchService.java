@@ -5,6 +5,7 @@ import com.teamup.teamUp.exceptions.BadRequestException;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.exceptions.ResourceConflictException;
 import com.teamup.teamUp.mapper.MatchMapper;
+import com.teamup.teamUp.model.dto.dashboard.UpcomingMatchDto;
 import com.teamup.teamUp.model.dto.match.*;
 import com.teamup.teamUp.model.dto.user.UserPreviewDto;
 import com.teamup.teamUp.model.entity.Match;
@@ -307,6 +308,28 @@ public class MatchService {
                         m.getDurationMinutes()
                 ))
                 .orElse(null);
+    }
+
+    public List<UpcomingMatchDto> getUpcomingMatchesForUser(String username) {
+
+        List<Match> matches = matchParticipantRepository.findUpcomingMatchesForUser(username);
+
+        return matches.stream()
+                .map(match -> {
+                    String location = match.getVenue() != null ? match.getVenue().getName() : null;
+
+                    return new UpcomingMatchDto(
+                            match.getId(),
+                            match.getTitle(),
+                            match.getStartsAt(),
+                            null,
+                            null,
+                            location
+                    );
+                })
+                .sorted(Comparator.comparing(UpcomingMatchDto::startsAt))
+                .limit(5)
+                .toList();
     }
 
 

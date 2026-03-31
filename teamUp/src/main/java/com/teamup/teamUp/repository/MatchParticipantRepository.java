@@ -1,6 +1,7 @@
 package com.teamup.teamUp.repository;
 
 import com.teamup.teamUp.model.dto.matchParticipant.ParticipantDto;
+import com.teamup.teamUp.model.entity.Match;
 import com.teamup.teamUp.model.entity.MatchParticipant;
 import com.teamup.teamUp.model.enums.MatchParticipantStatus;
 import com.teamup.teamUp.model.id.MatchParticipantId;
@@ -86,5 +87,18 @@ public interface MatchParticipantRepository extends JpaRepository<MatchParticipa
           AND mp2.status = 'ACCEPTED'
     """)
     int countMatchesTogether(@Param("userA") UUID userA, @Param("userB") UUID userB);
+
+
+
+    @Query("""
+        select mp.match
+        from MatchParticipant mp
+        join fetch mp.match m
+        left join fetch m.venue
+        where mp.user.username = :username
+          and mp.status = 'ACCEPTED'
+          and m.startsAt > CURRENT_TIMESTAMP
+    """)
+    List<Match> findUpcomingMatchesForUser(String username);
 
 }

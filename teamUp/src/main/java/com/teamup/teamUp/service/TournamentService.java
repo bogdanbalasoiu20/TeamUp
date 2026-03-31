@@ -3,6 +3,7 @@ package com.teamup.teamUp.service;
 import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.mapper.StandingMapper;
 import com.teamup.teamUp.mapper.TournamentMapper;
+import com.teamup.teamUp.model.dto.dashboard.UpcomingTournamentDto;
 import com.teamup.teamUp.model.dto.odds.MatchOddsDto;
 import com.teamup.teamUp.model.dto.tournament.CreateTournamentRequestDto;
 import com.teamup.teamUp.model.dto.tournament.TournamentMatchResponseDto;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -308,6 +310,30 @@ public class TournamentService {
         }
 
         return result.map(TournamentMapper::toDto);
+    }
+
+
+
+    public List<UpcomingTournamentDto> getUpcomingTournamentsForUser(String username) {
+
+        List<TournamentTeam> tournamentTeams = tournamentTeamRepository.findUpcomingTournamentTeamsForUser(username);
+
+        return tournamentTeams.stream()
+                .map(tt -> {
+
+                    Tournament t = tt.getTournament();
+                    Team team = tt.getTeam();
+
+                    return new UpcomingTournamentDto(
+                            t.getId(),
+                            t.getName(),
+                            t.getStartsAt(),
+                            team.getName()
+                    );
+                })
+                .sorted(Comparator.comparing(UpcomingTournamentDto::startsAt))
+                .limit(5)
+                .toList();
     }
 
 
