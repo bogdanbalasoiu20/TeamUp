@@ -322,9 +322,9 @@ public class MatchService {
                             match.getId(),
                             match.getTitle(),
                             match.getStartsAt(),
-                            null,
-                            null,
-                            location
+                            location,
+                            match.getCurrentPlayers(),
+                            match.getMaxPlayers()
                     );
                 })
                 .sorted(Comparator.comparing(UpcomingMatchDto::startsAt))

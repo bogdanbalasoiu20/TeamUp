@@ -91,14 +91,13 @@ public interface MatchParticipantRepository extends JpaRepository<MatchParticipa
 
 
     @Query("""
-        select m
+        select distinct m
         from MatchParticipant mp
         join mp.match m
         left join fetch m.venue
         where mp.user.username = :username
           and mp.status = 'ACCEPTED'
           and m.startsAt > CURRENT_TIMESTAMP
-        order by m.startsAt asc
     """)
     List<Match> findUpcomingMatchesForUser(String username);
 
