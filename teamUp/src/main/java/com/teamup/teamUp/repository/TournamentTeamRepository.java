@@ -11,11 +11,12 @@ public interface TournamentTeamRepository extends JpaRepository<TournamentTeam, 
     boolean existsByTournamentIdAndTeamId(UUID tournamentId, UUID teamId);
     List<TournamentTeam> findByTournamentId(UUID tournamentId);
 
-        @Query("""
+    @Query("""
         select distinct tt
         from TournamentTeam tt
-        join tt.tournament t
-        join tt.team team
+        join fetch tt.tournament t
+        join fetch t.venue
+        join fetch tt.team team
         join team.members member
         where member.user.username = :username
           and t.startsAt > CURRENT_TIMESTAMP
