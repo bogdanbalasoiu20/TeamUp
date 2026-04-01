@@ -110,13 +110,11 @@ public class HomeService {
 
         UUID userId = user.getId();
 
-        PlayerCardStats currentStats =
-                playerCardStatsRepository.findById(userId).orElseThrow();
+        PlayerCardStats currentStats = playerCardStatsRepository.findById(userId).orElseThrow();
 
         double current = currentStats.getOverallRating();
 
-        Page<PlayerCardStatsHistory> page =
-                playerCardStatsHistoryRepository.findLatestStats(userId, PageRequest.of(0, 2));
+        Page<PlayerCardStatsHistory> page = playerCardStatsHistoryRepository.findLatestStats(userId, PageRequest.of(0, 2));
 
         List<PlayerCardStatsHistory> history = page.getContent();
 
@@ -126,10 +124,13 @@ public class HomeService {
             previous = history.get(1).getOverallRating();
         }
 
-        int change = (int) Math.round(current - previous);
+        int roundedCurrent = (int) Math.round(current);
+        int roundedPrevious = (int) Math.round(previous);
+
+        int change = roundedCurrent - roundedPrevious;
 
         return new UserHomeStatsDto(
-                (int) Math.round(current),
+                roundedCurrent,
                 user.getPosition(),
                 user.getPhotoUrl(),
                 change
