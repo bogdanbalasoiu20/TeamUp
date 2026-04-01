@@ -1,6 +1,8 @@
 package com.teamup.teamUp.repository;
 
 import com.teamup.teamUp.model.entity.PlayerCardStatsHistory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,5 +23,14 @@ public interface PlayerCardStatsHistoryRepository extends JpaRepository<PlayerCa
         WHERE h.userId = :userId
     """)
     double findMaxOverallByUserId(@Param("userId") UUID userId);
+
+
+    @Query("""
+        select p
+        from PlayerCardStatsHistory p
+        where p.userId = :userId
+        order by p.recordedAt desc
+    """)
+    Page<PlayerCardStatsHistory> findLatestStats(UUID userId, Pageable pageable);
 
 }
