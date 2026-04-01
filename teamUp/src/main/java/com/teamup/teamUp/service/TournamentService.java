@@ -328,7 +328,9 @@ public class TournamentService {
                             t.getId(),
                             t.getName(),
                             t.getStartsAt(),
-                            team.getName()
+                            team.getName(),
+                            team.getBadgeUrl(),
+                            t.getVenue().getName()
                     );
                 })
                 .sorted(Comparator.comparing(UpcomingTournamentDto::startsAt))

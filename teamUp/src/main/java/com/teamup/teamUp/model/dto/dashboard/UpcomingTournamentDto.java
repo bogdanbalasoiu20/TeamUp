@@ -7,5 +7,7 @@ public record UpcomingTournamentDto(
         UUID id,
         String name,
         LocalDateTime startsAt,
-        String teamName
+        String teamName,
+        String teamBadgeUrl,
+        String location
 ) {}
