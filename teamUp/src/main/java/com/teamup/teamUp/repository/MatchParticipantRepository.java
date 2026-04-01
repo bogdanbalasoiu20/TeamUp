@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -100,5 +101,16 @@ public interface MatchParticipantRepository extends JpaRepository<MatchParticipa
           and m.startsAt > CURRENT_TIMESTAMP
     """)
     List<Match> findUpcomingMatchesForUser(String username);
+
+
+    @Query("""
+        select count(mp)
+        from MatchParticipant mp
+        where mp.user.username = :username
+          and mp.status = :status
+          and mp.match.startsAt >= :start
+          and mp.match.startsAt < :end
+    """)
+    long countMatchesBetween(String username, MatchParticipantStatus status, Instant start, Instant end);
 
 }

@@ -7,30 +7,44 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public interface TournamentMatchParticipantRepository extends JpaRepository<TournamentMatchParticipant, TournamentMatchParticipantId> {
     boolean existsByMatch_Id(UUID matchId);
 
     @Query("""
-    SELECT COUNT(DISTINCT tmp1.match.id)
-    FROM TournamentMatchParticipant tmp1,
-         TournamentMatchParticipant tmp2
-    WHERE tmp1.match.id = tmp2.match.id
-      AND tmp1.team.id = tmp2.team.id
-      AND tmp1.user.id = :userA
-      AND tmp2.user.id = :userB
-      AND tmp1.user.id <> tmp2.user.id
-      AND tmp1.match.status = :status
-""")
+        SELECT COUNT(DISTINCT tmp1.match.id)
+        FROM TournamentMatchParticipant tmp1,
+             TournamentMatchParticipant tmp2
+        WHERE tmp1.match.id = tmp2.match.id
+          AND tmp1.team.id = tmp2.team.id
+          AND tmp1.user.id = :userA
+          AND tmp2.user.id = :userB
+          AND tmp1.user.id <> tmp2.user.id
+          AND tmp1.match.status = :status
+    """)
     int countTournamentMatchesTogether(@Param("userA") UUID userA, @Param("userB") UUID userB, @Param("status") MatchStatus status);
 
 
     @Query("""
-    SELECT COUNT(DISTINCT tmp.match.id)
-    FROM TournamentMatchParticipant tmp
-    WHERE tmp.user.id = :userId
-      AND tmp.match.status = :status
-""")
+        SELECT COUNT(DISTINCT tmp.match.id)
+        FROM TournamentMatchParticipant tmp
+        WHERE tmp.user.id = :userId
+          AND tmp.match.status = :status
+    """)
     int countTournamentMatchesForUser(@Param("userId") UUID userId, @Param("status") MatchStatus status);
+
+
+    @Query("""
+        select count(distinct t.id)
+        from TournamentMatchParticipant tmp
+        join tmp.match m
+        join m.tournament t
+        where tmp.user.username = :username
+          and t.status = 'FINISHED'
+          and t.startsAt >= :start
+          and t.startsAt < :end
+    """)
+    long countTournamentsBetween(String username, LocalDateTime start, LocalDateTime end);
 }
