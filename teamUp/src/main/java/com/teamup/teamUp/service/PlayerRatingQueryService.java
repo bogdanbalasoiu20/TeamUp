@@ -41,7 +41,8 @@ public class PlayerRatingQueryService {
                 .map(u -> new PlayerToRateDto(
                         u.getId(),
                         u.getUsername(),
-                        u.getPosition()
+                        u.getPosition(),
+                        u.getPhotoUrl()
                 ))
                 .toList();
     }
