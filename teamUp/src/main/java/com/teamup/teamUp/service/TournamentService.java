@@ -5,6 +5,7 @@ import com.teamup.teamUp.mapper.StandingMapper;
 import com.teamup.teamUp.mapper.TournamentMapper;
 import com.teamup.teamUp.model.dto.dashboard.UpcomingTournamentDto;
 import com.teamup.teamUp.model.dto.odds.MatchOddsDto;
+import com.teamup.teamUp.model.dto.team.TeamPreviewDto;
 import com.teamup.teamUp.model.dto.tournament.CreateTournamentRequestDto;
 import com.teamup.teamUp.model.dto.tournament.TournamentMatchResponseDto;
 import com.teamup.teamUp.model.dto.tournament.TournamentResponseDto;
@@ -72,7 +73,7 @@ public class TournamentService {
 
         tournamentRepository.save(tournament);
 
-        return TournamentMapper.toDto(tournament,List.of());
+        return TournamentMapper.toDto(tournament,List.of(),getTotalTeams(tournament.getId()));
     }
 
 
@@ -209,8 +210,9 @@ public class TournamentService {
     @Transactional(readOnly = true)
     public TournamentResponseDto getTournament(UUID tournamentId) {
         Tournament tournament =  tournamentRepository.findById(tournamentId).orElseThrow(() -> new NotFoundException("Tournament not found"));
-        List<String> preview = getPreview(tournament.getId());
-        return TournamentMapper.toDto(tournament, preview);
+        List<TeamPreviewDto> preview = getPreview(tournament.getId());
+        int total = getTotalTeams(tournament.getId());
+        return TournamentMapper.toDto(tournament, preview,total);
     }
 
     public List<TournamentMatchResponseDto> getMatches(UUID tournamentId) {
@@ -310,7 +312,7 @@ public class TournamentService {
             result = tournamentRepository.findByStatus(status, pageable);
         }
 
-        return result.map(tournament -> TournamentMapper.toDto(tournament, getPreview(tournament.getId())));
+        return result.map(tournament -> TournamentMapper.toDto(tournament, getPreview(tournament.getId()),getTotalTeams(tournament.getId())));
     }
 
 
@@ -340,12 +342,16 @@ public class TournamentService {
     }
 
 
-    private List<String> getPreview(UUID tournamentId) {
+    private List<TeamPreviewDto> getPreview(UUID tournamentId) {
         return tournamentTeamRepository
-                .findBadgeUrls(tournamentId, PageRequest.of(0, 3))
+                .findTeams(tournamentId, PageRequest.of(0, 3))
                 .stream()
-                .filter(url -> url != null && !url.isBlank())
+                .map(team -> new TeamPreviewDto(team.getName(), team.getBadgeUrl()))
                 .toList();
+    }
+
+    private int getTotalTeams(UUID tournamentId) {
+        return (int) tournamentTeamRepository.countByTournamentId(tournamentId);
     }
 
 

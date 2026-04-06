@@ -1,5 +1,6 @@
 package com.teamup.teamUp.mapper;
 
+import com.teamup.teamUp.model.dto.team.TeamPreviewDto;
 import com.teamup.teamUp.model.dto.tournament.TournamentResponseDto;
 import com.teamup.teamUp.model.entity.Tournament;
 
@@ -7,7 +8,7 @@ import java.util.List;
 
 public class TournamentMapper {
 
-    public static TournamentResponseDto toDto(Tournament t, List<String> previewUrls) {
+    public static TournamentResponseDto toDto(Tournament t, List<TeamPreviewDto> previewUrls, int totalTeams) {
         return new TournamentResponseDto(
                 t.getId(),
                 t.getName(),
@@ -22,7 +23,8 @@ public class TournamentMapper {
                 t.getStartsAt(),
                 t.getEndsAt(),
                 t.getOrganizer().getUsername(),
-                previewUrls
+                previewUrls,
+                totalTeams
                 );
     }
 }
