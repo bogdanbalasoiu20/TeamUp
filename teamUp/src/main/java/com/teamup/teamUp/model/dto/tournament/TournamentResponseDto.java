@@ -4,6 +4,7 @@ package com.teamup.teamUp.model.dto.tournament;
 import com.teamup.teamUp.model.enums.TournamentStatus;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public record TournamentResponseDto(
@@ -19,6 +20,7 @@ public record TournamentResponseDto(
         Integer playersPerTeam,
         LocalDateTime startsAt,
         LocalDateTime endsAt,
-        String creatorUsername
+        String creatorUsername,
+        List<String> teamPreviewUrls
 ) {}
 

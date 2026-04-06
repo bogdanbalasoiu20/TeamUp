@@ -1,6 +1,7 @@
 package com.teamup.teamUp.repository;
 
 import com.teamup.teamUp.model.entity.TournamentTeam;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -23,4 +24,11 @@ public interface TournamentTeamRepository extends JpaRepository<TournamentTeam, 
           and t.status = 'OPEN'
     """)
     List<TournamentTeam> findUpcomingTournamentTeamsForUser(String username);
+
+    @Query("""
+        select tt.team.badgeUrl
+        from TournamentTeam tt
+        where tt.tournament.id = :tournamentId
+    """)
+    List<String> findBadgeUrls(UUID tournamentId, Pageable pageable);
 }

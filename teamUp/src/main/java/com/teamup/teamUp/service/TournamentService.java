@@ -72,7 +72,7 @@ public class TournamentService {
 
         tournamentRepository.save(tournament);
 
-        return TournamentMapper.toDto(tournament);
+        return TournamentMapper.toDto(tournament,List.of());
     }
 
 
@@ -209,7 +209,8 @@ public class TournamentService {
     @Transactional(readOnly = true)
     public TournamentResponseDto getTournament(UUID tournamentId) {
         Tournament tournament =  tournamentRepository.findById(tournamentId).orElseThrow(() -> new NotFoundException("Tournament not found"));
-        return TournamentMapper.toDto(tournament);
+        List<String> preview = getPreview(tournament.getId());
+        return TournamentMapper.toDto(tournament, preview);
     }
 
     public List<TournamentMatchResponseDto> getMatches(UUID tournamentId) {
@@ -309,7 +310,7 @@ public class TournamentService {
             result = tournamentRepository.findByStatus(status, pageable);
         }
 
-        return result.map(TournamentMapper::toDto);
+        return result.map(tournament -> TournamentMapper.toDto(tournament, getPreview(tournament.getId())));
     }
 
 
@@ -335,6 +336,15 @@ public class TournamentService {
                 })
                 .sorted(Comparator.comparing(UpcomingTournamentDto::startsAt))
                 .limit(5)
+                .toList();
+    }
+
+
+    private List<String> getPreview(UUID tournamentId) {
+        return tournamentTeamRepository
+                .findBadgeUrls(tournamentId, PageRequest.of(0, 3))
+                .stream()
+                .filter(url -> url != null && !url.isBlank())
                 .toList();
     }
 
