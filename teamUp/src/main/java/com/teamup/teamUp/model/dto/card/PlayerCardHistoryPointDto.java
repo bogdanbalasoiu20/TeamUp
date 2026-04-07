@@ -1,5 +1,6 @@
 package com.teamup.teamUp.model.dto.card;
 
+import com.teamup.teamUp.model.enums.EventType;
 import lombok.Builder;
 import lombok.Data;
 
@@ -10,7 +11,8 @@ import java.util.UUID;
 @Builder
 public class PlayerCardHistoryPointDto {
 
-    private UUID matchId;
+    private EventType eventType;
+    private UUID contextId;
     private Instant recordedAt;
 
     private Double overallRating;

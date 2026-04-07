@@ -8,7 +8,8 @@ import org.springframework.stereotype.Component;
 public class PlayerCardHistoryMapper {
     public static PlayerCardHistoryPointDto toDto(PlayerCardStatsHistory h) {
         return PlayerCardHistoryPointDto.builder()
-                .matchId(h.getMatchId())
+                .eventType(h.getEventType())
+                .contextId(h.getContextId())
                 .recordedAt(h.getRecordedAt())
                 .overallRating(h.getOverallRating())
 
