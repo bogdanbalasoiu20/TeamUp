@@ -24,7 +24,7 @@ ALTER TABLE tournaments
 DROP COLUMN rating_opened_at;
 
 ALTER TABLE tournaments
-DROP COLUMN rating_finalized;
+DROP COLUMN ratings_finalized;
 
 
 ALTER TABLE player_ratings
