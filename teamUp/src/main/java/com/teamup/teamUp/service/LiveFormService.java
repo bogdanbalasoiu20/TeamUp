@@ -3,6 +3,7 @@ package com.teamup.teamUp.service;
 import com.teamup.teamUp.model.dto.liveform.LiveFormDto;
 import com.teamup.teamUp.model.entity.PlayerCardStats;
 import com.teamup.teamUp.model.entity.PlayerCardStatsHistory;
+import com.teamup.teamUp.model.enums.EventType;
 import com.teamup.teamUp.repository.PlayerCardStatsHistoryRepository;
 import com.teamup.teamUp.repository.PlayerCardStatsRepository;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,7 @@ public class LiveFormService {
 
         PlayerCardStats card = cardRepo.findById(userId).orElseThrow(() -> new IllegalStateException("Player card not found"));
 
-        List<PlayerCardStatsHistory> lastMatches = historyRepo.findTop3ByUserIdAndMatchIdIsNotNullOrderByRecordedAtDesc(userId);
+        List<PlayerCardStatsHistory> lastMatches = historyRepo.findTop3ByUserIdAndEventTypeOrderByRecordedAtDesc(userId, EventType.OPEN_MATCH);
 
         int matchesCount = lastMatches.size();
 

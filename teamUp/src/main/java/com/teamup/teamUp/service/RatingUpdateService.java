@@ -4,6 +4,7 @@ import com.teamup.teamUp.model.entity.PlayerCardStats;
 import com.teamup.teamUp.model.entity.PlayerCardStatsHistory;
 import com.teamup.teamUp.model.entity.PlayerRating;
 import com.teamup.teamUp.model.entity.User;
+import com.teamup.teamUp.model.enums.EventType;
 import com.teamup.teamUp.model.enums.Position;
 import com.teamup.teamUp.repository.PlayerCardStatsHistoryRepository;
 import com.teamup.teamUp.repository.PlayerCardStatsRepository;
@@ -107,7 +108,7 @@ public class RatingUpdateService {
             PlayerCardStats card = cardRepo.findById(userId).orElseGet(() -> createInitialCard(userId, user));
 
             int numVotes = ratings.size();
-            int matchesPlayed = (int) historyRepo.countByUserIdAndMatchIdIsNotNull(userId);
+            int matchesPlayed = (int) historyRepo.countByUserIdAndEventType(userId, EventType.OPEN_MATCH);
             double alpha = computeAlpha(numVotes, matchesPlayed);
 
             // EMA + clamp
@@ -117,7 +118,7 @@ public class RatingUpdateService {
             cardRepo.save(card);
 
             // Istoric
-            historyRepo.save(snapshot(card, matchId));
+            historyRepo.save(snapshot(card, EventType.OPEN_MATCH, matchId));
         }
     }
 
@@ -180,10 +181,11 @@ public class RatingUpdateService {
 
 
 
-    private PlayerCardStatsHistory snapshot(PlayerCardStats card, UUID matchId) {
+    private PlayerCardStatsHistory snapshot(PlayerCardStats card, EventType eventType, UUID contextId) {
         return PlayerCardStatsHistory.builder()
                 .userId(card.getUserId())
-                .matchId(matchId)
+                .eventType(eventType)
+                .contextId(contextId)
                 .pace(card.getPace())
                 .shooting(card.getShooting())
                 .passing(card.getPassing())
@@ -249,7 +251,7 @@ public class RatingUpdateService {
 
         card.setOverallRating(calculateOverall(card, position));
 
-        historyRepo.save(snapshot(card, null));
+        historyRepo.save(snapshot(card, EventType.INITIAL, null));
 
         return card;
     }

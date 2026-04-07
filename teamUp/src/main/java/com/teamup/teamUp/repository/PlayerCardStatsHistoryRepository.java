@@ -1,6 +1,7 @@
 package com.teamup.teamUp.repository;
 
 import com.teamup.teamUp.model.entity.PlayerCardStatsHistory;
+import com.teamup.teamUp.model.enums.EventType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,9 +14,9 @@ import java.util.UUID;
 public interface PlayerCardStatsHistoryRepository extends JpaRepository<PlayerCardStatsHistory, UUID> {
     List<PlayerCardStatsHistory> findByUserIdOrderByRecordedAtAsc(UUID userId);
 
-    long countByUserIdAndMatchIdIsNotNull(UUID userId);
+    long countByUserIdAndEventType(UUID userId, EventType eventType);
 
-    List<PlayerCardStatsHistory> findTop3ByUserIdAndMatchIdIsNotNullOrderByRecordedAtDesc(UUID userId);
+    List<PlayerCardStatsHistory> findTop3ByUserIdAndEventTypeOrderByRecordedAtDesc(UUID userId, EventType eventType);
 
     @Query("""
         SELECT COALESCE(MAX(h.overallRating), 0)

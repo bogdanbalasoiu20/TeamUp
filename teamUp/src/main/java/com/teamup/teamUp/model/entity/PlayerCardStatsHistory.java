@@ -47,8 +47,8 @@ public class PlayerCardStatsHistory {
     @Column(name = "recorded_at", nullable = false)
     private Instant recordedAt;
 
-    @Column(name = "match_id")
-    private UUID matchId;
+//    @Column(name = "match_id")
+//    private UUID matchId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "event_type")
