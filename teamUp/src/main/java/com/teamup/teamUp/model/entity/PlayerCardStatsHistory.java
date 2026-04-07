@@ -1,7 +1,11 @@
 package com.teamup.teamUp.model.entity;
 
+import com.teamup.teamUp.model.enums.EventType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -45,5 +49,13 @@ public class PlayerCardStatsHistory {
 
     @Column(name = "match_id")
     private UUID matchId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "event_type")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    private EventType eventType;
+
+    @Column(name = "context_id")
+    private UUID contextId;
 }
 
