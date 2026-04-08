@@ -1,10 +1,8 @@
 package com.teamup.teamUp.service;
 
-import com.teamup.teamUp.model.entity.PlayerCardStats;
-import com.teamup.teamUp.model.entity.PlayerCardStatsHistory;
-import com.teamup.teamUp.model.entity.PlayerRating;
-import com.teamup.teamUp.model.entity.User;
+import com.teamup.teamUp.model.entity.*;
 import com.teamup.teamUp.model.enums.EventType;
+import com.teamup.teamUp.model.enums.MatchStatus;
 import com.teamup.teamUp.model.enums.Position;
 import com.teamup.teamUp.repository.PlayerCardStatsHistoryRepository;
 import com.teamup.teamUp.repository.PlayerCardStatsRepository;
@@ -179,6 +177,10 @@ public class RatingUpdateService {
         return Math.max(MIN_RATING, Math.min(MAX_RATING, deltaClamped));
     }
 
+    private double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
 
 
     private PlayerCardStatsHistory snapshot(PlayerCardStats card, EventType eventType, UUID contextId) {
@@ -348,6 +350,131 @@ public class RatingUpdateService {
     }
 
 
+    public void updateAfterTournamentMatch(TournamentMatch match, List<TournamentMatchParticipant> participants) {
+        if (match.getStatus() != MatchStatus.DONE) return;
+
+        if (match.getOddsHome() == null || match.getOddsDraw() == null || match.getOddsAway() == null) {
+            return;
+        }
+
+        double pHome = 1.0 / match.getOddsHome();
+        double pDraw = 1.0 / match.getOddsDraw();
+        double pAway = 1.0 / match.getOddsAway();
+
+        double sum = pHome + pDraw + pAway;
+        pHome /= sum;
+        pDraw /= sum;
+        pAway /= sum;
+
+        double actualHome, actualAway;
+
+        if (match.getScoreHome() > match.getScoreAway()) {
+            actualHome = 1;
+            actualAway = 0;
+        } else if (match.getScoreHome().equals(match.getScoreAway())) {
+            actualHome = 0.5;
+            actualAway = 0.5;
+        } else {
+            actualHome = 0;
+            actualAway = 1;
+        }
+
+        double SCALE = 1.2;
+
+        double deltaHome = (actualHome - pHome) * SCALE;
+        double deltaAway = (actualAway - pAway) * SCALE;
+
+        int goalDiff = Math.abs(match.getScoreHome() - match.getScoreAway());
+        double scoreFactor = 1 + Math.min(goalDiff, 3) * 0.15;
+
+        deltaHome *= scoreFactor;
+        deltaAway *= scoreFactor;
+
+        for (TournamentMatchParticipant p : participants) {
+            UUID userId = p.getUser().getId();
+            Team team = p.getTeam();
+            double delta = team.getId().equals(match.getHomeTeam().getId()) ? deltaHome : deltaAway;
+
+            applyTournamentDelta(userId, delta, p.getUser().getPosition(), match.getId());
+        }
+    }
+
+
+    private void applyTournamentDelta(UUID userId, double delta, Position position, UUID matchId) {
+
+        if (historyRepo.existsByUserIdAndContextId(userId, matchId)) {
+            return;
+        }
+
+        PlayerCardStats card = cardRepo.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("Card not found"));
+
+        if (position == Position.GOALKEEPER) {
+            applyGoalkeeperDelta(card, delta, matchId);
+            return;
+        }
+
+        double core = clamp(delta * 0.1, -0.3, 0.3);
+
+        setStat(card, "pace", clamp(card.getPace() + core, card.getPace()));
+        setStat(card, "shooting", clamp(card.getShooting() + core, card.getShooting()));
+        setStat(card, "passing", clamp(card.getPassing() + core, card.getPassing()));
+        setStat(card, "defending", clamp(card.getDefending() + core, card.getDefending()));
+        setStat(card, "dribbling", clamp(card.getDribbling() + core, card.getDribbling()));
+        setStat(card, "physical", clamp(card.getPhysical() + core, card.getPhysical()));
+
+        Map<String, Double> weights = POSITION_WEIGHTS.get(position);
+
+        weights.forEach((stat, weight) -> {
+            double change = delta * 0.8 * weight;
+            change = clamp(change, -0.6, 0.6);
+            Double oldValue = getStat(card, stat);
+            if (oldValue < 50 && change > 0) {
+                change *= 0.5;
+            }
+            double newValue = clamp(oldValue + change, oldValue);
+            setStat(card, stat, newValue);
+        });
+
+        // overall
+        card.setOverallRating(calculateOverall(card, position));
+        card.setLastUpdated(Instant.now());
+
+        cardRepo.save(card);
+
+        historyRepo.save(snapshot(card, EventType.TOURNAMENT_MATCH, matchId));
+    }
+
+
+    private void applyGoalkeeperDelta(PlayerCardStats card, double delta, UUID matchId) {
+        double core = clamp(delta * 0.1, -0.3, 0.3);
+
+        setStat(card, "gkDiving", clamp(card.getGkDiving() + core, card.getGkDiving()));
+        setStat(card, "gkHandling", clamp(card.getGkHandling() + core, card.getGkHandling()));
+        setStat(card, "gkKicking", clamp(card.getGkKicking() + core, card.getGkKicking()));
+        setStat(card, "gkReflexes", clamp(card.getGkReflexes() + core, card.getGkReflexes()));
+        setStat(card, "gkSpeed", clamp(card.getGkSpeed() + core, card.getGkSpeed()));
+        setStat(card, "gkPositioning", clamp(card.getGkPositioning() + core, card.getGkPositioning()));
+
+        Map<String, Double> weights = POSITION_WEIGHTS.get(Position.GOALKEEPER);
+
+        weights.forEach((stat, weight) -> {
+            double change = delta * 0.8 * weight;
+            change = clamp(change, -0.6, 0.6);
+            Double oldValue = getStat(card, stat);
+            if (oldValue < 50 && change > 0) {
+                change *= 0.5;
+            }
+            double newValue = clamp(oldValue + change, oldValue);
+            setStat(card, stat, newValue);
+        });
+
+        card.setOverallRating(calculateOverall(card, Position.GOALKEEPER));
+        card.setLastUpdated(Instant.now());
+
+        cardRepo.save(card);
+        historyRepo.save(snapshot(card, EventType.TOURNAMENT_MATCH, matchId));
+    }
 
 }
 

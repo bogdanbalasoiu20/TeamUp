@@ -34,4 +34,6 @@ public interface PlayerCardStatsHistoryRepository extends JpaRepository<PlayerCa
     """)
     Page<PlayerCardStatsHistory> findLatestStats(UUID userId, Pageable pageable);
 
+    boolean existsByUserIdAndContextId(UUID userId, UUID contextId);
+
 }

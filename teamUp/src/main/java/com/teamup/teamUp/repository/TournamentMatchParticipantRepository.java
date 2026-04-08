@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public interface TournamentMatchParticipantRepository extends JpaRepository<TournamentMatchParticipant, TournamentMatchParticipantId> {
@@ -47,4 +48,7 @@ public interface TournamentMatchParticipantRepository extends JpaRepository<Tour
           and t.startsAt < :end
     """)
     long countTournamentsBetween(String username, LocalDateTime start, LocalDateTime end);
+
+
+    List<TournamentMatchParticipant> findByMatchId(UUID matchId);
 }

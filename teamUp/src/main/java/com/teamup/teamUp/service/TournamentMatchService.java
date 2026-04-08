@@ -29,6 +29,7 @@ public class TournamentMatchService {
     private final TournamentMatchParticipantRepository participantRepository;
     private final TeamChemistryManager teamChemistryManager;
     private final MatchOddsService matchOddsService;
+    private final RatingUpdateService ratingUpdateService;
 
     @Transactional
     public void finishMatch(UUID matchId, int scoreHome, int scoreAway) {
@@ -73,6 +74,10 @@ public class TournamentMatchService {
         updateStandings(homeStanding, awayStanding, scoreHome, scoreAway);
 
         matchRepository.save(match);
+
+        List<TournamentMatchParticipant> participants = participantRepository.findByMatchId(match.getId());
+
+        ratingUpdateService.updateAfterTournamentMatch(match, participants);
 
         tournamentService.finishTournamentIfCompleted(match.getTournament().getId());
 
