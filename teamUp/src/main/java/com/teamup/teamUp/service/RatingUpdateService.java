@@ -1,13 +1,12 @@
 package com.teamup.teamUp.service;
 
+import com.teamup.teamUp.events.NotificationEvents;
+import com.teamup.teamUp.exceptions.NotFoundException;
 import com.teamup.teamUp.model.entity.*;
 import com.teamup.teamUp.model.enums.EventType;
 import com.teamup.teamUp.model.enums.MatchStatus;
 import com.teamup.teamUp.model.enums.Position;
-import com.teamup.teamUp.repository.PlayerCardStatsHistoryRepository;
-import com.teamup.teamUp.repository.PlayerCardStatsRepository;
-import com.teamup.teamUp.repository.PlayerRatingRepository;
-import com.teamup.teamUp.repository.UserRepository;
+import com.teamup.teamUp.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -75,18 +74,24 @@ public class RatingUpdateService {
     private final PlayerCardStatsRepository cardRepo;
     private final PlayerCardStatsHistoryRepository historyRepo;
     private final UserRepository userRepo;
+    private final NotificationEvents notificationEvents;
+    private final MatchRepository matchRepository;
 
-    public RatingUpdateService(PlayerRatingRepository ratingRepo, PlayerCardStatsRepository cardRepo, PlayerCardStatsHistoryRepository historyRepo, UserRepository userRepo) {
+    public RatingUpdateService(PlayerRatingRepository ratingRepo, PlayerCardStatsRepository cardRepo, PlayerCardStatsHistoryRepository historyRepo, UserRepository userRepo, NotificationEvents notificationEvents, MatchRepository matchRepository) {
         this.ratingRepo = ratingRepo;
         this.cardRepo = cardRepo;
         this.historyRepo = historyRepo;
         this.userRepo = userRepo;
+        this.notificationEvents = notificationEvents;
+        this.matchRepository = matchRepository;
     }
 
     public void updateAfterMatch(UUID matchId) {
         // Grupez toate ratingurile pe jucator evaluat
         Map<UUID, List<PlayerRating>> ratingsByUser = ratingRepo.findByIdMatchId(matchId).stream()
                         .collect(Collectors.groupingBy(r -> r.getRatedUser().getId()));
+
+        Match match = matchRepository.findById(matchId).orElseThrow(()->new NotFoundException("Match not found"));
 
 
         for (UUID userId : ratingsByUser.keySet()) {
@@ -105,6 +110,8 @@ public class RatingUpdateService {
             // Card curent (sau default)
             PlayerCardStats card = cardRepo.findById(userId).orElseGet(() -> createInitialCard(userId, user));
 
+            double oldRating = card.getOverallRating();
+
             int numVotes = ratings.size();
             int matchesPlayed = (int) historyRepo.countByUserIdAndEventType(userId, EventType.OPEN_MATCH);
             double alpha = computeAlpha(numVotes, matchesPlayed);
@@ -115,8 +122,14 @@ public class RatingUpdateService {
             card.setLastUpdated(Instant.now());
             cardRepo.save(card);
 
+            double newRating = card.getOverallRating();
+
             // Istoric
             historyRepo.save(snapshot(card, EventType.OPEN_MATCH, matchId));
+
+            if (Math.round(oldRating) != Math.round(newRating)) {
+                notificationEvents.ratingUpdatedAfterMatch(user, oldRating, newRating, match);
+            }
         }
     }
 
@@ -395,22 +408,25 @@ public class RatingUpdateService {
             Team team = p.getTeam();
             double delta = team.getId().equals(match.getHomeTeam().getId()) ? deltaHome : deltaAway;
 
-            applyTournamentDelta(userId, delta, p.getUser().getPosition(), match.getId());
+            applyTournamentDelta(userId, delta, p.getUser().getPosition(), match);
         }
     }
 
 
-    private void applyTournamentDelta(UUID userId, double delta, Position position, UUID matchId) {
+    private void applyTournamentDelta(UUID userId, double delta, Position position, TournamentMatch match) {
 
-        if (historyRepo.existsByUserIdAndContextId(userId, matchId)) {
+        if (historyRepo.existsByUserIdAndContextId(userId, match.getId())) {
             return;
         }
 
-        PlayerCardStats card = cardRepo.findById(userId)
-                .orElseThrow(() -> new IllegalStateException("Card not found"));
+        User user = userRepo.findById(userId).orElseThrow(() -> new IllegalStateException("User not found"));
+
+        PlayerCardStats card = cardRepo.findById(userId).orElseThrow(() -> new IllegalStateException("Card not found"));
+
+        double oldRating = card.getOverallRating();
 
         if (position == Position.GOALKEEPER) {
-            applyGoalkeeperDelta(card, delta, matchId);
+            applyGoalkeeperDelta(card, delta, match, user, oldRating);
             return;
         }
 
@@ -442,11 +458,17 @@ public class RatingUpdateService {
 
         cardRepo.save(card);
 
-        historyRepo.save(snapshot(card, EventType.TOURNAMENT_MATCH, matchId));
+        double newRating = card.getOverallRating();
+
+        historyRepo.save(snapshot(card, EventType.TOURNAMENT_MATCH, match.getId()));
+
+        if (Math.round(oldRating) != Math.round(newRating)) {
+            notificationEvents.ratingUpdatedAfterTournament(user, oldRating, newRating, match);
+        }
     }
 
 
-    private void applyGoalkeeperDelta(PlayerCardStats card, double delta, UUID matchId) {
+    private void applyGoalkeeperDelta(PlayerCardStats card, double delta, TournamentMatch match, User user, double oldRating) {
         double core = clamp(delta * 0.1, -0.3, 0.3);
 
         setStat(card, "gkDiving", clamp(card.getGkDiving() + core, card.getGkDiving()));
@@ -473,7 +495,12 @@ public class RatingUpdateService {
         card.setLastUpdated(Instant.now());
 
         cardRepo.save(card);
-        historyRepo.save(snapshot(card, EventType.TOURNAMENT_MATCH, matchId));
+        double newRating = card.getOverallRating();
+        historyRepo.save(snapshot(card, EventType.TOURNAMENT_MATCH, match.getId()));
+
+        if (Math.round(oldRating) != Math.round(newRating)) {
+            notificationEvents.ratingUpdatedAfterTournament(user, oldRating, newRating, match);
+        }
     }
 
 }

@@ -2,6 +2,7 @@ package com.teamup.teamUp.events;
 
 import com.teamup.teamUp.model.entity.Match;
 import com.teamup.teamUp.model.entity.MatchParticipant;
+import com.teamup.teamUp.model.entity.TournamentMatch;
 import com.teamup.teamUp.model.entity.User;
 import com.teamup.teamUp.model.enums.NotificationType;
 import com.teamup.teamUp.service.NotificationService;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -172,6 +174,54 @@ public class NotificationEvents {
                 "Did your match end?",
                 "Please confirm if your match has ended so players can rate each other.",
                 Map.of("matchId", match.getId())
+        );
+    }
+
+
+    public void ratingUpdatedAfterMatch(User user, double oldRating, double newRating, Match match) {
+
+        int diff = (int) Math.round(newRating - oldRating);
+        String sign = diff > 0 ? "+" : "";
+
+        notificationService.send(
+                user,
+                NotificationType.RATING_UPDATED,
+                "Match Rating Update",
+                "After \"" + match.getTitle() + "\" your rating changed: "
+                        + sign + diff + " → " + (int)Math.round(newRating),
+                Map.of(
+                        "matchId", match.getId(),
+                        "newRating", newRating,
+                        "oldRating", oldRating,
+                        "delta", diff,
+                        "type", "OPEN_MATCH"
+                )
+        );
+    }
+
+
+    public void ratingUpdatedAfterTournament(User user, double oldRating, double newRating, TournamentMatch match) {
+
+        int diff = (int) Math.round(newRating - oldRating);
+        String sign = diff > 0 ? "+" : "";
+
+        Integer round = match.getMatchDay();
+
+        notificationService.send(
+                user,
+                NotificationType.RATING_UPDATED,
+                "Tournament Update",
+                match.getTournament().getName() + " • " + round + "\n"
+                        + "Your rating changed: "
+                        + sign + diff + " → " + (int)Math.round(newRating),
+                Map.of(
+                        "tournamentId", match.getTournament().getId(),
+                        "matchId", match.getId(),
+                        "newRating", newRating,
+                        "oldRating", oldRating,
+                        "delta", diff,
+                        "type", "TOURNAMENT"
+                )
         );
     }
 
