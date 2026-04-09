@@ -180,7 +180,7 @@ public class NotificationEvents {
 
     public void ratingUpdatedAfterMatch(User user, double oldRating, double newRating, Match match) {
 
-        int diff = (int) Math.round(newRating - oldRating);
+        int diff = (int) (Math.round(newRating) - Math.round(oldRating));
         String sign = diff > 0 ? "+" : "";
 
         notificationService.send(
@@ -188,7 +188,7 @@ public class NotificationEvents {
                 NotificationType.RATING_UPDATED,
                 "Match Rating Update",
                 "After \"" + match.getTitle() + "\" your rating changed: "
-                        + sign + diff + " → " + (int)Math.round(newRating),
+                        + sign + diff + " -> " + (int)Math.round(newRating),
                 Map.of(
                         "matchId", match.getId(),
                         "newRating", newRating,
@@ -202,7 +202,7 @@ public class NotificationEvents {
 
     public void ratingUpdatedAfterTournament(User user, double oldRating, double newRating, TournamentMatch match) {
 
-        int diff = (int) Math.round(newRating - oldRating);
+        int diff = (int) (Math.round(newRating) - Math.round(oldRating));
         String sign = diff > 0 ? "+" : "";
 
         Integer round = match.getMatchDay();
@@ -211,9 +211,9 @@ public class NotificationEvents {
                 user,
                 NotificationType.RATING_UPDATED,
                 "Tournament Update",
-                match.getTournament().getName() + " • " + round + "\n"
+                match.getTournament().getName() + " - round " + round + "\n"
                         + "Your rating changed: "
-                        + sign + diff + " → " + (int)Math.round(newRating),
+                        + sign + diff + " -> " + (int)Math.round(newRating),
                 Map.of(
                         "tournamentId", match.getTournament().getId(),
                         "matchId", match.getId(),
