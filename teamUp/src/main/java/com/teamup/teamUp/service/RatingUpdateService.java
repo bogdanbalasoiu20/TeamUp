@@ -430,7 +430,7 @@ public class RatingUpdateService {
             return;
         }
 
-        double core = clamp(delta * 0.1, -0.3, 0.3);
+        double core = clamp(delta * 0.2, -0.3, 0.3);
 
         setStat(card, "pace", clamp(card.getPace() + core, card.getPace()));
         setStat(card, "shooting", clamp(card.getShooting() + core, card.getShooting()));
@@ -469,7 +469,7 @@ public class RatingUpdateService {
 
 
     private void applyGoalkeeperDelta(PlayerCardStats card, double delta, TournamentMatch match, User user, double oldRating) {
-        double core = clamp(delta * 0.1, -0.3, 0.3);
+        double core = clamp(delta * 0.2, -0.3, 0.3);
 
         setStat(card, "gkDiving", clamp(card.getGkDiving() + core, card.getGkDiving()));
         setStat(card, "gkHandling", clamp(card.getGkHandling() + core, card.getGkHandling()));
